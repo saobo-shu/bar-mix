@@ -11,7 +11,7 @@ const dist = path.join(dir, 'dist');
 
 const read = f => fs.readFileSync(path.join(dir, f), 'utf8');
 
-let html = read('index.html');
+let html = read('dev.html');
 const css = read('app.css');
 const dataJs = read('data.js');
 const appJs = read('app.js');
