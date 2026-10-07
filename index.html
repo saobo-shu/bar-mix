@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>调酒台 · 风味配比实验室</title>
+<meta name="theme-color" content="#12100f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="调酒台">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- 出错时要能自己喊出来，而不是默默空白 -->
+<noscript><div class="bootmsg">这个页面需要 JavaScript。如果你是在某个 App 里打开的，请点右上角「···」→「在浏览器打开」；或者直接把文件用浏览器打开。</div></noscript>
+<div class="bootmsg" id="bootError" hidden></div>
+<script>
+(function () {
+  function show(msg) {
+    var el = document.getElementById('bootError');
+    if (!el) return;
+    el.hidden = false;
+    el.textContent = msg;
+  }
+  window.addEventListener('error', function (e) {
+    show('页面脚本报错了，下面的功能不会工作：' + (e.message || '未知错误')
+      + (e.lineno ? '（第 ' + e.lineno + ' 行）' : ''));
+  });
+  window.addEventListener('load', function () {
+    /* 脚本跑完两秒后自检：分别报告"数据没加载"和"脚本没跑" */
+    setTimeout(function () {
+      if (typeof INGREDIENTS === 'undefined') {
+        show('材料数据没加载成功（data.js 没读到）。'
+          + '如果你只把 index.html 一个文件发出去了，它需要和 data.js、app.js、app.css 放在同一个文件夹里才能用。'
+          + '要单独发一个文件，请用 dist 里的「调酒台.html」。');
+        return;
+      }
+      var cats = document.getElementById('cats');
+      if (cats && !cats.children.length) {
+        show('页面脚本没有正常运行：材料数据读到了，但界面没渲染出来。');
+      }
+    }, 2000);
+  });
+})();
+</script>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="dot"></span>
+    <div>
+      <h1>调酒台</h1>
+      <p>挑材料 → 实时风味图 → 评分与调整建议</p>
+    </div>
+  </div>
+  <div class="scorechip">
+    <div class="mini" id="miniBars" aria-hidden="true"></div>
+    <div class="chipScore">
+      <span class="num" id="scoreNum">--</span>
+      <span class="lbl" id="scoreLbl">等待加料</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="cols">
+  <div class="col-a">
+
+  <!-- ① 杯子 -->
+  <section class="panel p-cup">
+    <div class="panel-head">
+      <h2>① 杯子里</h2>
+      <div class="head-acts">
+        <button type="button" class="ghost" id="swapBtn">换基酒</button>
+        <button type="button" class="ghost" id="clearBtn">清空</button>
+      </div>
+    </div>
+    <div class="glasspick" id="glassPick"></div>
+    <div class="glassrow">
+      <div class="plate"><svg id="glassPreview" class="glasssvg" role="img" aria-label="杯子预览"></svg></div>
+      <div class="glassside">
+        <div class="stats" id="stats"></div>
+        <p class="hint glassnote" id="glassNote"></p>
+      </div>
+    </div>
+    <p class="hint legendline">杯子里每一颗小图形就是一种材料，<b>颜色是它的类别</b>（深棕=基酒、砖红=利口酒、黄=酸、浅金=甜、橙=果汁、米=气泡饮料、暗红=苦精、绿=点缀），<b>形状是具体哪一瓶</b>，颗粒的多少就是它占的比例。白色菱形是冰。</p>
+    <div class="tasterow"><span class="taste-label">口味</span><div class="glasspick" id="tastePick"></div></div>
+    <div class="tasterow"><span class="taste-label">冰量</span><div class="glasspick" id="icePick"></div></div>
+    <div class="tasterow"><span class="taste-label">评分</span><div class="glasspick" id="schemePick"></div></div>
+    <div class="swap-panel" id="swapPanel" hidden></div>
+    <div class="cup-list" id="cupList"></div>
+    <p class="empty" id="cupEmpty">杯子是空的。你可以直接在下面「④ 经典配方」里点一个例子，或者从材料库自己挑——手上只有一瓶基酒也没关系，先倒进去，再用「换基酒」换成你有的那瓶。</p>
+  </section>
+
+  <!-- ③ 材料库 -->
+  <section class="panel p-lib">
+    <div class="panel-head">
+      <h2>③ 材料库</h2>
+      <button type="button" class="ghost" id="riskyBtn" aria-pressed="false">隐藏高风险</button>
+    </div>
+    <nav class="cats" id="cats"></nav>
+    <div class="grid" id="lib"></div>
+    <p class="hint libfoot">每样材料都标了「放心买 / 注意 / 高风险」，判断标准是：<b>没冰箱的住处里，它买到手之后有多难伺候</b>。点材料名可以看它的风味说明。</p>
+  </section>
+
+    </div><!-- /col-a -->
+    <div class="col-b">
+
+  <!-- ② 风味图 + 评分 -->
+  <section class="panel p-result" id="resultAnchor">
+    <div class="panel-head">
+      <h2>② 风味图与评分</h2>
+      <span class="hint">实时更新</span>
+    </div>
+    <div class="result-grid">
+      <div class="radar-wrap"><svg id="radar" role="img" aria-label="风味雷达图"></svg></div>
+      <div class="verdict">
+        <div class="big-score"><b id="bigScore">--</b><span id="scoreUnit"> / 100</span></div>
+        <p class="v-title" id="verdictTitle">先把材料放进杯子</p>
+        <p class="v-text" id="verdictText">从下面「材料库」随便点两样开始，风味图和评分会实时跟着变。</p>
+      </div>
+    </div>
+    <p class="top-flavor" id="topFlavor">还没有风味数据</p>
+    <div class="subs" id="subScores"></div>
+    <ul class="advice" id="advice"></ul>
+    <div class="dilute" id="diluteBox"></div>
+    <div class="storebox" id="storeBox"></div>
+  </section>
+
+    </div><!-- /col-b -->
+  </div><!-- /cols -->
+
+  <!-- ④ 经典配方（整块可以收起，点标题那一行） -->
+  <details class="panel p-pre" open>
+    <summary class="panel-head">
+      <h2>④ 经典配方 · 按家族分</h2>
+      <span class="hint">点一下装杯　<b class="fold"></b></span>
+    </summary>
+    <div class="presets" id="presets"></div>
+  </details>
+
+  <!-- ⑤ 生存指南（整块可以收起） -->
+  <details class="panel p-guide">
+    <summary class="panel-head">
+      <h2>⑤ 没冰箱 · 小空间生存指南</h2>
+      <span class="hint">点标题展开　<b class="fold"></b></span>
+    </summary>
+    <div class="guide">
+
+      <details open>
+        <summary>冰从哪来（这件事比买什么酒重要）</summary>
+        <div class="body">
+          冰占了调酒的一半。同一瓶酒，加不加冰完全是两种东西。
+          <ul>
+            <li><b>便利店</b>：夏天的冰杯，两三块钱一个，直接是杯子形状，倒进去就能用。</li>
+            <li><b>超市</b>：袋装冰块、泡沫保温箱、冰袋（家用区，几十块）。</li>
+            <li>做法：买一袋冰 + 两块冰袋，一起丢进泡沫箱，盖上盖，能撑一晚上。喝之前再拿出来，别一直开着盖。</li>
+            <li>想更讲究：网购硅胶大方冰模具，但没冰箱冻不了，可以不买。</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>一颗柠檬用不完怎么办（住处最常见的浪费）</summary>
+        <div class="body">
+          一颗中等柠檬大约出 <b>40ml</b> 汁，一杯威士忌酸用 20ml——所以<b>一颗柠檬 = 两杯</b>。买之前先决定今天做几杯，或者干脆一次挤完。
+          <ul>
+            <li><b>别挤一半留一半。</b>切开的柠檬接触空气会氧化发苦，表面还容易长霉。这是最容易被忽略的一步。</li>
+            <li><b>一次挤完，做成柠檬糖浆：</b>汁 + 等量白砂糖搅到化开，装瓶常温能放 2-3 周。用它的时候 30ml 就顶掉「20ml 柠檬汁 + 15ml 糖浆」，配方反而更简单。</li>
+            <li><b>皮别扔，做糖渍柠檬皮：</b>皮切条拌白糖腌 6-12 小时，糖会把皮里的香油逼出来，滤掉皮就是香气最浓的糖浆，常温放一个月。等于用废物升级了整杯酒的香气。</li>
+            <li><b>真的只剩半颗：</b>切面朝下扣在小碟子上，外面裹紧保鲜膜，放阴凉处能撑 2-3 天。裸露着放半天就干了。</li>
+            <li><b>不想折腾就用瓶装柠檬汁：</b>便利店就有，开封后常温能放一个月左右，代价是香气比现挤的闷一点。够用，但别指望它撑起一杯高级的酒。</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>糖浆能常温放多久（莫林这类）</summary>
+        <div class="body">
+          糖浆的保质期取决于<b>糖度</b>——糖多水少，水活度低，细菌就长不起来。
+          <ul>
+            <li><b>莫林这类商业糖浆：</b>未开封常温 2-3 年（看瓶身）。开瓶后阴凉避光，纯糖浆（香草、焦糖、榛子）放<b>半年到一年</b>没问题，只是香气会慢慢变淡；果味、含果肉的品种建议 <b>3-6 个月</b>内用完。住处里买 <b>250ml 小瓶</b>比 700ml 实际得多。</li>
+            <li><b>自制 1:1 糖浆：</b>常温 2-3 周。</li>
+            <li><b>自制 2:1 糖浆（富糖浆）：</b>糖多水少，常温能放<b>半年以上</b>。住处首选这个，甜度按 2/3 折算就行。</li>
+            <li><b>加一勺伏特加</b>（约糖浆体积的 10%）：能把常温保质期再拉长几个月，味道几乎尝不出来，是酒吧的常规做法。</li>
+            <li><b>真正让它坏的是污染，不是时间：</b>别把沾过酒或水的勺子伸进瓶里，别兑水，用倒酒嘴最干净。很多"糖浆坏了"其实是长霉。</li>
+            <li>蜂蜜不用管，常温几乎不坏。</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>柠檬汁到底买什么（新的 Sunquick 能不能用）</summary>
+        <div class="body">
+          按「调酒效果」和「住处可操作性」两个维度排，四个选项：
+          <ul>
+            <li><b>① 新鲜柠檬 — 效果最好。</b>香气是唯一且无法替代的，皮油更是瓶装货给不了的。一颗约 40ml，正好两杯。麻烦点在于要现挤、要处理剩下的半颗。</li>
+            <li><b>② 瓶装纯柠檬汁（宝蓝吉 / 如实 / ReaLemon 这类，超市或便利店）— 日常够用。</b>开封后常温约 1 个月。做威士忌酸完全成立，只是香气闷一点。忙的时候用它，不忙的时候现挤。</li>
+            <li><b>③ 柠檬糖浆（整颗柠檬一次挤完 + 等量糖）— 住处最优解。</b>一次解决"剩下半颗"的问题，常温放 2-3 周，而且它本身就是酸+甜，30ml 顶掉「20ml 柠檬汁 + 15ml 糖浆」。</li>
+            <li><b>④ 新的（Sunquick）浓缩柠檬 — 能用，但它不是柠檬汁。</b>它是丹麦可罗（CO-RO）的<b>含糖浓缩水果饮料</b>，官网原话是"由真正的柠檬汁制成"，但要<b>兑水</b>才当饮料喝。也就是说它<b>酸和甜都带着</b>，还有一点饮料感。<br>
+              用法：把它当「酸 + 甜」二合一，用它就<b>把糖浆减掉</b>；适合做长饮（配苏打水、茶、可乐），不适合做需要精确酸甜的经典配方。直接 30ml 浓缩 + 45ml 威士忌 + 120ml 苏打水就能出一杯很稳的柠檬高球。<br>
+              优点：<b>常温能放 3-6 个月</b>（高糖浓缩，开封后也耐放），是这四个里最不用操心保存的。</li>
+          </ul>
+          <b>结论：</b>想做正经鸡尾酒 → 买新鲜柠檬，用不完就做成柠檬糖浆；只想在住处随手调个柠檬味微醺、又不想管保存 → 新的完全可以用，只要记得它不是酸，是「酸甜饮料」。
+        </div>
+      </details>
+
+      <details>
+        <summary>一杯酒的通吃公式：45 / 20 / 15</summary>
+        <div class="body">
+          烈酒 <b>45ml</b> ＋ 酸（柠檬汁）<b>20ml</b> ＋ 甜（糖浆）<b>15ml</b>，再加冰，最后兑 90-120ml 气泡水。
+          <ul>
+            <li>想更烈 → 少放气泡水。想更顺 → 加冰、加气泡。</li>
+            <li>想更香 → 一条橙皮（在杯口拧一下喷皮油）＋ 2 滴苦精。</li>
+            <li>太甜了就加酸，太酸了就加糖，一次只加 5ml，别一步到位。</li>
+            <li>这套公式换上金酒、朗姆、伏特加照样成立。以后基酒换着买，配方不用重学。</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>为什么会结块（pH 和蛋白酶，两件事）</summary>
+        <div class="body">
+          加了奶的酒起絮，有两个完全不同的原因，混在一起想就会搞错：
+          <ul>
+            <li><b>① 酸把 pH 压得太低。</b>牛奶蛋白在 pH 低于 5 左右开始析出。柠檬汁 pH 只有 2.2，所以在 100ml 牛奶里加 10ml 柠檬就足以让整杯起絮。杯子面板上那个<b>「预估 pH」</b>就是干这个用的——低于 5.0 而且有奶，右边会直接警告你。</li>
+            <li><b>② 蛋白酶，跟 pH 完全无关。</b>菠萝里的<b>菠萝蛋白酶</b>、生姜里的生姜蛋白酶、木瓜、猕猴桃、无花果都有。它们会把奶类蛋白和椰浆的乳化结构直接拆开——所以椰林飘香（菠萝汁 + 椰浆）倒下去那一刻就可能分层，而它的 pH 其实不算极低。加酒会加快这个过程。</li>
+            <li><b>常见误判：</b>养乐多、可尔必思喝起来很酸，但它们本身就是稳定发酵体系，加柠檬、加奶都没问题。判断标准不是"酸不酸"，是 pH 和有没有酶。</li>
+            <li><b>救法：</b>菠萝汁<b>煮开一分钟</b>把酶灭活、放凉再用；或者直接买<b>罐装 / 超高温灭菌</b>的果汁，工厂已经灭过酶了。这也是为什么酒吧的椰林飘香能稳定出品，而家里用鲜榨菠萝汁经常翻车。</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>没冰箱，什么能囤、什么别碰（风险清单）</summary>
+        <div class="body">
+          材料库里的「放心买 / 注意 / 高风险」就是按这张表来的。判断标准只有一个：<b>买到手之后，在没冰箱的住处里它有多难伺候。</b>
+          <ul>
+            <li><b>放心买（常温久放）</b>：所有基酒（开封后 40 度左右的烈酒能放 1-2 年）、苦精（几乎永久）、干香料、蜂蜜、白砂糖、未开封的罐装饮料、茶、挂耳咖啡。</li>
+            <li><b>要注意（开封后有时间压力）</b>：自制糖浆 2-3 周、莫林糖浆开封后 3-12 个月、红石榴糖浆 3-6 个月、瓶装柠檬汁 1 个月、生姜 1-2 周、阿佩罗 1-2 个月。</li>
+            <li><b>⚠️ 高风险（一买就必须马上安排用完）</b>：
+              <ul>
+                <li><b>味美思、干味美思、利莱白</b> — 开瓶后必须冷藏，2-4 周内用完。没冰箱就别买大瓶，这是最容易翻车的一样。想做罗伯罗伊就买 375ml，一次叫上室友喝完。</li>
+                <li><b>百利甜、牛奶、淡奶油、椰浆</b> — 含奶，开瓶后必须冷藏。住处只适合"买一次喝一次"，不适合常备。</li>
+                <li><b>鲜榨柠檬/青柠汁、切开的水果、蛋清</b> — 当天用完，没有例外。</li>
+                <li><b>开封的果汁</b> — 冷藏 2-3 天，住处买小盒装。</li>
+                <li><b>气泡酒 / 香槟</b> — 开瓶后当天喝完，气泡跑了就只剩酸水。</li>
+              </ul>
+            </li>
+            <li>整颗柠檬、青柠、橙子在阴凉处能放 3-5 天，比切开的耐放得多——所以<b>买整颗，别买切好的</b>。</li>
+            <li>一个实用原则：<b>高风险材料尽量用"一顿能喝完的最小包装"</b>。买不到小包装，就约人一起喝，或者干脆换配方。</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>添置清单（大概 100 块，网购）</summary>
+        <div class="body">
+          <ul>
+            <li>量酒器 / jigger：最重要的工具，9 块左右。凭感觉倒的酒，九成是错的。</li>
+            <li>摇酒器：住处空间小，直接买一个 500ml 的密封保温杯当摇酒壶也行，盖紧摇 15 秒效果差不多。</li>
+            <li>吧勺 + 滤冰器：不贵，提升很大。</li>
+            <li>杯子：一个厚直身的高球杯 + 一个古典杯（矮的厚底杯），基本什么都能做。</li>
+            <li>泡沫保温箱 + 冰袋：解决没有冰箱的问题。</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>三条铁律</summary>
+        <div class="body">
+          <ul>
+            <li>顺序：冰先放 → 酒 → 酸和甜 → 气泡水最后，只提两下，别搅散气泡。</li>
+            <li>先少后多：糖和酸都一点点加，味道是加出来的，不是减出来的。</li>
+            <li>立刻洗：糖浆和果汁干了以后粘在量酒器上很难洗，喝完冲一下，十秒钟的事。</li>
+          </ul>
+        </div>
+      </details>
+
+    </div>
+  </details>
+
+  <footer>风味图与评分是根据配比推算的参考值，用于比较和调整方向，不是客观事实。</footer>
+</main>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

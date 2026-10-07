@@ -1,0 +1,13 @@
+{
+  "name": "bar-mix",
+  "version": "1.0.0",
+  "private": true,
+  "description": "调酒台 · 风味配比实验室 —— 纯静态、零依赖的单页调酒工具",
+  "scripts": {
+    "build": "node tools/build.js",
+    "check": "node self-check.js",
+    "audit": "node tools/audit.js",
+    "verify": "node self-check.js && node tools/audit.js && node tools/build.js"
+  },
+  "engines": { "node": ">=18" }
+}

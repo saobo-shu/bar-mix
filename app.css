@@ -1,0 +1,364 @@
+/* =========================================================
+   调酒台 · 样式（深色暖调，手机优先）
+   ========================================================= */
+:root {
+  --bg: #12100f;
+  --card: #1e1a18;
+  --card2: #262120;
+  --line: rgba(255, 255, 255, .09);
+  --text: #f3ebe3;
+  --muted: #a3978c;
+  --amber: #e0a35c;
+  --amber-d: #c9832f;
+  --green: #7fb069;
+  --blue: #6aa8d8;
+  --orange: #d9834e;
+  --purple: #a58bd0;
+  --red: #d96c5c;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background:
+    radial-gradient(900px 420px at 82% -8%, rgba(224, 163, 92, .16), transparent 62%),
+    radial-gradient(700px 380px at -10% 8%, rgba(201, 111, 58, .12), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font: 15px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", "Segoe UI", sans-serif;
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
+
+button { font: inherit; color: inherit; cursor: pointer; }
+
+/* 启动失败时的提示条：默认隐藏，脚本报错或没跑起来才会出现 */
+.bootmsg {
+  margin: 10px 12px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(217, 108, 92, .16);
+  border: 1px solid var(--red);
+  color: #f3d9d4;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ---------------- 顶栏 ---------------- */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px) * 0);
+  background: rgba(18, 16, 15, .88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 9px; min-width: 0; flex: 1; }
+.brand .dot {
+  width: 11px; height: 11px; border-radius: 50%; flex: none;
+  background: var(--amber);
+  box-shadow: 0 0 0 4px rgba(224, 163, 92, .16);
+}
+.brand h1 { font-size: 16px; margin: 0; font-weight: 600; letter-spacing: .02em; }
+.brand p { margin: 0; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.scorechip { display: flex; align-items: center; gap: 9px; flex: none; }
+.mini { display: flex; align-items: flex-end; gap: 2px; height: 26px; }
+.mini i { display: block; width: 4px; border-radius: 2px; background: linear-gradient(180deg, var(--amber), rgba(224, 163, 92, .25)); }
+.chipScore { text-align: right; line-height: 1.15; }
+.chipScore .num { font-size: 22px; font-weight: 700; color: var(--amber); font-variant-numeric: tabular-nums; }
+.chipScore .lbl { display: block; font-size: 10.5px; color: var(--muted); }
+
+/* ---------------- 布局 ---------------- */
+main {
+  max-width: 1180px; margin: 0 auto; padding: 12px;
+  display: grid; gap: 12px;
+}
+
+/* 手机上：两栏容器不参与布局，各面板直接排在 .cols 里，用 order 排成 ①②③④ */
+.cols { display: grid; gap: 12px; }
+.col-a, .col-b { display: contents; }
+.p-cup { order: 1; }
+.p-result { order: 2; }
+.p-lib { order: 3; }
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 13px 13px 14px;
+  /* 这一栏的内容不许撑破自己的格子 */
+  min-width: 0;
+  max-width: 100%;
+}
+
+.panel-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; margin-bottom: 10px;
+}
+
+/* ---------------- 整块可收起的面板（④ 配方 / ⑤ 指南） ---------------- */
+details.panel > summary.panel-head {
+  cursor: pointer; list-style: none; margin-bottom: 0;
+  padding: 2px 0; border-radius: 8px;
+}
+details.panel > summary.panel-head::-webkit-details-marker { display: none; }
+details.panel > summary.panel-head::marker { content: ''; }
+details.panel[open] > summary.panel-head { margin-bottom: 12px; }
+details.panel > summary.panel-head:hover h2 { color: var(--amber); }
+.fold { display: inline-block; width: 12px; }
+details.panel[open] > summary .fold::before { content: '▾'; }
+details.panel:not([open]) > summary .fold::before { content: '▸'; }
+/* 收起的时候，头部不要留出多余的底边距 */
+details.panel:not([open]) { padding-bottom: 13px; }
+.panel-head h2 { font-size: 14px; margin: 0; font-weight: 600; color: var(--text); }
+.hint { font-size: 11.5px; color: var(--muted); }
+
+/* ---------------- 材料库 ---------------- */
+.cats { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 9px; margin-bottom: 10px; scrollbar-width: none; }
+.cats::-webkit-scrollbar { display: none; }
+.cat {
+  flex: none; padding: 6px 12px; border-radius: 999px; font-size: 13px;
+  background: var(--card2); border: 1px solid var(--line); color: var(--muted);
+}
+.cat.on { background: var(--amber); border-color: var(--amber); color: #1c1409; font-weight: 600; }
+.cat-sep { flex: none; width: 1px; height: 20px; background: var(--line); align-self: center; margin: 0 3px; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; min-width: 0; }
+.libgroup {
+  grid-column: 1 / -1;
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-size: 12px; color: var(--amber); letter-spacing: .06em;
+  padding: 7px 2px 3px; border-bottom: 1px solid var(--line);
+}
+.libgroup span { color: var(--muted); font-size: 11px; letter-spacing: 0; }
+.libgroup:first-child { padding-top: 0; }
+.chip {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  text-align: left; padding: 9px 10px; border-radius: 11px;
+  background: var(--card2); border: 1px solid var(--line);
+  font-size: 13px; line-height: 1.35;
+  min-width: 0; overflow: hidden;
+}
+.chip:active { transform: scale(.98); }
+.chip.on { border-color: var(--amber); background: rgba(224, 163, 92, .13); }
+.chip .cn { min-width: 0; overflow-wrap: anywhere; }
+.chip .tags { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.risk { font-size: 9.5px; padding: 1.5px 5px; border-radius: 999px; white-space: nowrap; border: 1px solid currentColor; }
+.r0 { color: var(--green); }
+.r1 { color: var(--amber); }
+.r2 { color: var(--red); }
+.ci-eq { font-style: normal; font-size: 11px; color: var(--muted); }
+.libfoot { margin: 10px 0 0; line-height: 1.6; }
+.libfoot b { color: var(--text); font-weight: 600; }
+.ghost.on { background: rgba(224, 163, 92, .16); border-color: var(--amber); color: var(--amber); }
+.src { flex: none; font-size: 10px; padding: 1.5px 6px; border-radius: 999px; border: 1px solid currentColor; opacity: .85; }
+.s-near   { color: var(--blue); }
+.s-rt     { color: var(--orange); }
+.s-web    { color: var(--purple); }
+
+/* ---------------- 杯子 ---------------- */
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 11px; }
+.head-acts { display: flex; gap: 6px; flex: none; }
+
+/* ---------------- 杯子：选择 + 预览图 ---------------- */
+.glasspick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.gchip {
+  padding: 5px 10px; border-radius: 999px; font-size: 12px;
+  background: var(--card2); border: 1px solid var(--line); color: var(--muted);
+}
+.gchip.on { background: var(--amber); border-color: var(--amber); color: #1c1409; font-weight: 600; }
+.glassrow { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-bottom: 11px; }
+.plate {
+  flex: none; width: 116px; padding: 8px 8px 4px;
+  background: #efe7d8; border-radius: 10px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(0, 0, 0, .10);
+}
+.glasssvg { width: 100%; height: auto; display: block; }
+.g-line { fill: none; stroke: #3b3229; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.g-ice { fill: rgba(255, 255, 255, .5); stroke: #3b3229; stroke-width: 1.3; }
+.glassside { flex: 1; min-width: 190px; }
+.glassside .stats { margin-bottom: 8px; }
+.glassnote { margin: 0; line-height: 1.65; }
+.legendline { margin: 0 0 11px; line-height: 1.6; }
+.legendline b { color: var(--text); font-weight: 600; }
+.glassnote b { color: var(--text); font-weight: 600; }
+.over { color: var(--red); }
+.tasterow { display: flex; align-items: center; gap: 8px; margin-bottom: 11px; }
+.tasterow .glasspick { margin-bottom: 0; }
+.taste-label { font-size: 11.5px; color: var(--muted); flex: none; }
+
+/* ---------------- 换基酒 ---------------- */
+.swap-panel { margin-bottom: 11px; }
+.swap-panel[hidden] { display: none; }
+.swap-hint { display: block; margin-bottom: 7px; }
+.swap-grid { display: flex; flex-wrap: wrap; gap: 6px; max-height: 168px; overflow-y: auto; }
+.schip {
+  padding: 5px 10px; border-radius: 999px; font-size: 12px;
+  background: var(--card2); border: 1px solid var(--line); color: var(--muted);
+}
+.schip.on { background: var(--amber); border-color: var(--amber); color: #1c1409; font-weight: 600; }
+.stat { background: var(--card2); border-radius: 11px; padding: 8px 10px; border: 1px solid var(--line); }
+.st-l { display: block; font-size: 11px; color: var(--muted); }
+.st-v { display: block; font-size: 17px; font-weight: 600; color: var(--amber); font-variant-numeric: tabular-nums; }
+
+.cup-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 7px; min-width: 0; }
+.cup-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 9px 10px;
+  min-width: 0;
+}
+/* 这一行以前会被"挤爆"：note 上写了 max-width: 46vw，在宽屏上等于 600 多像素，
+   于是整行比面板还宽，− / + / ✕ 三个按钮被推到面板外面（+ 露一半、✕ 全没了）。
+   现在不给固定宽度，只让它自己挤，按钮永远留在面板内。 */
+.ci-main { min-width: 0; flex: 1 1 auto; }
+.ci-name { display: block; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ci-note { display: block; font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.ci-ctl { display: flex; align-items: center; gap: 3px; flex: none; }
+.rnd {
+  width: 30px; height: 30px; border-radius: 9px; line-height: 1;
+  background: #302927; border: 1px solid var(--line); font-size: 15px; color: var(--text);
+}
+.rnd:active { background: var(--amber); color: #1c1409; }
+.rnd.del { color: var(--muted); font-size: 12px; }
+.ci-amt { min-width: 62px; text-align: center; font-size: 12.5px; color: var(--amber); font-variant-numeric: tabular-nums; }
+
+.ghost {
+  background: transparent; border: 1px solid var(--line); color: var(--muted);
+  border-radius: 9px; padding: 4px 11px; font-size: 12.5px;
+}
+.ghost:active { color: var(--text); border-color: var(--muted); }
+
+.empty { color: var(--muted); font-size: 13px; margin: 4px 0 2px; }
+
+/* ---------------- 结果 ---------------- */
+.result-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.radar-wrap { display: flex; justify-content: center; }
+#radar { width: 100%; max-width: 340px; height: auto; display: block; }
+#radar .ring { fill: none; stroke: var(--line); stroke-width: 1; }
+#radar .spoke { stroke: var(--line); stroke-width: 1; }
+#radar .axis { fill: var(--muted); font-size: 12px; }
+#radar .shape { fill: rgba(224, 163, 92, .26); stroke: var(--amber); stroke-width: 2; stroke-linejoin: round; }
+#radar .node { fill: var(--amber); }
+
+.verdict { text-align: center; }
+.big-score { font-size: 44px; font-weight: 700; color: var(--amber); line-height: 1; font-variant-numeric: tabular-nums; }
+.big-score span { font-size: 14px; color: var(--muted); font-weight: 400; }
+.v-title { margin: 6px 0 2px; font-size: 16px; font-weight: 600; }
+.v-text { margin: 0 0 10px; font-size: 12.5px; color: var(--muted); }
+
+.top-flavor { font-size: 12px; color: var(--muted); text-align: center; margin: 0 0 12px; }
+
+.subs { display: grid; gap: 9px; margin-bottom: 12px; }
+.sub { display: grid; gap: 2px; }
+.sb-cap { font-size: 10.5px; color: var(--muted); padding-left: 52px; line-height: 1.4; }
+.sbar { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--muted); }
+.sb-l { width: 44px; flex: none; }
+.sb-track { flex: 1; height: 6px; border-radius: 999px; background: rgba(255, 255, 255, .07); overflow: hidden; }
+.sb-track i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--amber-d), var(--amber)); }
+.sb-v { width: 24px; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
+
+.advice { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.adv-title { font-size: 11.5px; color: var(--muted); padding: 0 0 1px 2px; }
+.adv {
+  font-size: 12.5px; line-height: 1.55; padding: 9px 11px 9px 12px;
+  border-radius: 10px; border-left: 3px solid var(--amber);
+  background: rgba(255, 255, 255, .035); color: #e2d8ce;
+}
+.adv.warn { border-left-color: var(--red); }
+.adv.ok { border-left-color: var(--green); }
+
+.storebox { margin-top: 12px; }
+.dilute { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(255, 255, 255, .035); border-left: 3px solid var(--amber); }
+.dilute:empty { display: none; }
+.dil-title { font-size: 12.5px; color: var(--text); margin-bottom: 4px; }
+.dil-title b { font-weight: 600; }
+.dil-hi { color: var(--green); }
+.dil-mid { color: var(--amber); }
+.dil-lo { color: var(--red); }
+.dil-none { color: var(--muted); }
+.dil-num { font-size: 11.5px; color: var(--muted); margin-left: 4px; }
+.dil-msg { margin: 0; font-size: 12px; line-height: 1.6; color: #ddd3c9; }
+.storebox:empty { display: none; }
+.store-title { font-size: 11.5px; color: var(--muted); margin-bottom: 6px; }
+.storebox ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sto {
+  font-size: 12px; line-height: 1.55; color: #ded4ca;
+  padding-left: 10px; border-left: 2px solid var(--amber); background: rgba(255, 255, 255, .03);
+  border-radius: 0 8px 8px 0; padding: 7px 10px;
+}
+.sto.r2 { border-left-color: var(--red); }
+.sto b { color: var(--text); font-weight: 600; margin-right: 6px; }
+.sto b::after { content: ''; }
+
+/* ---------------- 配方 ---------------- */
+.presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 9px; }
+.pgroup {
+  grid-column: 1 / -1; font-size: 12px; color: var(--amber);
+  letter-spacing: .04em; padding: 4px 2px 1px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+}
+.pgroup-n { color: var(--muted); font-size: 11px; letter-spacing: 0; text-align: right; }
+.p-comp { font-size: 11.5px; color: #d3c7b8; line-height: 1.5; }
+.preset {
+  text-align: left; padding: 11px 12px; border-radius: 12px;
+  background: var(--card2); border: 1px solid var(--line); display: grid; gap: 3px;
+}
+.preset:active { border-color: var(--amber); }
+.p-name { font-size: 14px; font-weight: 600; }
+.p-sub { font-size: 11.5px; color: var(--amber); }
+.p-tip { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+
+/* ---------------- 生存指南 ---------------- */
+.guide { display: grid; gap: 9px; }
+.guide details { background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.guide summary { cursor: pointer; font-size: 13.5px; list-style: none; }
+.guide summary::-webkit-details-marker { display: none; }
+.guide summary::before { content: '▸ '; color: var(--amber); }
+.guide details[open] summary::before { content: '▾ '; }
+.guide .body { font-size: 12.5px; color: #ddd3c9; margin-top: 8px; line-height: 1.7; }
+.guide .body b { color: var(--amber); font-weight: 600; }
+.guide .body ul { margin: 6px 0; padding-left: 18px; }
+.guide .body li { margin: 3px 0; }
+
+footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6px 0 10px; }
+
+/* ---------------- 桌面双栏 ---------------- */
+@media (min-width: 960px) {
+  main { padding: 16px; gap: 14px; }
+  .stats { grid-template-columns: repeat(4, 1fr); }
+  /* 桌面端分类标签改成"等宽网格"：16 个标签自动铺满、自动换行，
+     永远不可能溢出；分隔线在网格布局里没意义，藏掉 */
+  .cats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 6px; overflow: visible;
+  }
+  .cat { padding: 6px 4px; text-align: center; }
+  .cat-sep { display: none; }
+  .cols {
+    grid-template-columns: minmax(0, 1.02fr) minmax(0, .98fr);
+    gap: 14px; align-items: start;
+  }
+  .col-a, .col-b {
+    display: grid; gap: 14px; align-content: start; min-width: 0; order: 0;
+    /* 最后一道保险：万一某一栏的内容还是比格子宽，就地裁掉，
+       绝不越过边界去压到旁边那一栏 */
+    overflow: hidden;
+  }
+  .p-cup, .p-lib, .p-pre, .p-result { order: 0; }
+  /* 这里原来有个 position: sticky 的"悬浮风味图"（外加一个内部滚动条）。
+     它被投诉过两次"跟着页面下来把文字遮住"，现在直接取消：
+     右栏就是普通的一栏，跟着页面正常滚动，任何情况下都盖不住东西。 */
+  .ci-note { max-width: 22vw; }
+  .big-score { font-size: 52px; }
+}
+
+@media (max-width: 380px) {
+  .grid { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); }
+  .stats { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .st-v { font-size: 15px; }
+}

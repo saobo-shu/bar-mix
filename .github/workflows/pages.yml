@@ -1,0 +1,46 @@
+# 推到 main 分支就自动：跑自检 → 打包 → 发布到 GitHub Pages
+# 配好之后，"更新网站"就只剩三步：改文件 → git commit → git push
+name: 发布到 GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:        # 也可以在网页上手动点一下跑
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # 自检不过就不发布——宁可网站停留在上一个好版本
+      - name: 自检
+        run: node self-check.js
+      - name: 全面复核
+        run: node tools/audit.js
+      - name: 打包
+        run: node tools/build.js
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
