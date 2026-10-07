@@ -32,19 +32,6 @@
 
 `dev.html` 是开发用的源文件，引用 `app.css` / `app.js` / `data.js`。`tools/build.js` 把它们打包成 `dist/` 里的单文件。`self-check.js` 和 `tools/audit.js` 是两个检查脚本：前者看有没有面板渲染不出来、数据对不对得上，后者把 44 配方 × 7 杯型 × 3 冰量 × 5 套评分方案全跑一遍，找自相矛盾的地方。部署和更新写在 `DEPLOY.md`。
 
-## 改完怎么更新
-
-```bash
-node tools/build.js
-git add -A
-git commit -m "更新"
-git push
-```
-
-推上去之后 GitHub Actions 会自己跑一遍「自检 → 全面复核 → 打包 → 发布」。自检不过就不会发布，所以改坏了线上还停在能用的版本上。
-
-本机没装 node 也不影响更新——云端有。本地跑 node 只是为了提前看一眼效果。
-
 ## 数据来源
 
 材料清单和配方的比例，参考了一份「鸡尾酒配方本」（191 条经典配方），提取出来的原始数据放在 `tools/reference-recipes.json`，可以当字典查。经典酒的结构是共通的——酸、糖、苦精搭骨架——具体比例各家略有出入。
