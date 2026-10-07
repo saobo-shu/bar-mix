@@ -64,6 +64,77 @@
 </header>
 
 <main>
+
+  <!-- 怎么用：第一次来的人不知道「常温」「40%」这些标签能点，所以单独放一块 -->
+  <details class="panel p-howto">
+    <summary class="panel-head">
+      <h2>怎么用 · 30 秒看完</h2>
+      <span class="hint">点标题展开　<b class="fold"></b></span>
+    </summary>
+    <div class="guide">
+      <details open>
+        <summary>把材料放进杯子</summary>
+        <div class="body">
+          <ul>
+            <li>在 <b>③ 材料库</b> 点一下材料名，它就进杯子了；再点一下加一份。</li>
+            <li>杯子那一行右边的 <b>− / +</b> 调分量（一次 5ml），<b>✕</b> 拿掉。</li>
+            <li>点<b>材料名那一行</b>会展开完整说明：风味、在哪买、没冰箱能放多久。</li>
+            <li>只有一瓶基酒也没关系——先倒进去，再用右上角的 <b>「换基酒」</b> 换成你手上那瓶。</li>
+          </ul>
+        </div>
+      </details>
+
+      <details open>
+        <summary>两个容易漏掉的按钮（很多人不知道它们能点）</summary>
+        <div class="body">
+          杯子里的每一样材料，名字后面都有两个小标签，<b>它们都是按钮</b>：
+          <ul>
+            <li><b>「常温」＝ 温度。</b>点一下在 <b>冷冻 -18℃ → 冷藏 5℃ → 常温 25℃</b> 之间轮换，点满一圈回到默认。
+              同一瓶可乐，从冰箱拿还是从货架拿，能把杯子里的冰化出好几倍的水——这一步直接决定你这杯最后有多浓。
+              热水这类材料只在「热 / 常温」之间换。</li>
+            <li><b>「40%」＝ 酒精度。</b>点一下改成<b>你瓶子上印的数字</b>。同一款酒各国版本度数不一样
+              （哥顿 37.5 / 40、添加利 47.3、美格 46 是产品名不是度数），算浓度和评分都按你填的算。</li>
+            <li>填错、填乱码都没关系——留空或填 0 就恢复成默认度数。</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>四个开关（都在「① 杯子里」）</summary>
+        <div class="body">
+          <ul>
+            <li><b>口味</b>（清淡 / 标准 / 浓烈）：决定"多少度才算正好"。它只管<b>浓度</b>这一项，不影响别的。</li>
+            <li><b>冰量</b>（满冰 / 半杯冰 / 不加冰）：决定能倒多少液体、以及冰能化出多少水。</li>
+            <li><b>做法</b>（兑和 Build / 搅拌 Stir / 摇和 Shake）：决定准备时加多少水——兑和不加水，搅拌约 20%，摇和约 25%。</li>
+            <li><b>评分</b>（五套权重方案）：不管选哪套，<b>平衡度永远是权重最大的那一项</b>。</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>不想一样样挑？两条捷径</summary>
+        <div class="body">
+          <ul>
+            <li><b>④ 经典配方</b> 里点一张卡片：材料、杯型、冰量、做法会一起装好，就像有人替你摆好了。改两下就是你的版本。</li>
+            <li>点右上角 <b>「换基酒」</b>：把配方里写的酒换成你手上那瓶，比例不用重算。</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>怎么读结果</summary>
+        <div class="body">
+          <ul>
+            <li><b>分数只是参考</b>。真正有用的是下面三块：风味图（这杯是什么味道）、「冰化开会怎么样」（会变多淡）、「怎么再调一步」（下一步加什么）。</li>
+            <li>杯子里<b>只有一样酒</b>（比如纯饮一杯威士忌）时不评分，只描述味道——"这杯好不好"不是这个工具能回答的。</li>
+            <li>杯子装不下只是提醒，不扣分：你手上那只杯子可能比标称的大，自己判断。</li>
+            <li>手机上可以「添加到主屏幕」，打开是全屏、没地址栏，断网也能用。</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+  </details>
+
   <div class="cols">
   <div class="col-a">
 
@@ -91,6 +162,7 @@
     <div class="tasterow"><span class="taste-label">做法</span><div class="glasspick" id="methodPick"></div></div>
     <div class="tasterow"><span class="taste-label">评分</span><div class="glasspick" id="schemePick"></div></div>
     <div class="swap-panel" id="swapPanel" hidden></div>
+    <p class="hint cuphint">材料行里的小标签都能点：<b>「常温」换温度</b>（冷冻 / 冷藏 / 常温）、<b>「40%」改度数</b>（按你瓶身上印的填）；点材料名那一行会展开完整说明。</p>
     <div class="cup-list" id="cupList"></div>
     <p class="empty" id="cupEmpty">杯子是空的。你可以直接在下面「④ 经典配方」里点一个例子，或者从材料库自己挑——手上只有一瓶基酒也没关系，先倒进去，再用「换基酒」换成你有的那瓶。</p>
   </section>

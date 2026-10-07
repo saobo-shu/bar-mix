@@ -692,6 +692,26 @@ parts.forEach(function (chunk, idx) {
 console.log('\n共渲染 ' + n + ' 张配方卡，' + seenGroups.length + ' 个分组');
 
 /* ---- 汇总 ---- */
+/* ---- 操作说明：用户反馈"没人知道「常温」和「40%」能点" ---- */
+console.log('\n--- 操作说明（页面里有没有教怎么用）---');
+(function () {
+  const html = fs.readFileSync(path.join(dir, 'dev.html'), 'utf8');
+  const need = [
+    ['「怎么用」这一块', /怎么用 · 30 秒看完/],
+    ['温度按钮怎么点', /「常温」＝ 温度/],
+    ['度数按钮怎么点', /「40%」＝ 酒精度/],
+    ['三个温度都写了数值', /冷冻 -18℃/],
+    ['杯子那栏的常驻提示', /cuphint/],
+    ['四个开关都解释了', /做法<\/b>（兑和 Build/],
+    ['纯饮不评分也说了', /只有一样酒<\/b>（比如纯饮一杯威士忌）时不评分/]
+  ];
+  need.forEach(function (n) {
+    const ok = n[1].test(html);
+    console.log('  ' + (ok ? '✅' : '❌') + ' ' + n[0]);
+    if (!ok) bad('操作说明', '页面里少了：' + n[0]);
+  });
+})();
+
 console.log('\n================ 自检结果 ================');
 if (PROBLEMS.length) {
   console.log('❌ ' + PROBLEMS.length + ' 项没通过：');

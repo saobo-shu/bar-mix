@@ -152,13 +152,16 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .r1 { color: var(--amber); }
 .r2 { color: var(--red); }
 .ci-eq { font-style: normal; font-size: 11px; color: var(--muted); }
-/* 温度标签：材料现在是多少度。杯子那栏点一下轮换（冷冻 → 冷藏 → 常温） */
+/* 温度标签：材料现在是多少度。杯子那栏点一下轮换（冷冻 → 冷藏 → 常温）
+   做成"填了底色的胶囊"是为了让它看起来像按钮——原来只有一圈描边，
+   很多人当成说明文字，根本不知道能点。 */
 .tagtemp,
 .tempchip {
   font-size: 9.5px; padding: 1.5px 5px; border-radius: 999px;
   white-space: nowrap; border: 1px solid currentColor; line-height: 1.4;
 }
-.tempchip { cursor: pointer; user-select: none; }
+.tempchip { cursor: pointer; user-select: none; background: rgba(255, 255, 255, .07); }
+.tempchip:active { background: rgba(255, 255, 255, .18); }
 .t-frozen { color: #8ab4f8; }
 .t-cold   { color: #6fbfb0; }
 .t-room   { color: var(--muted); }
@@ -272,6 +275,7 @@ details.panel:not([open]) { padding-bottom: 13px; }
   font-size: 11px; padding: 2px 7px; border-radius: 999px; margin-right: 2px;
   background: rgba(224, 163, 92, .14); border: 1px solid rgba(224, 163, 92, .45);
   color: var(--amber); font-variant-numeric: tabular-nums;
+  cursor: pointer;
 }
 .abvbtn:active { background: var(--amber); color: #1c1409; }
 .rnd {
