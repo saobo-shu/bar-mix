@@ -34,8 +34,8 @@ var INGREDIENTS = [
   /* ---- 金酒 ---- */
   { id:'gin', cat:'gin', name:'哥顿金酒', unit:'ml', mlu:1, def:45, step:5, abv:40, src:'web',
     f:{sugar:0.5,acid:0.5,bitter:2,booze:8,fruit:3,spice:6,fizz:0,body:3},
-    note:'最便宜的可用伦敦干金，杜松子直接。预算紧就买它，配气泡水和青柠永远不会错。' },
-  { id:'tanqueray', cat:'gin', name:'添加利金酒', unit:'ml', mlu:1, def:45, step:5, abv:47, src:'web',
+    note:'最便宜的可用伦敦干金，杜松子直接。⚠️ 这瓶各国版本度数差很多（37.5% / 40% / 47.3%），以瓶身为准——点杯子里的度数就能改。' },
+  { id:'tanqueray', cat:'gin', name:'添加利金酒', unit:'ml', mlu:1, def:45, step:5, abv:47.3, src:'web',
     f:{sugar:0.5,acid:0.5,bitter:2.5,booze:9,fruit:3,spice:7,fizz:0,body:3},
     note:'伦敦干金的标准答案：杜松子强烈、柑橘干净、47 度够劲。做金汤力和干马天尼首选它。' },
   { id:'beefeater', cat:'gin', name:'必富达金酒', unit:'ml', mlu:1, def:45, step:5, abv:40, src:'web',
@@ -44,16 +44,16 @@ var INGREDIENTS = [
   { id:'bombay', cat:'gin', name:'孟买蓝宝石金酒', unit:'ml', mlu:1, def:45, step:5, abv:40, src:'web',
     f:{sugar:1.5,acid:0.5,bitter:1.5,booze:8,fruit:4,spice:7,fizz:0,body:3},
     note:'花香和草本突出，杜松子没那么冲，加气泡水特别顺。' },
-  { id:'hendricks', cat:'gin', name:'亨利爵士金酒', unit:'ml', mlu:1, def:45, step:5, abv:41, src:'web',
+  { id:'hendricks', cat:'gin', name:'亨利爵士金酒', unit:'ml', mlu:1, def:45, step:5, abv:41.4, src:'web',
     f:{sugar:1.5,acid:0.5,bitter:1,booze:8,fruit:3,spice:6,fizz:1,body:3.5},
     note:'黄瓜和玫瑰的香气，是最不"冲"的金酒。配黄瓜片和气泡水，完全不需要其他材料。' },
   { id:'old_tom', cat:'gin', name:'老汤姆金酒', unit:'ml', mlu:1, def:45, step:5, abv:40, src:'web',
     f:{sugar:3,acid:0.5,bitter:2,booze:8,fruit:3,spice:6,fizz:0,body:3.5},
     note:'老派金酒：比伦敦干金多一点甜、少一点锋利。马丁内斯、汤姆柯林斯这类老配方指定用它。' },
-  { id:'plymouth', cat:'gin', name:'普利茅斯金酒', unit:'ml', mlu:1, def:45, step:5, abv:41, src:'web',
+  { id:'plymouth', cat:'gin', name:'普利茅斯金酒', unit:'ml', mlu:1, def:45, step:5, abv:41.2, src:'web',
     f:{sugar:1,acid:0.5,bitter:2,booze:8,fruit:3.5,spice:6,fizz:0,body:3},
     note:'最老的伦敦干金品牌之一，比添加利更柔、土感更重。' },
-  { id:'tanqueray10', cat:'gin', name:'添加利十号', unit:'ml', mlu:1, def:45, step:5, abv:47, src:'web',
+  { id:'tanqueray10', cat:'gin', name:'添加利十号', unit:'ml', mlu:1, def:45, step:5, abv:47.3, src:'web',
     f:{sugar:1.5,acid:0.5,bitter:2,booze:9,fruit:5.5,spice:7,fizz:0,body:3},
     note:'在添加利的基础上加了葡萄柚、橙和青柠，柑橘味爆发。做金汤力明显比普通版香。' },
 
@@ -76,7 +76,7 @@ var INGREDIENTS = [
   { id:'bacardi_oro', cat:'rum', name:'百加得金朗姆', unit:'ml', mlu:1, def:45, step:5, abv:37.5, src:'web',
     f:{sugar:4.5,acid:0.2,bitter:0.5,booze:7,fruit:4,spice:3,fizz:0,body:5},
     note:'比白朗姆多一层橡木和焦糖，颜色淡金。配热带果汁比白朗姆更有味道。' },
-  { id:'plantation3', cat:'rum', name:'蔗园三星朗姆', unit:'ml', mlu:1, def:45, step:5, abv:41, src:'web',
+  { id:'plantation3', cat:'rum', name:'蔗园三星朗姆', unit:'ml', mlu:1, def:45, step:5, abv:41.2, src:'web',
     f:{sugar:4,acid:0.3,bitter:1,booze:8.5,fruit:5,spice:3.5,fizz:0,body:5},
     note:'古巴、牙买加、巴巴多斯三种朗姆调出来的，调酒师很爱用：比百加得有个性，又不像陈年朗姆那么重。' },
   { id:'plantation_dark', cat:'rum', name:'蔗园黑朗姆', unit:'ml', mlu:1, def:45, step:5, abv:40, src:'web',
@@ -175,9 +175,9 @@ var INGREDIENTS = [
   { id:'jameson', cat:'whisky', name:'尊美醇爱尔兰威士忌', unit:'ml', mlu:1, def:45, step:5, abv:40, src:'rt',
     f:{sugar:4.5,acid:0.5,bitter:1,booze:8,fruit:4,spice:3.5,fizz:0,body:5},
     note:'顺滑、带一点青草和蜂蜜，几乎没有烟熏。爱尔兰咖啡的正统基酒。' },
-  { id:'wild_turkey', cat:'whisky', name:'威凤凰波本', unit:'ml', mlu:1, def:45, step:5, abv:40, src:'web',
-    f:{sugar:5,acid:0.3,bitter:2,booze:9,fruit:3.5,spice:5,fizz:0,body:6.5},
-    note:'度数偏高、辛香和橡木味重的波本，做古典很有劲，比占边"凶"。' },
+  { id:'wild_turkey', cat:'whisky', name:'威凤凰 101 波本', unit:'ml', mlu:1, def:45, step:5, abv:50.5, src:'web',
+    f:{sugar:5,acid:0.3,bitter:2,booze:10,fruit:3.5,spice:5.5,fizz:0,body:7},
+    note:'101 proof = 50.5 度，是同价位里最"凶"的波本：辛香、橡木、酒精感都重。做古典很有劲；纯饮建议加一两滴水把它打开。' },
   { id:'ardbeg10', cat:'whisky', name:'阿贝 10 年', unit:'ml', mlu:1, def:15, step:5, abv:46, src:'web',
     f:{sugar:2,acid:0.5,bitter:3,booze:9,fruit:1.5,spice:9.5,fizz:0,body:6},
     note:'比拉弗格更狠的重泥煤：烟熏、焦油、海风。默认给 15ml——当浮层用，别整杯都是它。' },
@@ -231,10 +231,10 @@ var INGREDIENTS = [
     note:'苦味担当，一小份就能给甜味「刹车」。' },
   { id:'vermouth', cat:'liqueur', name:'甜味美思（Martini Rosso）', unit:'ml', mlu:1, def:30, step:5, abv:16, src:'rt',
     f:{sugar:6,acid:2,bitter:4,booze:2,fruit:4,spice:6,fizz:0,body:3},
-    note:'⚠️ 开瓶后必须低温保存。没冰箱就别买大瓶，买 375ml 尽快用完。' },
+    note:'⚠️ 两件事：一、开瓶后必须低温保存，没冰箱就别买大瓶，买 375ml 尽快用完。二、它叫「味美思」不叫「苦艾酒」——中文里那个是历史误译，苦艾酒是 68% 的蒸馏烈酒，和这个完全两回事。' },
   { id:'dry_vermouth', cat:'liqueur', name:'干味美思（Extra Dry）', unit:'ml', mlu:1, def:15, step:5, abv:16, src:'web',
     f:{sugar:2,acid:3,bitter:4,booze:2,fruit:3,spice:6,fizz:0,body:2},
-    note:'干爽带草本味，和甜味美思是一对。同样怕氧化，买 375ml。' },
+    note:'干爽带草本味，和甜味美思是一对。同样怕氧化，买 375ml。它也是味美思（加香加强葡萄酒），不是苦艾酒。' },
   { id:'maraschino', cat:'liqueur', name:'黑樱桃利口酒（Luxardo）', unit:'ml', mlu:1, def:15, step:5, abv:32, src:'web',
     f:{sugar:6,acid:0.5,bitter:1.5,booze:4,fruit:7,spice:4,fizz:0,body:2},
     note:'经典威士忌配方里出现频率最高的利口酒之一。不甜腻，带一点杏仁和花香，15ml 就是点睛。' },
@@ -271,9 +271,12 @@ var INGREDIENTS = [
   { id:'fernet', cat:'liqueur', name:'菲奈特（苦味草药酒）', unit:'ml', mlu:1, def:15, step:5, abv:39, src:'web',
     f:{sugar:3,acid:0.5,bitter:10,booze:6,fruit:1,spice:8,fizz:0,body:3},
     note:'苦到极致的意大利草药酒，15ml 就够，专门给甜味踩刹车。' },
-  { id:'absinthe', cat:'liqueur', name:'苦艾酒（洗杯用）', unit:'ml', mlu:1, def:3, step:1, abv:68, src:'web',
+  { id:'absinthe', cat:'liqueur', name:'苦艾酒 Absinthe（绿仙子）', unit:'ml', mlu:1, def:3, step:1, abv:68, src:'web',
     f:{sugar:0,acid:0,bitter:4,booze:4,fruit:1,spice:10,fizz:0,body:1},
-    note:'只在杯子里转一圈再倒掉（洗杯），或者几滴。千万别当酒喝。' },
+    note:'⚠️ 别和"味美思"搞混——那不是同一种东西。这才是真正的苦艾酒：68% 的蒸馏烈酒，茴香 + 苦艾草 + 茴香。用法是洗杯（在杯里转一圈再倒掉）或者滴几滴，千万别当酒喝。萨泽拉克、午后的死亡要用它。' },
+  { id:'pastis', cat:'liqueur', name:'茴香酒 Pastis（保乐 / 里卡尔）', unit:'ml', mlu:1, def:5, step:1, abv:45, src:'web',
+    f:{sugar:1,acid:0,bitter:2.5,booze:5,fruit:1,spice:8,fizz:0,body:1},
+    note:'不含苦艾草、度数低一半的"苦艾酒平替"——茴香味一样冲，但好买得多，京东天猫都有。做萨泽拉克的洗杯完全够用，加冰水就是法国人夏天的喝法。' },
   { id:'sloe_gin', cat:'liqueur', name:'黑刺李金酒 Sloe Gin', unit:'ml', mlu:1, def:20, step:5, abv:26, src:'web',
     f:{sugar:8,acid:2,bitter:1.5,booze:4,fruit:9,spice:3,fizz:0,body:4},
     note:'金酒泡黑刺李做的，红色、酸甜、带浆果香。度数低又好喝，住处里很受欢迎，配气泡酒就是黑刺李皇家。' },
@@ -749,6 +752,8 @@ var STORE = {
   vermouth: { lv: 'bad', risk: 2, text: '开瓶后必须冷藏，2-4 周内用完。没冰箱的话这是最容易翻车的一样，建议直接跳过或买 375ml 一次喝完。' },
   dry_vermouth: { lv: 'bad', risk: 2, text: '同甜味美思：开瓶后必须冷藏，4 周内用完。没冰箱别买大瓶。' },
   lillet: { lv: 'bad', risk: 2, text: '开瓶后冷藏，1-2 个月内用完。住处建议不买。' },
+  absinthe: { lv: 'ok', risk: 0, text: '68 度，常温放很多年都不会坏——比味美思省心得多。' },
+  pastis: { lv: 'ok', risk: 0, text: '45 度，常温阴凉处不用担心保存。' },
   baileys: { lv: 'bad', risk: 2, text: '含奶油，开瓶后必须冷藏，2-3 周内喝完。住处别买大瓶。' },
   aperol: { lv: 'mid', risk: 1, text: '只有 11 度，开瓶后避光常温 1-2 个月，冷藏更久。室友分着喝最合适。' },
   cocoa_white: { lv: 'mid', risk: 1, text: '未开封常温；开瓶后避光能放 3-6 个月。' },
@@ -870,6 +875,92 @@ var ICE_LEVELS = [
   { id: 'none', name: '不加冰', meltRatio: 0, roomRatio: 1,
     note: '常温直饮，不会越喝越淡' }
 ];
+
+/* =========================================================
+   做法——决定"准备时加多少水"
+
+   这一点我一开始搞错了：把稀释绑在杯子上（"古典杯=现调、马天尼杯=摇和"）。
+   但真正决定加水多少的是做法，不是杯子。萨泽拉克用古典杯，却是搅拌出来的，
+   有整整 20% 的水——按杯子判断会算出 38%，而实际只有 31%。
+   ========================================================= */
+var METHODS = [
+  { id: 'build', name: '兑和', en: 'Build', dil: 0,
+    note: '直接在杯里兑，不摇不搅——只靠冰化开慢慢稀释' },
+  { id: 'stir',  name: '搅拌', en: 'Stir', dil: 0.20,
+    note: '加冰搅拌后滤出，约 20% 稀释。马天尼、古典、萨泽拉克都是' },
+  { id: 'shake', name: '摇和', en: 'Shake', dil: 0.25,
+    note: '加冰摇匀后滤出，约 25% 稀释。带果汁、蛋清、奶的都要摇' }
+];
+
+/* 每个经典配方用哪种做法（配方名 → 做法）。
+   存在这里而不是写进每条配方，是为了加配方时不用改结构。 */
+var PRESET_METHOD = {
+  '威士忌高球': 'build', '维他柠檬茶微醺': 'build', '威士忌乌龙': 'build',
+  '姜味骡子': 'build', '威士忌可乐': 'build', '浓缩柠檬高球': 'build',
+  '金汤力': 'build', '莫吉托': 'build', '自由古巴': 'build',
+  '马颈': 'build', '加里波利': 'build', '螺丝刀': 'build',
+  '美国佬': 'build', '可尔必思沙瓦': 'build', '养乐多烧酒': 'build',
+  '椰林飘香': 'shake',
+  '威士忌酸': 'shake', '黛绮莉': 'shake', '蜂之膝': 'shake', '吉姆雷特': 'shake',
+  '玛格丽特': 'shake', '汤米家的玛格丽特': 'shake', '淘金热': 'shake', '神风': 'shake',
+  '大都会': 'shake', '榛子酸': 'shake', '纽约': 'shake', '八区': 'shake',
+  '芒果朗姆': 'shake', '青霉素': 'shake', '血与沙': 'shake',
+  '古典': 'stir', '干马天尼': 'stir', '尼格罗尼': 'stir', '罗伯罗伊': 'stir',
+  '花花公子': 'stir', '萨泽拉克': 'stir',
+  '锈钉': 'build', '教父': 'build', '黑俄罗斯': 'build',
+  '法国情怀': 'build', '薄荷朱丽普': 'build',
+  '热托蒂': 'build', '爱尔兰咖啡': 'build'
+};
+
+/* =========================================================
+   温度——同样一杯酒，材料是冰的还是常温的，化出来的水能差好几倍
+
+   这一点是用户提醒我的：材料不是抽象的"液体"，它们各自带着温度。
+   冷材料能动用的热量少，冰就化得慢；常温材料会把冰一路化开。
+
+   四个值取生活里真实的数字：
+     常温 25℃（放桌上）· 冷藏 5℃（冰箱 3-8℃）· 冷冻 -18℃（冷冻室）
+     热 80℃（现烧的水、现冲的咖啡）
+
+   40 度的烈酒放冷冻室不会结冰，很多酒吧本来就这么存酒。
+   ========================================================= */
+var TEMPS = [
+  { id: 'frozen', name: '冷冻', c: -18, short: '冷冻',
+    note: '基酒放在冷冻室（40 度不会冻上，酒吧本来就这么存）。倒出来几乎不化冰。' },
+  { id: 'cold',   name: '冷藏', c: 5,   short: '冷藏',
+    note: '冰箱冷藏室 3-8℃。便利店买回来的饮料本来就是冷的，拎回来就是这个温度。' },
+  { id: 'room',   name: '常温', c: 25,  short: '常温',
+    note: '放在桌上的室温。没有冰箱的话，大多数材料就是这个状态。' },
+  { id: 'hot',    name: '热',   c: 80,  short: '热',
+    note: '现烧的热水、现冲的咖啡。热饮不放冰。' }
+];
+
+/* 点材料上的温度标签时按这个顺序轮换 */
+var TEMP_CYCLE = ['frozen', 'cold', 'room'];
+/* 冰镇材料（气泡饮料、奶、果汁）默认按"从冰箱拿出来"算；烈酒、糖浆默认常温 */
+var TEMP_DEFAULT = {
+  whisky: 'room', gin: 'room', rum: 'room', vodka: 'room', tequila: 'room', brandy: 'room',
+  otherbase: 'room', liqueur: 'room', bitter: 'room', sweet: 'room', sour: 'room',
+  garnish: 'room', teacoffee: 'room',
+  wine: 'cold',
+  mixer: 'cold',
+  juice: 'cold',
+  dairy: 'cold',
+  ice: 'frozen'
+};
+var TEMP = {
+  hot_water: 'hot', coffee_hot: 'hot', cold_brew: 'cold'
+};
+/* 只能热的材料：不给它们"冷冻"这个选项 */
+var TEMP_FIXED = { hot_water: 1, coffee_hot: 1 };
+
+/* 热量常数（初中物理）：冰化开要从液体里吸热，材料越凉，冰化得越少 */
+var THERMO = {
+  iceLatent: 334,   /* J/g　冰 → 水（融化热） */
+  iceCp: 2.05,      /* J/(g·K)　冰升温：-18℃ 的冰先要捂到 0℃ 才开始化 */
+  iceTemp: -18,     /* 冷冻室拿出来的冰 */
+  icePack: 0.85     /* 冰填到杯口，中间有空隙，折算成质量 */
+};
 
 /* 口味偏好：该多浓是口味问题，不是客观事实，所以由你来定 */
 var TASTES = [

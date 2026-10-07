@@ -12,18 +12,53 @@ global.document = {
       classList: { toggle() {}, add() {}, remove() {} } };
     return els[id];
   },
-  addEventListener() {}
+  /* 把 click 处理器存下来，测试里可以真的模拟一次点击 */
+  _handlers: {},
+  addEventListener(type, fn) { this._handlers[type] = fn; }
 };
 
 const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
             fs.readFileSync(path.join(dir, 'app.js'), 'utf8') + '\n' +
-            'global.__PRESETS = PRESETS; global.__I = INGREDIENTS; global.__PH = PH; global.__SCHEMES = SCORING_SCHEMES; global.__G = GLASSES;';
+            'global.__PRESETS = PRESETS; global.__I = INGREDIENTS; global.__PH = PH; global.__SCHEMES = SCORING_SCHEMES; global.__G = GLASSES; global.__PM = PRESET_METHOD;'
+            + ' global.__TEMPS = TEMPS; global.__TD = TEMP_DEFAULT; global.__TF = TEMP; global.__TC = TEMP_CYCLE;'
+            + ' global.__METHODS = METHODS;';
 eval(src);
 
 const B = global.BarMix;
+
+/* 失败要记下来，而不是抛异常中断——之前 bad() 根本没定义，
+   一旦哪条检查不通过，脚本会以 ReferenceError 崩掉，后面的检查全不跑，
+   看起来像"程序坏了"，而不是"这条检查没过"。 */
+const PROBLEMS = [];
+function bad(tag, msg) {
+  PROBLEMS.push('[' + tag + '] ' + msg);
+  console.log('      ⛔ ' + msg);
+}
+
+/* 忠实地模拟一次点击：假元素的 closest() 必须按选择器判断，不能无脑返回。
+   之前这里无脑返回 dataset，于是"只认 <button>"那个 bug 测不出来。 */
+function fire(dataset, tag) {
+  const click = global.document._handlers.click;
+  const el = { tagName: (tag || 'button').toUpperCase(), dataset: dataset };
+  el.closest = function (sel) {
+    const parts = sel.split(',').map(function (s) { return s.trim(); });
+    for (const p of parts) {
+      if (p === 'button' && el.tagName === 'BUTTON') return el;
+      const m = p.match(/^\[([a-z-]+)\]$/);
+      if (m) {
+        /* 真实 DOM 里 data-expand 对应 dataset.expand，所以要去掉 data- 前缀 */
+        const key = m[1].replace(/^data-/, '').replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); });
+        if (el.dataset[key] !== undefined) return el;
+      }
+    }
+    return null;
+  };
+  click({ target: el });
+}
+
 const rows = [];
-global.__PRESETS.forEach(function (p) {
-  const r = B.load(p.items);
+global.__PRESETS.forEach(function (p, i) {
+  const r = B.preset(i);
   const a = B.analyze();
   const tips = B.advise(a);
   rows.push({ 名称: p.name, 分: r.total, 平衡: r.balance, 烈度: r.strength, 结构: r.structure, 复杂度: r.complexity, 酒精度: r.abv + '%', 液量: r.liquid });
@@ -50,9 +85,8 @@ Object.keys(cases).forEach(function (k) {
 console.log('\n--- 四个分项在全部配方上的波动 ---');
 (function () {
   const acc = { balance: [], strength: [], structure: [], complexity: [] };
-  global.__PRESETS.forEach(function (p) {
-    B.state.glass = p.glass || 'icecup';
-    const r = B.load(p.items);
+  global.__PRESETS.forEach(function (p, i) {
+    const r = B.preset(i);
     acc.balance.push(r.balance); acc.strength.push(r.strength);
     acc.structure.push(r.structure); acc.complexity.push(r.complexity);
   });
@@ -70,6 +104,360 @@ console.log('\n--- 四个分项在全部配方上的波动 ---');
 
 /* ---- 子评分区渲染出来的文案 ---- */
 /* ---- 分类标签：六大基酒应该是并列的独立分类 ---- */
+/* ---- 真的模拟一次点击：改度数这条路必须走得通 ---- */
+console.log('\n--- 点击交互（模拟真实点击，不是读代码）---');
+(function () {
+  B.state.glass = 'shot'; B.state.iceLevel = 'none';
+  B.state.taste = 'strong'; B.state.scheme = 'balanced';
+  B.load([['tanqueray', 45]]);
+
+  const before = B.analyze().abv;
+  const asked = [];
+  global.window.prompt = function (msg, def) { asked.push(def); return '50'; };
+  fire({ abv: 'tanqueray' });
+  const after = B.analyze().abv;
+  const ok = Math.abs(before - 47.3) < 0.05 && Math.abs(after - 50) < 0.05;
+  console.log('  ' + (ok ? '✅' : '❌') + ' 点度数按钮：' + before.toFixed(1) + '% → ' + after.toFixed(1)
+    + '%（弹窗默认填 ' + asked[0] + '）');
+  if (!ok) bad('交互', '点度数按钮没生效：' + before.toFixed(1) + ' → ' + after.toFixed(1));
+
+  global.window.prompt = function () { return 'abc'; };
+  fire({ abv: 'tanqueray' });
+  const back = B.analyze().abv;
+  const ok2 = Math.abs(back - 47.3) < 0.05;
+  console.log('  ' + (ok2 ? '✅' : '❌') + ' 输入乱码：恢复到默认 ' + back.toFixed(1) + '%');
+  if (!ok2) bad('交互', '输入非法值后没恢复默认，当前 ' + back.toFixed(1) + '%');
+
+  global.window.prompt = function () { return null; };
+  /* 点杯子里的那一行 → 展开/收起完整说明 */
+  /* 注意：这一行在真实页面里是 <div>，不是 <button>。
+     所以这里必须按 div 模拟——否则测不出"只认 button"那个 bug。 */
+  B.state.glass = 'icecup'; B.state.iceLevel = 'full';
+  B.load([['tanqueray', 45], ['sunquick', 30]]);
+  const foldBefore = els['cupList'].innerHTML.indexOf('看全部 ▾') >= 0;
+  fire({ expand: 'sunquick' }, 'div');
+  const opened = els['cupList'].innerHTML.indexOf('cup-item open') >= 0
+    && els['cupList'].innerHTML.indexOf('收起 ▴') >= 0;
+  fire({ expand: 'sunquick' }, 'div');
+  const closed = els['cupList'].innerHTML.indexOf('cup-item open') < 0;
+  console.log('  ' + (foldBefore && opened && closed ? '✅' : '❌')
+    + ' 点说明那一行（div 元素）：展开 → 收起');
+  if (!(foldBefore && opened && closed)) bad('交互', '点说明那一行不能展开/收起');
+
+  /* 反向验证：一个既不是 button、也没有 data-expand 的元素，点了应该什么都不做 */
+  const snap = els['cupList'].innerHTML;
+  fire({}, 'div');
+  console.log('  ' + (els['cupList'].innerHTML === snap ? '✅' : '❌') + ' 点无关的 div：没有副作用');
+
+  global.window.prompt = function () { return null; };
+  fire({ act: 'plus', id: 'tanqueray' });
+  const plus = B.state.cup.get('tanqueray');
+  fire({ act: 'minus', id: 'tanqueray' });
+  const minus = B.state.cup.get('tanqueray');
+  fire({ act: 'del', id: 'tanqueray' });
+  const del = B.state.cup.has('tanqueray');
+  const ok3 = plus === 50 && minus === 45 && del === false;
+  console.log('  ' + (ok3 ? '✅' : '❌') + ' 加/减/删：45 → +' + plus + ' → ' + minus
+    + ' → ' + (del ? '还在' : '删掉了'));
+  if (!ok3) bad('交互', '加/减/删按钮有问题：' + plus + '/' + minus + '/' + del);
+})();
+
+/* ---- 做法：和参考字典对账 ---- */
+console.log('\n--- 做法（和经典字典对账）---');
+(function () {
+  const ref = JSON.parse(fs.readFileSync(path.join(__dirname, 'tools', 'reference-recipes.json'), 'utf8'));
+  const MAP = { shake: 'shake', stir: 'stir', build: 'build', smash: 'build', rolling: 'build', blended: 'shake' };
+  const OUR = { build: '兑和', stir: '搅拌', shake: '摇和' };
+  const norm = function (s) {
+    return String(s || '').replace(/[（(].*?[)）]/g, '').replace(/[\s·\/]/g, '')
+      .replace(/^生锈钉$/, '锈钉').replace(/^古典鸡尾酒$/, '古典');
+  };
+  const byName = {};
+  ref.forEach(function (r) { byName[norm(r.zh)] = r; });
+  let same = 0; const diff = []; const missing = [];
+  global.__PRESETS.forEach(function (p) {
+    const mine = global.__PM[p.name];
+    const r = byName[norm(p.name)];
+    if (!r) { missing.push(p.name); return; }
+    const theirs = MAP[r.method] || '?';
+    if (theirs === mine) same++;
+    else diff.push(p.name + '：我写「' + OUR[mine] + '」，字典是「' + (r.method || '?') + '」');
+  });
+  console.log('  44 条里能对上字典的 ' + (global.__PRESETS.length - missing.length) + ' 条，做法一致 ' + same + ' 条');
+  if (missing.length) console.log('  字典里没同名条目：' + missing.join('、'));
+  diff.forEach(function (d) { console.log('  ⚠ ' + d); });
+})();
+
+/* ---- 做法：每条配方都得有，而且点一张卡片必须真的把做法带进来 ---- */
+console.log('\n--- 做法（覆盖 + 点卡片）---');
+(function () {
+  const ids = global.__METHODS.map(function (m) { return m.id; });
+  const miss = [], wrong = [];
+  global.__PRESETS.forEach(function (p) {
+    const m = global.__PM[p.name];
+    if (!m) miss.push(p.name);
+    else if (ids.indexOf(m) < 0) wrong.push(p.name + '=' + m);
+  });
+  console.log('  ' + (miss.length || wrong.length ? '❌' : '✅') + ' ' + global.__PRESETS.length
+    + ' 个经典配方都有做法' + (miss.length ? '，缺：' + miss.join('、') : '')
+    + (wrong.length ? '，非法值：' + wrong.join('、') : ''));
+  if (miss.length || wrong.length) bad('做法', '配方缺做法或做法非法：' + miss.concat(wrong).join('、'));
+
+  /* 点「萨泽拉克」这张卡片：配方是搅拌的，点完做法就该是 stir，酒精度也该跟着降。
+     这一步以前漏了——点进去出来的是"兑和"，38.2%，比实际的 31% 烈。 */
+  const i = global.__PRESETS.findIndex(function (p) { return p.name === '萨泽拉克'; });
+  B.state.method = 'build'; B.state.glass = 'icecup'; B.state.iceLevel = 'full';
+  B.state.temps = {}; B.state.taste = 'normal';
+  fire({ preset: String(i) });
+  const after = B.analyze();
+  const ok = B.state.method === 'stir' && after.prepDil > 0;
+  console.log('  ' + (ok ? '✅' : '❌') + ' 点「萨泽拉克」：做法变成 ' + B.state.method
+    + '，稀释 ' + Math.round(after.prepDil) + 'ml，酒精度 ' + after.abv.toFixed(1) + '%');
+  if (!ok) bad('做法', '点配方没有把做法带进来：method=' + B.state.method);
+})();
+
+/* ---- 温度 / 化水：热量平衡必须真的算出来，而且方向不能反 ---- */
+console.log('\n--- 温度 / 化水（热量平衡）---');
+(function () {
+  const ids = global.__TEMPS.map(function (t) { return t.id; });
+  const badT = [];
+  global.__I.forEach(function (g) {
+    const id = B.tempIdOf(g);
+    if (ids.indexOf(id) < 0) badT.push(g.id + '=' + id);
+  });
+  console.log('  ' + (badT.length ? '❌' : '✅') + ' ' + global.__I.length + ' 样材料都能落到一个合法温度'
+    + (badT.length ? '：' + badT.join('、') : ''));
+  if (badT.length) bad('温度', '这些材料没有合法温度：' + badT.join('、'));
+
+  const recipe = [['tanqueray', 45], ['tonic', 150], ['ice', 1]];
+  B.state.glass = 'icecup'; B.state.iceLevel = 'full'; B.state.method = 'build';
+  B.state.taste = 'normal'; B.state.scheme = 'balanced';
+
+  B.state.temps = {};
+  B.load(recipe);
+  const cold = B.analyze();
+  B.state.temps = { tanqueray: 'frozen' };
+  B.load(recipe);
+  const frozen = B.analyze();
+  B.state.temps = { tanqueray: 'room', tonic: 'room' };
+  B.load(recipe);
+  const warm = B.analyze();
+  B.state.temps = {};
+
+  console.log('  同一杯金汤力（冰杯·满冰），只有材料温度不同：');
+  console.log('     冷冻基酒 + 冷藏汤力水 → 倒入即化 ' + frozen.meltIce + 'ml　酒精度 ' + frozen.abv.toFixed(1) + '%');
+  console.log('     常温基酒 + 冷藏汤力水 → 倒入即化 ' + cold.meltIce + 'ml　酒精度 ' + cold.abv.toFixed(1) + '%');
+  console.log('     全部常温　　　　　　　 → 倒入即化 ' + warm.meltIce + 'ml　酒精度 ' + warm.abv.toFixed(1) + '%');
+
+  const okOrder = frozen.meltIce <= cold.meltIce && cold.meltIce < warm.meltIce
+    && warm.meltIce - cold.meltIce >= 15 && warm.abv < cold.abv;
+  console.log('  ' + (okOrder ? '✅' : '❌') + ' 顺序是对的：越冷化得越少，常温材料会明显把酒冲淡');
+  if (!okOrder) bad('温度', '化水方向不对：冷冻 ' + frozen.meltIce + ' / 冷藏 ' + cold.meltIce
+    + ' / 常温 ' + warm.meltIce + '，酒精度 ' + warm.abv.toFixed(1) + ' vs ' + cold.abv.toFixed(1));
+
+  const okCap = warm.meltIce <= warm.iceMass && cold.meltIce >= 0;
+  console.log('  ' + (okCap ? '✅' : '❌') + ' 化掉的水不会超过杯里的冰（' + warm.meltIce
+    + 'ml ≤ ' + warm.iceMass + 'g），也不会是负数');
+  if (!okCap) bad('温度', '化水量越界：' + warm.meltIce + 'ml / 冰 ' + warm.iceMass + 'g');
+
+  /* 不加冰：一滴水都不该有 */
+  B.state.iceLevel = 'none';
+  const noIce = B.analyze();
+  const okNone = noIce.iceMass === 0 && noIce.meltIce === 0;
+  console.log('  ' + (okNone ? '✅' : '❌') + ' 选"不加冰"：杯里没有冰，倒入即化 0ml');
+  if (!okNone) bad('温度', '不加冰却算出了化水：' + noIce.meltIce + 'ml');
+
+  /* 热饮：不放冰，也不该去算化水 */
+  B.state.glass = 'mug'; B.state.iceLevel = 'none'; B.state.temps = {};
+  B.load([['jw_black', 45], ['hot_water', 90], ['honey', 15]]);
+  const hot = B.analyze();
+  const okHot = hot.isHot && hot.iceMass === 0 && hot.meltIce === 0;
+  console.log('  ' + (okHot ? '✅' : '❌') + ' 热托蒂（加热水）：判定为热饮，不放冰、不算化水');
+  if (!okHot) bad('温度', '热饮判定出问题：isHot=' + hot.isHot + ' 冰=' + hot.iceMass);
+  B.state.temps = {}; B.state.glass = 'icecup'; B.state.iceLevel = 'full';
+})();
+
+/* ---- 化水那一栏的说法：不能把"放十几分钟化的水"说成"冰全化开" ---- */
+console.log('\n--- 化水文案（用户拿两张截图问"这是不是冲突的"）---');
+(function () {
+  const strip = s => String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+  /* 摇和 + 古典杯满冰：以前这里说"「古典杯」里的冰全化开（约 +25ml）"，
+     可 128g 冰全化开是 +128ml，25ml 只是室温十几分钟化的量——自相矛盾。 */
+  const i = global.__PRESETS.findIndex(p => p.name === '威士忌酸');
+  B.preset(i);
+  const sour = strip(els['diluteBox'].innerHTML);
+  const noAllMelt = sour.indexOf('全化开') < 0;
+  const hasGram = /\d+g 冰/.test(sour);
+  const hasShake = sour.indexOf('摇壶') >= 0;
+  const hasTime = sour.indexOf('十几分钟') >= 0;
+  console.log('  ' + (noAllMelt ? '✅' : '❌') + ' 不再说"冰全化开"（杯里的冰有 128g，全化开是 +128ml）');
+  console.log('  ' + (hasGram ? '✅' : '❌') + ' 写出了杯里冰的实际克数');
+  console.log('  ' + (hasTime ? '✅' : '❌') + ' 说清了这是"放着十几分钟"的量');
+  console.log('  ' + (hasShake ? '✅' : '❌') + ' 摇和的酒说明了摇壶那笔水和杯里化冰不重复');
+  if (!noAllMelt) bad('化水文案', '还在说"冰全化开"，但数字只是室温十几分钟化的量');
+  if (!hasGram) bad('化水文案', '化水那栏没写出杯里有多少克冰');
+  if (!hasTime) bad('化水文案', '没说明 +25ml 是放多久化出来的');
+  if (!hasShake) bad('化水文案', '摇和的酒没说清两笔水的来源');
+
+  /* 兑和 + 冰：这一杯倒进去那一刻的水必须写出来 */
+  const j = global.__PRESETS.findIndex(p => p.name === '金汤力');
+  B.preset(j);
+  const gin = strip(els['diluteBox'].innerHTML);
+  const okPre = gin.indexOf('倒进去那一刻') >= 0;
+  console.log('  ' + (okPre ? '✅' : '❌') + ' 兑和的酒写出了"倒进去那一刻"化的水');
+  if (!okPre) bad('化水文案', '兑和的酒没有算"倒进去那一刻"化的水');
+
+  /* 杯子上限必须跟着冰量走：不加冰能倒的比满冰多 */
+  B.state.glass = 'rocks'; B.state.iceLevel = 'full'; B.state.temps = {};
+  B.load([['bourbon', 45], ['coke', 150]]);
+  const full = els['glassNote'].innerHTML.match(/上限 (\d+)ml/);
+  B.state.iceLevel = 'none';
+  B.load([['bourbon', 45], ['coke', 150]]);
+  const none = els['glassNote'].innerHTML.match(/上限 (\d+)ml/);
+  const okCap = full && none && +none[1] > +full[1];
+  console.log('  ' + (okCap ? '✅' : '❌') + ' 上限跟着冰量变：满冰 ' + (full ? full[1] : '?')
+    + 'ml → 不加冰 ' + (none ? none[1] : '?') + 'ml');
+  if (!okCap) bad('化水文案', '换冰量之后杯子的液体上限没跟着变');
+  B.state.iceLevel = 'full';
+})();
+
+/* ---- 这杯酒最后的构成（带子）：三笔水必须加起来正好是总液量 ---- */
+console.log('\n--- 这杯酒最后的构成（带子）---');
+(function () {
+  const strip = s => String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  function widths(html) {
+    return Array.from(html.matchAll(/style="width:([\d.]+)%"/g)).map(m => +m[1]);
+  }
+
+  /* 摇和的威士忌酸：酒液 96 + 摇壶 24 = 120ml，杯里的冰不再化水 */
+  B.preset(global.__PRESETS.findIndex(p => p.name === '威士忌酸'));
+  const html = els['mixBar'].innerHTML;
+  const w = widths(html), sum = w.reduce((x, y) => x + y, 0);
+  const text = strip(html);
+  const a = B.analyze();
+  const okSum = w.length > 0 && Math.abs(sum - 100) < 0.5;
+  const okTxt = /倒进去的酒液\s*96ml/.test(text) && /摇和 \/ 搅拌加的水\s*24ml/.test(text)
+    && /冰化出来的水\s*0ml/.test(text) && /合计\s*120ml/.test(text);
+  console.log('  ' + (okSum ? '✅' : '❌') + ' 各段加起来正好 100%（' + w.map(x => x.toFixed(0) + '%').join(' + ') + '）');
+  console.log('  ' + (okTxt ? '✅' : '❌') + ' 威士忌酸：' + text.replace(/\s+/g, ' ').slice(0, 60));
+  if (!okSum) bad('构成带', '各段宽度加起来不是 100%：' + w.join(' + ') + ' = ' + sum.toFixed(1));
+  if (!okTxt) bad('构成带', '威士忌酸的构成不对：' + text);
+  const okVol = Math.abs(a.liquid + a.prepDil + a.meltIce - a.finalVol) < 0.01;
+  if (!okVol) bad('构成带', '三笔水加起来不等于总液量');
+
+  /* 兑和 + 冰：这时冰化的水必须单独有一段 */
+  B.preset(global.__PRESETS.findIndex(p => p.name === '金汤力'));
+  const gin = els['mixBar'].innerHTML;
+  /* 兑和没有摇壶那笔水，所以带子上是两段：酒液 + 冰化出来的水 */
+  const okMelt = /冰化出来的水\s*\d+ml/.test(strip(gin))
+    && strip(gin).indexOf('冰化出来的水 0ml') < 0 && widths(gin).length === 2;
+  console.log('  ' + (okMelt ? '✅' : '❌') + ' 兑和的酒多出一段「冰化出来的水」');
+  if (!okMelt) bad('构成带', '兑和的酒没有把冰化的水单独画出来');
+
+  /* 空杯：整条带子不出现 */
+  B.load([]);
+  console.log('  ' + (els['mixBar'].innerHTML === '' ? '✅' : '❌') + ' 空杯子：不画这条带子');
+  if (els['mixBar'].innerHTML !== '') bad('构成带', '空杯子还画了构成带');
+})();
+
+/* ---- 温度标签：点一下要能轮换（span 不能被"展开说明"那一行吃掉点击）---- */
+console.log('\n--- 点温度标签 ---');
+(function () {
+  B.state.temps = {};
+  B.load([['coke', 150]]);
+  const seq = [B.tempIdOf(B.BY_ID['coke'])];
+  fire({ temp: 'coke' }, 'span');
+  seq.push(B.tempIdOf(B.BY_ID['coke']));
+  fire({ temp: 'coke' }, 'span');
+  seq.push(B.tempIdOf(B.BY_ID['coke']));
+  fire({ temp: 'coke' }, 'span');
+  seq.push(B.tempIdOf(B.BY_ID['coke']));
+  const ok = seq.join('>') === 'cold>room>frozen>cold';
+  console.log('  ' + (ok ? '✅' : '❌') + ' 可乐：' + seq.join(' → ') + '（默认 冷藏，点一下常温，再点冷冻，转回默认）');
+  if (!ok) bad('温度', '点温度标签没有轮换：' + seq.join('>'));
+
+  /* 标签必须真的画在杯子里（杯子那栏和材料库都要有） */
+  const cupHtml = els['cupList'].innerHTML;
+  const libHtml = els['lib'].innerHTML;
+  const drawn = cupHtml.indexOf('data-temp="coke"') >= 0 && cupHtml.indexOf('tempchip t-cold') >= 0;
+  console.log('  ' + (drawn ? '✅' : '❌') + ' 杯子那一行画出了可点的温度标签（材料库里是只读的标签）');
+  if (!drawn) bad('温度', '杯子那一行没有画出温度标签');
+  if (libHtml.indexOf('tagtemp') < 0) bad('温度', '材料库没有画出温度标签');
+  else console.log('  ✅ 材料库里的每种材料也标了建议温度');
+
+  /* 热水这种只能热的材料，不该被点成冷冻 */
+  B.state.temps = {};
+  B.load([['hot_water', 90]]);
+  const before = B.tempIdOf(B.BY_ID['hot_water']);
+  fire({ temp: 'hot_water' }, 'span');
+  const next = B.tempIdOf(B.BY_ID['hot_water']);
+  const okH = before === 'hot' && next === 'room';
+  console.log('  ' + (okH ? '✅' : '❌') + ' 热水：' + before + ' → ' + next + '（只在水温和常温之间换）');
+  if (!okH) bad('温度', '热水的温度切换不对：' + before + ' → ' + next);
+  B.state.temps = {};
+})();
+
+/* ---- 三种模式：鸡尾酒评分 / 纯饮描述 / 单独一样材料不算酒 ---- */
+console.log('\n--- 三种模式 ---');
+(function () {
+  const cases = [
+    ['45ml 纯可乐（找麻烦）', [['coke', 45]], 'shot', 'none', 'single'],
+    ['45ml 纯苏打水', [['soda', 90]], 'highball', 'full', 'single'],
+    ['45ml 纯橙汁', [['orange_juice', 60]], 'highball', 'full', 'single'],
+    ['45ml 麦卡伦（纯饮）', [['macallan', 45]], 'shot', 'none', 'neat'],
+    ['威士忌可乐', [['bourbon', 45], ['coke', 100]], 'icecup', 'full', 'cocktail'],
+    ['三样材料的无酒精特调', [['orange_juice', 60], ['soda', 90], ['syrup', 15]], 'highball', 'full', 'cocktail'],
+    ['锈钉（两样都是酒）', [['jw_black', 45], ['drambuie', 20]], 'rocks', 'full', 'cocktail']
+  ];
+  const NAMES = { single: '不是酒', neat: '纯饮', cocktail: '鸡尾酒' };
+  cases.forEach(function (c) {
+    B.state.glass = c[2]; B.state.iceLevel = c[3];
+    B.state.taste = 'normal'; B.state.scheme = 'balanced';
+    B.load(c[1]);
+    const a = B.analyze();
+    const got = a.singleSoft ? 'single' : (a.neatPour ? 'neat' : 'cocktail');
+    const ok = got === c[4];
+    console.log('  ' + (ok ? '✅' : '❌') + ' ' + c[0].padEnd(22) + '判定 ' + NAMES[got]
+      + '（预期 ' + NAMES[c[4]] + '）');
+    if (!ok) bad('模式', c[0] + ' 被判成 ' + NAMES[got] + '，应该是 ' + NAMES[c[4]]);
+  });
+})();
+
+/* ---- 酒精度：纯饮必须等于原瓶度数 ---- */
+console.log('\n--- 酒精度 ---');
+(function () {
+  ['bourbon', 'macallan', 'wild_turkey', 'glenfiddich', 'soju'].forEach(function (id) {
+    const g = global.__I.find(function (x) { return x.id === id; });
+    if (!g) return;
+    B.state.glass = 'shot'; B.state.iceLevel = 'none';
+    B.state.taste = 'strong'; B.state.scheme = 'balanced';
+    B.load([[id, 45]]);
+    const a = B.analyze();
+    const ok = Math.abs(a.abv - g.abv) < 0.05;
+    console.log('  ' + (ok ? '✅' : '❌') + ' ' + g.name.padEnd(20) + '原瓶 ' + g.abv
+      + '%　纯饮算出 ' + a.abv.toFixed(1) + '%');
+    if (!ok) bad('酒精度', g.name + ' 纯饮算成 ' + a.abv.toFixed(1) + '%，应该等于原瓶的 ' + g.abv + '%');
+  });
+  const cases = [
+    /* 做法必须一起给：马天尼是搅拌出来的（约 20% 水），高球是现调，酸要摇 */
+    ['干马天尼', [['tanqueray', 60], ['dry_vermouth', 10], ['orange_bitters', 1]], 'coupe', 'none', 'stir', 30, 40],
+    ['威士忌高球', [['kakubin', 45], ['soda', 120], ['lemon_peel', 1]], 'highball', 'full', 'build', 8, 13],
+    ['威士忌酸', [['bourbon', 45], ['lemon', 20], ['syrup', 15], ['egg_white', 15]], 'rocks', 'full', 'shake', 13, 21]
+  ];
+  cases.forEach(function (c) {
+    B.state.glass = c[2]; B.state.iceLevel = c[3];
+    B.state.method = c[4];
+    B.state.taste = 'normal'; B.state.scheme = 'balanced';
+    B.load(c[1]);
+    const v = B.analyze().abv;
+    const ok = v >= c[5] && v <= c[6];
+    console.log('  ' + (ok ? '✅' : '❌') + ' ' + c[0].padEnd(20) + '算出 ' + v.toFixed(1)
+      + '%　（合理区间 ' + c[5] + '-' + c[6] + '%）');
+    if (!ok) bad('酒精度', c[0] + ' 的酒精度 ' + v.toFixed(1) + '% 不在合理区间');
+  });
+})();
+
 /* ---- 纯饮判定不能误伤正常配方 ---- */
 console.log('\n--- 纯饮判定 ---');
 (function () {
@@ -302,3 +690,13 @@ parts.forEach(function (chunk, idx) {
   cardRe.lastIndex = 0;
 });
 console.log('\n共渲染 ' + n + ' 张配方卡，' + seenGroups.length + ' 个分组');
+
+/* ---- 汇总 ---- */
+console.log('\n================ 自检结果 ================');
+if (PROBLEMS.length) {
+  console.log('❌ ' + PROBLEMS.length + ' 项没通过：');
+  PROBLEMS.forEach(function (p) { console.log('   · ' + p); });
+  process.exitCode = 1;
+} else {
+  console.log('✅ 全部检查通过');
+}

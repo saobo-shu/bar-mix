@@ -22,11 +22,11 @@ global.document = {
 const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
   fs.readFileSync(path.join(dir, 'app.js'), 'utf8') + '\n' +
   'global.__X = { PRESETS: PRESETS, INGREDIENTS: INGREDIENTS, GLASSES: GLASSES,' +
-  ' TASTES: TASTES, ICE_LEVELS: ICE_LEVELS };';
+  ' TASTES: TASTES, ICE_LEVELS: ICE_LEVELS, PRESET_METHOD: PRESET_METHOD, TEMPS: TEMPS };';
 eval(src);
 
 const B = window.BarMix, X = global.__X;
-const P = X.PRESETS, I = X.INGREDIENTS, GL = X.GLASSES, TA = X.TASTES, LV = X.ICE_LEVELS;
+const P = X.PRESETS, I = X.INGREDIENTS, GL = X.GLASSES, TA = X.TASTES, LV = X.ICE_LEVELS, PM = X.PRESET_METHOD;
 const byId = {};
 I.forEach(g => byId[g.id] = g);
 const defaultIce = g => (g.ice === 'inglass' ? 'full' : 'none');
@@ -37,11 +37,16 @@ function bad(tag, msg) { problems.push('[' + tag + '] ' + msg); }
 function note(tag, msg) { notes.push('[' + tag + '] ' + msg); }
 
 /* 跑一杯：设定好杯子/冰量/口味，装杯，返回分数 */
-function run(items, glass, ice, taste) {
+function run(items, glass, ice, taste, method) {
   B.state.glass = glass; B.state.iceLevel = ice; B.state.taste = taste;
+  if (method) B.state.method = method;
   const r = B.load(items);
   return { r: r, a: B.analyze(), advice: B.advise(B.analyze()) };
 }
+/* 跑一条配方：做法一定要跟着配方走。
+   以前这里不传做法，于是"上一条配方用什么做法"会漏给下一条——
+   养乐多烧酒按"摇和"算出了 3.6%，实际上它是兑和的 4.5%。 */
+const runPreset = (p, glass, ice, taste) => run(p.items, glass, ice, taste, PM[p.name] || 'build');
 const scale = (items, k) => items.map(it => [it[0], Math.round(it[1] * k * 100) / 100]);
 
 /* ---------------- A. 取值范围 / NaN ---------------- */
@@ -50,7 +55,7 @@ P.forEach(p => {
   const glass = p.glass || 'icecup';
   GL.forEach(g => LV.forEach(lv => TA.forEach(t => {
     combos++;
-    const o = run(p.items, g.id, lv.id, t.id);
+    const o = run(p.items, g.id, lv.id, t.id, PM[p.name]);
     ['total', 'balance', 'strength', 'structure', 'complexity'].forEach(k => {
       const v = o.r[k];
       if (typeof v !== 'number' || !isFinite(v)) bad('NaN', p.name + ' / ' + g.name + ' / ' + lv.name + ' / ' + t.name + ' 的 ' + k + ' = ' + v);
@@ -100,10 +105,10 @@ P.forEach(p => {
 /* ---------------- D. 杯型方向性 ---------------- */
 P.forEach(p => {
   const good = GL.find(g => g.id === (p.glass || 'icecup'));
-  const base = run(p.items, good.id, defaultIce(good), 'normal').r.total;
+  const base = runPreset(p, good.id, defaultIce(good), 'normal').r.total;
   GL.forEach(g => {
     LV.forEach(lv => {
-      const o = run(p.items, g.id, lv.id, 'normal');
+      const o = runPreset(p, g.id, lv.id, 'normal');
       if (o.r.total > base + 3)
         bad('杯型', p.name + ' 用「' + g.name + '+' + lv.name + '」比它该用的「' + good.name + '」还高 '
           + (o.r.total - base).toFixed(1) + ' 分');
@@ -118,7 +123,7 @@ console.log('\n各分项在 ' + P.length + ' 个配方（各自默认状态）�
   const totals = [];
   P.forEach(p => {
     const g = GL.find(x => x.id === (p.glass || 'icecup'));
-    const o = run(p.items, g.id, defaultIce(g), 'normal');
+    const o = runPreset(p, g.id, defaultIce(g), 'normal');
     ['balance', 'strength', 'structure', 'complexity'].forEach(k => acc[k].push(o.r[k]));
     totals.push(o.r.total);
   });
@@ -138,7 +143,7 @@ console.log('\n各分项在 ' + P.length + ' 个配方（各自默认状态）�
 /* ---------------- F. 建议自相矛盾 ---------------- */
 P.forEach(p => {
   const g = GL.find(x => x.id === (p.glass || 'icecup'));
-  const adv = run(p.items, g.id, defaultIce(g), 'normal').advice.map(x => x.text).join(' ');
+  const adv = runPreset(p, g.id, defaultIce(g), 'normal').advice.map(x => x.text).join(' ');
   if (/偏甜|太甜/.test(adv) && /偏酸|太酸/.test(adv)) bad('建议矛盾', p.name + ' 同时说偏甜和偏酸');
   if (/加 15ml 鲜柠檬汁/.test(adv) && /去掉奶/.test(adv)) bad('建议矛盾', p.name + ' 一边让加酸一边说会结块');
 });
@@ -149,7 +154,7 @@ console.log('\n配方自带杯型与自身酒精度的匹配：');
 let mismatch = 0;
 P.forEach(p => {
   const g = GL.find(x => x.id === p.glass);
-  const o = run(p.items, g.id, defaultIce(g), 'normal');
+  const o = runPreset(p, g.id, defaultIce(g), 'normal');
   if (o.a.isHot) return;
   if (!(o.a.abv >= g.lo && o.a.abv <= g.hi)) {
     mismatch++;

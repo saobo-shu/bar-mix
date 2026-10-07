@@ -152,6 +152,17 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .r1 { color: var(--amber); }
 .r2 { color: var(--red); }
 .ci-eq { font-style: normal; font-size: 11px; color: var(--muted); }
+/* 温度标签：材料现在是多少度。杯子那栏点一下轮换（冷冻 → 冷藏 → 常温） */
+.tagtemp,
+.tempchip {
+  font-size: 9.5px; padding: 1.5px 5px; border-radius: 999px;
+  white-space: nowrap; border: 1px solid currentColor; line-height: 1.4;
+}
+.tempchip { cursor: pointer; user-select: none; }
+.t-frozen { color: #8ab4f8; }
+.t-cold   { color: #6fbfb0; }
+.t-room   { color: var(--muted); }
+.t-hot    { color: var(--orange); }
 .libfoot { margin: 10px 0 0; line-height: 1.6; }
 .libfoot b { color: var(--text); font-weight: 600; }
 .ghost.on { background: rgba(224, 163, 92, .16); border-color: var(--amber); color: var(--amber); }
@@ -183,6 +194,34 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .glassside { flex: 1; min-width: 190px; }
 .glassside .stats { margin-bottom: 8px; }
 .glassnote { margin: 0; line-height: 1.65; }
+
+/* ---------------- 这杯酒最后的构成：酒液 / 做法加水 / 冰化水 ---------------- */
+.mixbar { margin: 0 0 11px; }
+.mb-track {
+  display: flex; width: 100%; height: 18px; border-radius: 5px; overflow: hidden;
+  background: rgba(255, 255, 255, .05);
+}
+.mb-seg { height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.mb-seg > b {
+  font-size: 10.5px; font-weight: 600; color: #12100f;
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+.mb-liquid { background: rgba(243, 235, 227, .32); }
+.mb-prep   { background: var(--blue); }
+.mb-melt   { background: var(--amber); }
+.mb-legend {
+  display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 6px;
+  font-size: 11.5px; color: var(--muted);
+}
+.mb-key { display: inline-flex; align-items: center; gap: 5px; }
+.mb-key > b { margin-left: 2px; color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.mb-dot { flex: none; width: 9px; height: 9px; border-radius: 2px; }
+.mb-dot.mb-liquid { background: rgba(243, 235, 227, .32); }
+.mb-dot.mb-prep   { background: var(--blue); }
+.mb-dot.mb-melt   { background: var(--amber); }
+.mb-total { color: var(--text); }
+.mb-later { color: var(--muted); }
+.mb-later > b { color: var(--muted); font-weight: 600; }
 .legendline { margin: 0 0 11px; line-height: 1.6; }
 .legendline b { color: var(--text); font-weight: 600; }
 .glassnote b { color: var(--text); font-weight: 600; }
@@ -215,9 +254,26 @@ details.panel:not([open]) { padding-bottom: 13px; }
    于是整行比面板还宽，− / + / ✕ 三个按钮被推到面板外面（+ 露一半、✕ 全没了）。
    现在不给固定宽度，只让它自己挤，按钮永远留在面板内。 */
 .ci-main { min-width: 0; flex: 1 1 auto; }
-.ci-name { display: block; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ci-main { cursor: pointer; }
+/* 名字那一行：名字自己可以缩写，但"高风险 / 冷藏"这些标签要永远露出来。
+   所以这一行是 flex，只有 .ci-t 会让步——手机窄屏上再也不会把标签挤没。 */
+.ci-name { display: flex; align-items: center; gap: 4px; font-size: 13.5px; min-width: 0; }
+.ci-name > .ci-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ci-name > .risk, .ci-name > .tempchip { flex: none; }
 .ci-note { display: block; font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.ci-fold { display: block; font-size: 10.5px; color: var(--amber); margin-top: 2px; opacity: .8; }
+/* 展开之后不再截断，说明整段可读 */
+.cup-item.open .ci-name > .ci-t,
+.cup-item.open .ci-note { white-space: normal; overflow: visible; text-overflow: clip; }
+.cup-item.open .ci-name { flex-wrap: wrap; }
+.cup-item.open .ci-note { line-height: 1.6; margin-top: 3px; }
 .ci-ctl { display: flex; align-items: center; gap: 3px; flex: none; }
+.abvbtn {
+  font-size: 11px; padding: 2px 7px; border-radius: 999px; margin-right: 2px;
+  background: rgba(224, 163, 92, .14); border: 1px solid rgba(224, 163, 92, .45);
+  color: var(--amber); font-variant-numeric: tabular-nums;
+}
+.abvbtn:active { background: var(--amber); color: #1c1409; }
 .rnd {
   width: 30px; height: 30px; border-radius: 9px; line-height: 1;
   background: #302927; border: 1px solid var(--line); font-size: 15px; color: var(--text);
@@ -281,6 +337,10 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .dil-lo { color: var(--red); }
 .dil-none { color: var(--muted); }
 .dil-num { font-size: 11.5px; color: var(--muted); margin-left: 4px; }
+.dil-melt {
+  display: inline-block; margin-left: 8px; font-size: 11px; color: var(--amber);
+  font-variant-numeric: tabular-nums;
+}
 .dil-msg { margin: 0; font-size: 12px; line-height: 1.6; color: #ddd3c9; }
 .storebox:empty { display: none; }
 .store-title { font-size: 11.5px; color: var(--muted); margin-bottom: 6px; }

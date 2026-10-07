@@ -26,6 +26,11 @@
     whisky: 1, gin: 1, rum: 1, vodka: 1, tequila: 1, brandy: 1, otherbase: 1
   };
   function isBase(g) { return !!BASE_CATS[g.cat]; }
+  /* 这瓶酒实际用的度数：用户改过就用他改的 */
+  function abvOf(g) {
+    var v = state.abv[g.id];
+    return (typeof v === 'number' && v >= 0 && v <= 80) ? v : g.abv;
+  }
 
   /* 现实里的容器：一个便利店标准冰杯，加满冰之后能加的液体大约 200ml。
      大部分人在住处调酒都是往这样一个冰杯里加，液体很少超过这个数。 */
@@ -169,7 +174,7 @@
   };
   /* 乳酸菌饮料：虽然也是奶系，但又稀又自带酸，加柠檬完全没问题 */
   var LACTIC = { yakult: 1, calpis: 1 };
-  var HOT = { hot_water: 1, coffee_hot: 1 };
+  /* "是不是热饮"不再写死在这里——每样材料自己带温度（见 data.js 的 TEMPS） */
 
   var BY_ID = {};
   INGREDIENTS.forEach(function (g) { BY_ID[g.id] = g; });
@@ -178,11 +183,21 @@
     cat: 'whisky',
     cup: new Map(),
     hideRisky: false,
-    swapOpen: false,
-    glass: 'icecup',
+      swapOpen: false,
+      glass: 'icecup',
       taste: 'normal',
       iceLevel: 'full',
-      scheme: 'balanced'
+      scheme: 'balanced',
+      /* 做法决定准备时加多少水（兑和 0 / 搅拌 20% / 摇和 25%） */
+      method: 'build',
+      /* 用户自己改过的材料温度（id → 温度 id）。默认值从材料分类来，
+         因为同一瓶饮料有人从冰箱拿、有人从货架拿。 */
+      temps: {},
+      /* 用户自己改过的酒精度（id → 度数）。装瓶度数分国家版本，
+         以手上那瓶为准，所以允许覆盖。 */
+      abv: {},
+      /* 杯子里哪几行说明展开了（点一下切换） */
+      open: {}
     };
 
   /* ---------------------------------------------------------
@@ -239,6 +254,8 @@
     var nOthers = 0;   /* 除基酒和冰以外的材料（配料） */
     var juiceMl = 0, hasDairy = false, dairyFat = false, isHot = false;
     var acidLoad = 0, enzymes = [], dairyName = '';
+    /* 每样材料的温度，用来算冰化掉多少（见 meltFrom） */
+    var parts = [], tempMix = { frozen: 0, cold: 0, room: 0, hot: 0 };
 
     state.cup.forEach(function (amt, id) {
       var g = BY_ID[id];
@@ -249,7 +266,7 @@
       var ml = amt * (g.mlu || 0);
       if (ml > 0) liquid += ml;
       if (ml > 0) acidLoad += ml * acidPerMl(phOf(g));
-      if (g.abv) alcoholMl += ml * g.abv / 100;
+      if (g.abv) alcoholMl += ml * abvOf(g) / 100;
       if (g.ice) hasIce = true;
       if (isBase(g)) { hasBase = true; nBase++; baseMl += ml; }
       else if (!g.ice) nOthers++;
@@ -257,7 +274,11 @@
       if (DAIRY_FAT[g.id] || LACTIC[g.id]) hasDairy = true;
       if (DAIRY_FAT[g.id]) { dairyFat = true; if (!dairyName) dairyName = g.name; }
       if (ENZYMES[g.id] && ml > 0) enzymes.push(ENZYMES[g.id]);
-      if (HOT[g.id]) isHot = true;
+      if (isHotIng(g)) isHot = true;
+      if (ml > 0 && g.cat !== 'ice') {
+        parts.push({ g: g, ml: ml, abv: abvOf(g), c: tempOf(g).c });
+        tempMix[tempIdOf(g)]++;
+      }
       if (g.cat !== 'ice') nNonIce++;
       if ((g.f.fizz || 0) >= 6) hasFizzIng = true;
       nItems++;
@@ -271,7 +292,49 @@
     var gsel0 = glassOf(state.glass);
     /* 热饮不放冰——冰在热酒里只会瞬间化掉、把整杯冲淡 */
     hasIce = !isHot && iceNow(gsel0).id !== 'none';
-    var dilution = isHot ? 0 : liquid * 0.15;
+
+    /* 纯饮：杯里只有一样含酒精的东西（加不加冰都算），没有任何配料。
+       不限定"必须是基酒"——单喝金巴利、单喝咖啡利口酒同样是纯饮。 */
+    var neatPour = nItems === 1 && alcoholMl > 3;
+    /* 杯里只有一样东西、而且不是酒（比如倒了一杯纯可乐）——
+       这不是调酒，不该给它打分。 */
+    var singleSoft = nItems === 1 && alcoholMl <= 3;
+    var singleName = '';
+    if (nItems === 1) state.cup.forEach(function (amt, id) {
+      if (BY_ID[id]) singleName = BY_ID[id].name;
+    });
+
+    var prepDil = (neatPour || isHot) ? 0 : liquid * methodOf(state.method).dil;
+
+    /* 倒进去那一刻化掉的水：材料降温到 0℃ 放出的热，减去把冰从 -18℃ 捂到 0℃ 要的热。
+       同时算一遍"如果这些材料都是常温的"——两个数字一比，就知道把基酒放冷冻、饮料买冷藏的
+       到底省下了多少水。
+
+       摇和 / 搅拌出来的酒不算这一笔：它在摇壶里就已经和冰换过热量、滤出来接近 0℃，
+       再倒进放了冰的杯子里几乎化不出水——那部分水已经算在做法的 20% / 25% 里了。 */
+    var iceMass = hasIce ? iceMassOf(gsel0) : 0;
+    var qNow = 0, qRoom = 0;
+    parts.forEach(function (p) {
+      var cp = cpOf(p.abv);
+      qNow += p.ml * cp * p.c;
+      qRoom += p.ml * cp * 25;          /* 25℃ = 常温 */
+    });
+    var meltIce = prepDil > 0 ? 0 : meltFrom(qNow, iceMass);
+    var meltRoom = prepDil > 0 ? 0 : meltFrom(qRoom, iceMass);
+
+    /* 水从哪来——原来的写法是"所有酒一律加 15%"，这是错的，会同时犯两个毛病：
+       ① 纯饮（一口杯直接倒）根本没有水，却被算成 45ml 只剩 34.8%；
+       ② 在杯里加冰现调的酒（高球、尼格罗尼）被算了两次水
+          ——15% 准备稀释 + 化冰。可"现调"本来就没有摇和那一步。
+
+       现在分开算：
+       · 纯饮 / 热饮 → 不加水
+       · 摇和 / 搅拌 → 按做法的经验值加水（20% / 25%），这一步在摇壶里发生
+       · 兑和在冰上 → 水从冰来：材料把冰化开多少，就加多少水（按温度算出来）
+
+       最后一条是用户补的：材料不是抽象的"液体"，它们各自带着温度。
+       常温材料会把冰一路化开，冷冻过的基酒几乎不化冰。 */
+    var dilution = prepDil + meltIce;
     var finalVol = liquid + dilution;
     var abv = finalVol > 0 ? alcoholMl / finalVol * 100 : 0;
     /* 把总酸量摊到总液量上再反推 pH：纯柠檬汁算出 2.2，纯菠萝汁算出 3.5 */
@@ -295,9 +358,13 @@
       juiceMl: juiceMl, hasJuice: juiceMl > 5, hasDairy: hasDairy, dairyFat: dairyFat, isHot: isHot,
       ph: ph, acidLoad: acidLoad, enzymes: enzymes, dairyName: dairyName, taste: state.taste,
       fd: fd, nOthers: nOthers,
+      /* 温度那条线的产物：杯里有多少克冰、倒进去就化了多少水、
+         以及"如果材料全是常温的"会化多少（用来对比，不参与打分） */
+      iceMass: iceMass, meltIce: meltIce, meltRoom: meltRoom, tempMix: tempMix,
+      prepDil: prepDil, parts: parts,
       /* 纯饮：杯里只有一样含酒精的东西（加不加冰都算），没有任何配料。
          不限定"必须是基酒"——单喝金巴利、单喝咖啡利口酒同样是纯饮。 */
-      neatPour: nItems === 1 && alcoholMl > 3
+      neatPour: neatPour, singleSoft: singleSoft, singleName: singleName
     };
   }
 
@@ -399,13 +466,72 @@
     return SCORING_SCHEMES[0];
   }
 
+  function methodOf(id) {
+    for (var i = 0; i < METHODS.length; i++) if (METHODS[i].id === id) return METHODS[i];
+    return METHODS[0];
+  }
+
+  /* ---------------------------------------------------------
+     温度：每样材料现在是多少度
+     --------------------------------------------------------- */
+  function tempInfo(id) {
+    for (var i = 0; i < TEMPS.length; i++) if (TEMPS[i].id === id) return TEMPS[i];
+    return TEMPS[2];
+  }
+  function tempIdOf(g) {
+    if (g.cat === 'ice') return 'frozen';
+    return state.temps[g.id] || TEMP[g.id] || TEMP_DEFAULT[g.cat] || 'room';
+  }
+  function tempOf(g) { return tempInfo(tempIdOf(g)); }
+  function isHotIng(g) { return tempIdOf(g) === 'hot'; }
+  /* 「冷藏 3 样、常温 2 样」这种说法 */
+  function tempMixText(mix) {
+    var bits = [];
+    ['frozen', 'cold', 'room', 'hot'].forEach(function (id) {
+      if (mix[id]) bits.push(tempInfo(id).name + ' ' + mix[id] + ' 样');
+    });
+    return bits.join('、') || '没有材料';
+  }
+
+  /* 比热容：纯水 4.18，纯乙醇 2.44，按质量分数加权。
+     40 度的酒算出来约 3.6 —— 酒比水"不耐冷"，同样多的热量能让它升温更多。 */
+  function cpOf(abv) {
+    var mEth = abv / 100 * 0.789;
+    var mTot = 1 - abv / 100 * (1 - 0.789);
+    var x = mTot > 0 ? mEth / mTot : 0;
+    return 4.18 * (1 - x) + 2.44 * x;
+  }
+
+  /* 这只杯子里有多少克冰。冰填到杯口，中间还有空隙，按 THERMO.icePack 折算。 */
+  function iceMassOf(g) {
+    if (g.ice !== 'inglass') return 0;
+    var lv = iceOnly(g);
+    if (lv.id === 'none') return 0;
+    return Math.round(g.cap * (1 - lv.roomRatio) * THERMO.icePack);
+  }
+
+  /* 化水：热量平衡
+
+       材料降温到 0℃ 放出的热 = 冰从 -18℃ 捂到 0℃ 吸的热 + 化掉的水 × 334
+
+     化 1 克冰要 334 焦耳。把 -18℃ 的冰捂到 0℃ 还要 2.05×18 ≈ 37 焦耳/克，
+     这笔"过路费"先扣掉，剩下的才真正化冰——所以冷冻过的材料化出来的水很少，
+     常温材料会把冰一路化开。 */
+  function meltFrom(Q, iceMass) {
+    if (iceMass <= 0) return 0;
+    var m = (Q - iceMass * THERMO.iceCp * (-THERMO.iceTemp)) / THERMO.iceLatent;
+    return clamp(Math.round(m), 0, Math.round(iceMass));
+  }
+
   function iceLevelOf(id) {
     for (var i = 0; i < ICE_LEVELS.length; i++) if (ICE_LEVELS[i].id === id) return ICE_LEVELS[i];
     return ICE_LEVELS[0];
   }
 
+  /* 用户选的冰量（跟杯子无关） */
+  function iceOnly(g) { return iceLevelOf(state.iceLevel); }
   /* 这只杯子有多少冰（chilled 的杯子天然没有冰） */
-  function iceNow(g) { return g.ice === 'inglass' ? iceLevelOf(state.iceLevel) : ICE_LEVELS[2]; }
+  function iceNow(g) { return g.ice === 'inglass' ? iceOnly(g) : ICE_LEVELS[2]; }
   /* 冰占掉空间之后，还能倒多少液体 */
   function liquidMaxFor(g) {
     var lv = iceNow(g);
@@ -420,6 +546,26 @@
   function dilutionInfo(a) {
     var g = glassOf(state.glass), band = tasteBand(a.taste);
     var melt = meltFor(g);
+    /* 这里有两笔来源完全不同的水，以前混在一起说，看起来自相矛盾：
+       ① 倒进去那一刻化的水：材料带来的热化掉的（按材料温度算）
+       ② 放着慢慢化的水：室温透过杯子把冰化掉的（这只杯型的经验值，十几分钟的量）
+       ②绝不是"杯里的冰全化掉"——满冰的古典杯里有 120 多克冰，全化掉是 +120 多毫升。
+       所以下面一律说"放着慢慢化出约 X ml"，并把这个杯子有冰多少克写出来。 */
+    var pre = a.meltIce > 0
+      ? '倒进去那一刻会化掉约 ' + a.meltIce + 'ml 冰（' + tempMixText(a.tempMix) + '，杯里按 '
+        + Math.round(a.iceMass) + 'g 冰算）。'
+        + (a.meltRoom - a.meltIce >= 12
+            ? '同样是这些材料，全放常温的话会化掉 ' + a.meltRoom + 'ml，多出 '
+              + (a.meltRoom - a.meltIce) + 'ml 水。' : '')
+      : '';
+    /* 这个数字是"放十几分钟、室温化出来的那部分"，不是"冰全都化掉" */
+    var meltPhrase = a.iceMass > 0
+      ? '杯里这 ' + Math.round(a.iceMass) + 'g 冰，放着十几分钟室温大约会化掉 ' + melt + 'ml'
+      : '放着十几分钟，室温大约会化出 ' + melt + 'ml 水';
+    /* 摇和 / 搅拌的酒，那笔水是在摇壶里加的；杯子里的冰是室温慢慢化的，两笔不冲突 */
+    var shaken = (a.prepDil > 0 && a.iceMass > 0)
+      ? '（摇和 / 搅拌加的 ' + Math.round(a.prepDil) + 'ml 水是在摇壶里进去的，'
+        + '跟杯里这些冰被室温化开是两回事，不会重复算。）' : '';
     if (melt <= 0) {
       return { level: '不用管', short: '冰镇后滤掉冰，不会越喝越淡',
                msg: (state.iceLevel === 'none' && g.ice === 'inglass')
@@ -428,20 +574,23 @@
     }
     var afterVol = a.finalVol + melt;
     var after = afterVol > 0 ? a.alcoholMl / afterVol * 100 : 0;
-    var short = a.abv.toFixed(1) + '% → 化开后 ' + after.toFixed(1) + '%';
+    var short = a.abv.toFixed(1) + '% → 十几分钟后 ' + after.toFixed(1) + '%';
     if (after >= band.lo) {
       return { level: '高', short: short,
-               msg: '化水容忍度很高：「' + g.name + '」里的冰全化开（约 +' + melt + 'ml）之后还有 '
-                 + after.toFixed(1) + '%，仍在你的「' + band.name + '」区间里，可以慢慢喝。' };
+               msg: pre + shaken + '化水容忍度很高：' + meltPhrase + '，到那时还有 '
+                 + after.toFixed(1) + '%，仍在你的「' + band.name + '」区间里。'
+                 + '按这个速度可以慢慢喝——想拖得更久就换一整块大方冰，melt 能砍一半。' };
     }
     if (a.abv >= band.lo) {
       return { level: '中', short: short,
-               msg: '化水容忍度一般：刚做好是 ' + a.abv.toFixed(1) + '%，冰全化开会掉到 ' + after.toFixed(1)
+               msg: pre + shaken + '化水容忍度一般：刚做好是 ' + a.abv.toFixed(1)
+                 + '%，' + meltPhrase + '，那时会掉到 ' + after.toFixed(1)
                  + '%，低于你的「' + band.name + '」区间（' + band.lo + '-' + band.hi + '%）。'
-                 + ' 想拖久一点就换大块冰——同样一只杯子，大方冰的 melt 只有小冰的一半。' };
+                 + '想拖久一点就换大块冰——同样一只杯子，大方冰的 melt 只有小冰的一半。' };
     }
     return { level: '低', short: short,
-             msg: '化水容忍度低：现在就已经 ' + a.abv.toFixed(1) + '% 偏淡，冰再化开只会更淡。'
+             msg: pre + shaken + '化水容忍度低：现在就已经 ' + a.abv.toFixed(1) + '% 偏淡，'
+               + meltPhrase + '，只会更淡。'
                + ' 要么加酒，要么尽快喝完。' };
   }
 
@@ -512,6 +661,11 @@
     /* 一律用浓度（每 120ml）判断，而不是绝对量——
        不然把同一杯酒整体放大，建议也会跟着变。 */
     var f = a.fd, out = [];
+    /* 只有一样非酒材料：不是调酒，别拿酸甜比去教训人 */
+    if (a.singleSoft) return [{
+      p: 100, tone: 'tip',
+      text: '杯子里只有「' + a.singleName + '」。它本身是材料，不是调酒——加一份基酒（威士忌、朗姆、伏特加、金酒都行）、一点酸（柠檬或青柠），再加冰，就是一杯完整的酒。'
+    }];
     var cw = f.acid + 0.4 * f.bitter;
     var r = cw > 0 ? f.sugar / cw : 99;
     var spiritForward = a.nNonIce <= 2 && a.abv > 24;
@@ -537,6 +691,22 @@
 
     if (!a.hasIce && !a.isHot && a.abv > 12)
       add(96, 'warn', '没有冰。同一杯酒降到 10-15℃ 之后，甜味会收、香气会打开，差别比换一瓶酒还大。便利店的冰杯加一个泡沫保温箱就能解决。');
+
+    /* 温度这条线：材料是冰的还是常温的，冰化掉多少完全不一样 */
+    if (a.iceMass > 0 && a.meltIce >= 25)
+      add(95, 'warn', '这些材料会把冰化掉约 ' + a.meltIce + 'ml——你的材料大多是常温的（'
+        + tempMixText(a.tempMix) + '）。' + Math.round(a.meltIce) + 'ml 水直接进了这杯酒。'
+        + '把基酒整瓶放冷冻室、饮料买冷藏的，同样的配方能少掉一大半水。');
+    else if (a.iceMass > 0 && a.meltRoom - a.meltIce >= 25)
+      add(74, 'tip', '这杯只化掉约 ' + a.meltIce + 'ml 冰（' + tempMixText(a.tempMix)
+        + '）。材料全放常温的话会化掉 ' + a.meltRoom + 'ml——基酒放冷冻、饮料买冷藏的，'
+        + '就是少掉这 ' + (a.meltRoom - a.meltIce) + 'ml 水的办法。');
+
+    /* 滤冰的杯子配兑和：这一步物理上不成立 */
+    if (state.method === 'build' && glassOf(state.glass).ice === 'chilled' && !a.isHot && a.nItems >= 2)
+      add(93, 'warn', '「' + glassOf(state.glass).name + '」是用来装滤冰之后的酒的杯子，'
+        + '但做法选的是「兑和」——这样既没有冰也不会稀释。点上面的做法换成'
+        + '「搅拌 Stir」或「摇和 Shake」，酒才会是冰的。');
 
     if (f.sugar >= 4.5 && cw < 2.5) {
       if (spiritForward)
@@ -674,11 +844,13 @@
     function chip(g) {
       var inCup = state.cup.has(g.id);
       var st = storeOf(g);
+      var tp = tempOf(g);
       return '<button type="button" class="chip' + (inCup ? ' on' : '') + '" data-add="' + g.id +
-        '" title="' + esc(g.note + ' —— ' + st.text) + '">' +
+        '" title="' + esc(g.note + ' —— ' + st.text + ' —— 建议' + tp.name + '（' + tp.c + '℃）：' + tp.note) + '">' +
         '<span class="cn">' + esc(g.name) + '</span>' +
         '<span class="tags">' +
           '<span class="src s-' + g.src + '">' + SRC_NAME[g.src] + '</span>' +
+          (g.cat === 'ice' ? '' : '<span class="tagtemp t-' + tempIdOf(g) + '">' + esc(tp.name) + '</span>') +
           '<span class="risk r' + st.risk + '">' + RISK_LABEL[st.risk] + '</span>' +
         '</span>' +
         '</button>';
@@ -709,16 +881,27 @@
       var g = BY_ID[id];
       if (!g) return;
       var st = storeOf(g);
+      var tp = tempOf(g);
       var hint = fruitHint(g, amt);
-      html += '<div class="cup-item">' +
-        '<div class="ci-main">' +
-          '<span class="ci-name">' + esc(g.name) +
+      var open = state.open[id] ? ' open' : '';
+      html += '<div class="cup-item' + open + '">' +
+        /* 点这一行展开/收起完整说明——之前说明被省略号截断，却没有看全文的办法 */
+        '<div class="ci-main" data-expand="' + id + '" title="点一下看完整说明">' +
+          '<span class="ci-name"><span class="ci-t">' + esc(g.name) +
             (hint ? ' <i class="ci-eq">' + esc(hint) + '</i>' : '') +
+            '</span>' +
             (st.risk > 0 ? ' <span class="risk r' + st.risk + '">' + RISK_LABEL[st.risk] + '</span>' : '') +
+            (g.cat === 'ice' ? '' :
+              ' <span class="tempchip t-' + tempIdOf(g) + '" data-temp="' + id + '" role="button" tabindex="0"' +
+              ' title="' + esc(tp.name + ' ' + tp.c + '℃　' + tp.note + '　点一下换一个温度') + '">'
+              + esc(tp.name) + '</span>') +
           '</span>' +
           '<span class="ci-note">' + esc(g.note) + '</span>' +
+          '<span class="ci-fold">' + (state.open[id] ? '收起 ▴' : '看全部 ▾') + '</span>' +
         '</div>' +
         '<div class="ci-ctl">' +
+          (g.abv ? '<button type="button" class="abvbtn" data-abv="' + id + '" title="改酒精度——装瓶度数分国家版本，以你手上那瓶为准">'
+            + abvOf(g) + '%</button>' : '') +
           '<button type="button" class="rnd" data-act="minus" data-id="' + id + '" aria-label="减少">−</button>' +
           '<span class="ci-amt">' + fmtAmt(g, amt) + '</span>' +
           '<button type="button" class="rnd" data-act="plus" data-id="' + id + '" aria-label="增加">+</button>' +
@@ -850,13 +1033,21 @@
        硬给一个分数等于装懂，而且早先版本会因为"雪莉桶甜得没有酸来抵消"
        把麦卡伦 12 年判得比占边白标低。 */
     var neat = !empty && a.neatPour;
-    document.getElementById('bigScore').textContent = empty ? '--' : (neat ? '纯饮' : Math.round(total));
-    document.getElementById('scoreUnit').textContent = neat ? '　不作评分' : ' / 100';
+    var single = !empty && a.singleSoft;
+    document.getElementById('bigScore').textContent =
+      empty ? '--' : (neat ? '纯饮' : (single ? '—' : Math.round(total)));
+    document.getElementById('scoreUnit').textContent =
+      neat ? '　不作评分' : (single ? '　这还不是一杯酒' : ' / 100');
     document.getElementById('verdictTitle').textContent =
-      empty ? '先把材料放进杯子' : (neat ? '纯饮 · 只描述味道' : band[1]);
+      empty ? '先把材料放进杯子'
+        : (neat ? '纯饮 · 只描述味道'
+          : (single ? '这只是材料，不是一杯酒' : band[1]));
     document.getElementById('verdictText').textContent = empty
       ? '从下面「材料库」随便点两样开始，风味图和评分会实时跟着变。'
-      : (neat ? neatDescribe(a) + '加一点气泡水或一条柠檬皮，它才会变成一杯酒。' : band[2]);
+      : (neat ? neatDescribe(a) + '加一点气泡水或一条柠檬皮，它才会变成一杯酒。'
+        : (single
+          ? '杯子里只有「' + a.singleName + '」。它本身是材料，不是调酒——给它加一份基酒（威士忌、朗姆、伏特加、金酒都行）和一点酸，它才变成一杯酒。'
+          : band[2]));
 
     /* 光给一个分数看不出来为什么，所以每一项下面都标出它的依据 */
     var cwv = a.f.acid + 0.4 * a.f.bitter;
@@ -872,7 +1063,7 @@
     /* 每一项都标出它现在的权重——换了评分方案，这些数字会一起变 */
     var w = sc.weight, pc = function (x) { return Math.round(x * 100) + '%'; };
     /* 纯饮模式一根评分条都不留——说了不评分就别再写着"权重 32%" */
-    document.getElementById('subScores').innerHTML = neat ? '' :
+    document.getElementById('subScores').innerHTML = (neat || single) ? '' :
       bar('平衡', b, '权重 ' + pc(w.balance) + '　' + ratioCap) +
       bar('复杂度', cx, '权重 ' + pc(w.complexity) + '　激活了 ' + dimsOn + ' 种风味') +
       bar('结构', stru, '权重 ' + pc(w.structure) + '　'
@@ -904,7 +1095,9 @@
     var dil = dilutionInfo(a);
     document.getElementById('diluteBox').innerHTML = empty ? '' :
       '<div class="dil-title">冰化开会怎么样　<b class="dil-' + (dil.level === '高' ? 'hi' : dil.level === '中' ? 'mid' : dil.level === '低' ? 'lo' : 'none')
-      + '">容忍度 ' + dil.level + '</b>　<span class="dil-num">' + esc(dil.short) + '</span></div>'
+      + '">容忍度 ' + dil.level + '</b>　<span class="dil-num">' + esc(dil.short) + '</span>'
+      + (a.meltIce > 0 ? '<span class="dil-melt">倒入即化 ' + a.meltIce + 'ml</span>' : '')
+      + '</div>'
       + '<p class="dil-msg">' + esc(dil.msg) + '</p>';
 
     /* 保存提醒：这杯里有哪些材料在住处里不好伺候 */
@@ -925,10 +1118,59 @@
         (rest > 0 ? '<li class="sto r1">还有 ' + rest + ' 样材料在材料库里能查到保存方式。</li>' : '') +
         '</ul>'
       : '';
+
+    /* 这杯酒最后是什么构成的 */
+    renderMixBar(a);
   }
 
   function statBox(label, val) {
     return '<div class="stat"><span class="st-l">' + label + '</span><span class="st-v">' + val + '</span></div>';
+  }
+
+  /* ---------------------------------------------------------
+     这杯酒最后是什么构成的
+
+     一条带子：倒进去的酒液 + 摇和/搅拌在摇壶里加的水 + 杯里的冰化出来的水。
+     这三笔加起来就是「总液量」，跟上面那个数字是同一笔账；
+     冰还会被室温慢慢化开，那部分单独写在后面（十几分钟的量，见化水那一栏）。
+     --------------------------------------------------------- */
+  function renderMixBar(a) {
+    var box = document.getElementById('mixBar');
+    if (!box) return;
+    if (!a.liquid) { box.innerHTML = ''; return; }
+
+    var later = meltFor(glassOf(state.glass));      /* 放着十几分钟还会再多这些 */
+    var total = a.finalVol;
+    var den = total > 0 ? total : 1;
+    var segs = [
+      { n: '倒进去的酒液', ml: a.liquid, cls: 'mb-liquid' },
+      { n: '摇和 / 搅拌加的水', ml: a.prepDil, cls: 'mb-prep' },
+      { n: '冰化出来的水', ml: a.meltIce, cls: 'mb-melt' }
+    ];
+    var label = segs.map(function (s) { return s.n + ' ' + Math.round(s.ml) + ' 毫升'; })
+      .join('，') + '，合计 ' + Math.round(total) + ' 毫升';
+
+    box.innerHTML =
+      '<div class="mb-track" role="img" aria-label="' + esc(label) + '">' +
+        segs.map(function (s) {
+          var pct = s.ml / den * 100;
+          if (pct <= 0) return '';
+          return '<i class="mb-seg ' + s.cls + '" style="width:' + pct.toFixed(2) + '%" title="'
+            + esc(s.n + ' ' + Math.round(s.ml) + 'ml') + '">'
+            + (pct >= 16 ? '<b>' + Math.round(s.ml) + '</b>' : '') + '</i>';
+        }).join('') +
+      '</div>' +
+      '<div class="mb-legend">' +
+        segs.map(function (s) {
+          return '<span class="mb-key"><i class="mb-dot ' + s.cls + '"></i>' + esc(s.n)
+            + '<b>' + Math.round(s.ml) + 'ml</b></span>';
+        }).join('') +
+        '<span class="mb-key mb-total">合计<b>' + Math.round(total) + 'ml</b></span>' +
+        (later > 0
+          ? '<span class="mb-key mb-later">放着十几分钟还会再多<b>' + later + 'ml</b>（→ '
+            + Math.round(total + later) + 'ml）</span>'
+          : '') +
+      '</div>';
   }
 
   /* 把「添加利金酒 Tanqueray」压成「添加利金酒」，卡片和按钮上才放得下 */
@@ -976,7 +1218,8 @@
 
   function renderAll() {
     renderCats(); renderLib(); renderCup(); renderResult(); renderPresets();
-    renderGlassPick(); renderTastePick(); renderIcePick(); renderSchemePick(); renderGlass();
+    renderGlassPick(); renderTastePick(); renderIcePick(); renderSchemePick();
+    renderMethodPick(); renderGlass();
   }
 
   /* ---------------------------------------------------------
@@ -1005,6 +1248,14 @@
       return '<button type="button" class="gchip' + (s.id === state.scheme ? ' on' : '') +
         '" data-scheme="' + s.id + '" title="' + esc(detail + '　' + s.note) + '">'
         + esc(s.name) + '</button>';
+    }).join('');
+  }
+
+  function renderMethodPick() {
+    document.getElementById('methodPick').innerHTML = METHODS.map(function (m) {
+      return '<button type="button" class="gchip' + (m.id === state.method ? ' on' : '') +
+        '" data-method="' + m.id + '" title="' + esc(m.note) + '">'
+        + esc(m.name + ' ' + m.en) + '</button>';
     }).join('');
   }
 
@@ -1103,13 +1354,17 @@
       (art.foot ? '<path class="g-line" d="' + art.foot + '"/>' : '') +
       (art.handle ? '<path class="g-line" d="' + art.handle + '"/>' : '');
 
-    var over = a.liquid > g.liquidMax;
+    /* 上限要按"这只杯子现在的冰量"算：不加冰能倒的比满冰多得多。
+       以前这里用的是 g.liquidMax（满冰的固定值），跟上面那行显示的上限对不上。 */
+    var maxNow = liquidMaxFor(g);
+    var over = a.liquid > maxNow;
+    /* 冰按克数写出来——它直接决定化掉多少水，比"占多少体积"有用，
+       而且跟下面化水那栏算的是同一个数。 */
+    var iceGram = a.iceMass > 0 ? '（约 ' + a.iceMass + 'g 冰）' : '';
     document.getElementById('glassNote').innerHTML =
       '<b>' + esc(g.name) + '</b>　' + esc(g.note) + '<br>液体 ' + Math.round(a.liquid)
-      + ' / 上限 ' + liquidMaxFor(g) + 'ml　' + esc(lv.name)
-      + (lv.id === 'full' ? '（冰约占 ' + Math.round((1 - liquidFrac) * 100) + '% 体积）'
-         : (lv.id === 'half' ? '（冰约占 ' + Math.round(a.liquid ? 20 : 0) + '% 体积）' : ''))
-      + (over ? '　<span class="over">已经超了 ' + Math.round(a.liquid - g.liquidMax) + 'ml</span>' : '');
+      + ' / 上限 ' + maxNow + 'ml　' + esc(lv.name) + iceGram
+      + (over ? '　<span class="over">已经超了 ' + Math.round(a.liquid - maxNow) + 'ml</span>' : '');
   }
 
   /* ---------------------------------------------------------
@@ -1123,7 +1378,12 @@
   }
 
   document.addEventListener('click', function (e) {
-    var t = e.target.closest ? e.target.closest('button') : null;
+    /* 之前这里只写 closest('button')，于是所有挂在 <div> 上的点击
+       （比如"看全部"那一行）都被这一行挡掉了——点了没反应。
+       现在把带自定义属性的元素也算进来。
+       温度标签是 <span>（它嵌在"点一下展开"的那一行里，用 span 才不会互相打架），
+       所以 [data-temp] 也必须在这个选择器里，否则点温度会变成展开说明。 */
+    var t = e.target.closest ? e.target.closest('button, [data-expand], [data-temp]') : null;
     if (!t) return;
 
     if (t.dataset.cat) {
@@ -1138,6 +1398,54 @@
       renderCup();
       renderResult();
       renderLib();
+      return;
+    }
+
+    /* 点材料上的温度标签 → 冷冻 / 冷藏 / 常温 轮换。
+       同一瓶可乐，从冰箱拿和从货架拿，化出来的水能差好几倍，所以这个由你说了算。 */
+    if (t.dataset.temp) {
+      var tg = BY_ID[t.dataset.temp];
+      if (tg) {
+        var cyc = TEMP_FIXED[tg.id] ? ['hot', 'room'] : TEMP_CYCLE;
+        var now = tempIdOf(tg), at = cyc.indexOf(now);
+        var next = cyc[(at + 1) % cyc.length];
+        var fallback = TEMP[tg.id] || TEMP_DEFAULT[tg.cat] || 'room';
+        if (next === fallback) delete state.temps[tg.id];
+        else state.temps[tg.id] = next;
+        renderCup(); renderResult();
+      }
+      return;
+    }
+
+    /* 点度数改度数。注意按钮上的属性是 data-abv（不是 data-act），
+       之前判断写成了 data-act，所以这个分支永远进不来——点了没反应。 */
+    /* 点杯子里的那一行 → 展开/收起完整说明 */
+    if (t.dataset.expand) {
+      var eid = t.dataset.expand;
+      if (state.open[eid]) delete state.open[eid];
+      else state.open[eid] = 1;
+      renderCup();
+      return;
+    }
+
+    if (t.dataset.abv) {
+      var ga = BY_ID[t.dataset.abv];
+      if (ga) {
+        var curAbv = abvOf(ga);
+        var input = window.prompt('「' + ga.name + '」的酒精度是多少？\n\n'
+          + '看瓶身写的那行字，例如 47.3 或 50.5。\n'
+          + '留空、填 0，或者填一个不像度数的数字 → 恢复默认的 ' + ga.abv + '%。', curAbv);
+        if (input !== null) {
+          var num = parseFloat(input);
+          if (isFinite(num) && num > 0 && num <= 80) {
+            if (Math.abs(num - ga.abv) < 0.05) delete state.abv[ga.id];
+            else state.abv[ga.id] = num;
+          } else {
+            delete state.abv[ga.id];      /* 输错了就恢复默认，别把页面卡在一个坏值上 */
+          }
+          renderCup(); renderResult();
+        }
+      }
       return;
     }
 
@@ -1160,8 +1468,11 @@
       /* 配方自带杯型：干马天尼配马天尼杯，高球配高球杯 */
       if (p.glass) state.glass = p.glass;
       state.iceLevel = glassOf(state.glass).ice === 'inglass' ? 'full' : 'none';
+      /* 配方也自带做法：兑和 / 搅拌 / 摇和。这一步以前漏了，
+         于是点"萨泽拉克"出来的是兑和——35 度，比实际的 31 度烈。 */
+      state.method = PRESET_METHOD[p.name] || state.method;
       state.swapOpen = false;
-      renderCup(); renderResult(); renderLib(); renderGlassPick(); renderIcePick();
+      renderCup(); renderResult(); renderLib(); renderGlassPick(); renderIcePick(); renderMethodPick();
       document.getElementById('resultAnchor').scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
@@ -1198,6 +1509,12 @@
       renderSchemePick(); renderResult();
       return;
     }
+
+    if (t.dataset.method) {
+      state.method = t.dataset.method;
+      renderMethodPick(); renderResult();
+      return;
+    }
   });
 
   document.getElementById('clearBtn').addEventListener('click', function () {
@@ -1227,6 +1544,7 @@
   /* 调试 / 二次开发用：在浏览器控制台可以访问 window.BarMix */
   window.BarMix = {
     state: state, analyze: analyze, advise: advise, BY_ID: BY_ID,
+    tempIdOf: tempIdOf, tempOf: tempOf,
     scores: function () {
       var a = analyze(), sc = totalScore(a);
       return { balance: +sc.balance.toFixed(1), strength: +sc.strength.toFixed(1),
@@ -1239,6 +1557,25 @@
       (items || []).forEach(function (it) { state.cup.set(it[0], it[1]); });
       renderCup(); renderResult(); renderLib();
       return this.scores();
+    },
+    /* 跟界面上点一张经典配方卡片走同一条路：杯型、冰量、做法一起设定。
+       自检和审计都该用它，不然测出来的不是用户真正看到的那杯。 */
+    preset: function (i) {
+      var p = PRESETS[i];
+      if (!p) return null;
+      state.cup.clear();
+      p.items.forEach(function (it) { state.cup.set(it[0], it[1]); });
+      if (p.glass) state.glass = p.glass;
+      state.iceLevel = glassOf(state.glass).ice === 'inglass' ? 'full' : 'none';
+      state.method = PRESET_METHOD[p.name] || 'build';
+      renderCup(); renderResult(); renderLib();
+      return this.scores();
+    },
+    /* 温度 / 化水这条线的调试点：在控制台就能看到每一步怎么算的 */
+    melt: function () {
+      var a = analyze();
+      return { 杯里的冰: a.iceMass + 'g', 倒入即化: a.meltIce + 'ml',
+               全常温会化: a.meltRoom + 'ml', 材料温度: tempMixText(a.tempMix) };
     }
   };
 })();
