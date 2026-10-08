@@ -712,6 +712,29 @@ console.log('\n--- 操作说明（页面里有没有教怎么用）---');
   });
 })();
 
+/* ---- 统计：加了百度统计，但只能加这一个外部请求，而且本地文件不能上报 ---- */
+console.log('\n--- 访问统计 ---');
+(function () {
+  const html = fs.readFileSync(path.join(dir, 'dev.html'), 'utf8');
+  const id = html.match(/hm\.baidu\.com\/hm\.js\?([0-9a-f]{32})/);
+  console.log('  ' + (id ? '✅' : '❌') + ' dev.html 里有百度统计代码' + (id ? '（ID ' + id[1].slice(0, 8) + '…）' : ''));
+  if (!id) bad('统计', 'dev.html 里没有百度统计代码');
+
+  const guard = /location\.protocol/.test(html) && /document\.createElement/.test(html);
+  console.log('  ' + (guard ? '✅' : '❌') + ' 只在 http(s) 下上报：本地双击打开的 html 不计入访问量');
+  if (!guard) bad('统计', '统计代码没有做协议判断，本地文件也会上报');
+
+  /* 页面里说的和 README 里写的不能互相矛盾 */
+  const readme = fs.readFileSync(path.join(dir, 'README.md'), 'utf8');
+  const okReadme = readme.indexOf('不收集任何数据') < 0 && readme.indexOf('百度统计') >= 0;
+  console.log('  ' + (okReadme ? '✅' : '❌') + ' README 不再声称"不收集任何数据"，并说明了统计范围');
+  if (!okReadme) bad('统计', 'README 和实际行为对不上：要么还写着不收集数据，要么没提统计');
+
+  const told = /百度统计/.test(html) && /调了什么酒/.test(html);
+  console.log('  ' + (told ? '✅' : '❌') + ' 页面自己也说明了：只统计访问量，不记录调了什么');
+  if (!told) bad('统计', '页面里没有告诉用户这件事');
+})();
+
 console.log('\n================ 自检结果 ================');
 if (PROBLEMS.length) {
   console.log('❌ ' + PROBLEMS.length + ' 项没通过：');

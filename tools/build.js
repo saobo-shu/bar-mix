@@ -64,7 +64,16 @@ console.log('  大小 ' + kb(html) + ' KB　（原始四个文件合计 '
   + kb(css + dataJs + appJs) + ' KB）');
 console.log('  <script> ' + scripts + ' 个，</script> ' + closes + ' 个' + (scripts === closes ? '　配平 ✓' : '　⚠ 不配平'));
 console.log('  残留的本地文件引用：' + (leftovers.length ? leftovers.join('、') + ' ⚠' : '无 ✓'));
-console.log('  外部网络请求：' + (/https?:\/\//.test(html.replace(/og:|w3\.org/g, '')) ? '有 ⚠' : '无 ✓（双击就能用，完全离线）'));
+/* 外部请求：只允许百度统计那一处（文件里其它 http 都是 XML 命名空间之类的死字符串）。
+   统计脚本只在 http(s) 下加载，而且是动态插入的——它挂了或者断网，页面照常跑。 */
+const extUrls = (html.replace(/w3\.org/g, '')
+  .match(/https?:\/\/[^"'\s)]+/g) || []).filter(u => u.indexOf('https://hm.baidu.com/hm.js?') !== 0);
+console.log('  外部网络请求：' + (extUrls.length
+  ? extUrls.join('、') + ' ⚠'
+  : '只有百度统计 1 处（hm.baidu.com）✓　离线时它加载失败，页面照常跑'));
+console.log('  统计代码：' + (/hm\.baidu\.com\/hm\.js\?[0-9a-f]{32}/.test(html)
+  ? '自带（ID ' + html.match(/hm\.js\?([0-9a-f]{32})/)[1].slice(0, 8) + '…）✓'
+  : '没有 ⚠'));
 
 /* ---------------- 真的跑一遍：把内联脚本抽出来执行 ---------------- */
 const blocks = Array.from(html.matchAll(/<script>([\s\S]*?)<\/script>/g)).map(m => m[1]);

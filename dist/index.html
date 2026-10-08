@@ -9,6 +9,22 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="调酒台">
+<!-- 百度统计：只看访问量（多少人来了、从哪来、什么设备）。
+     你调了什么酒、选了哪些材料都不会被上报——那些只在你自己浏览器里算。
+     本地双击打开的 html 文件不上报（file:// 直接跳过），所以统计到的是"网站"的访问，
+     跟发给别人离线看的那个文件不是一回事。
+     ID 在百度统计 → 网站列表 → 获取代码 里能查到。 -->
+<script>
+if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '') && document.createElement) {
+  var _hmt = _hmt || [];
+  (function () {
+    var hm = document.createElement('script');
+    hm.src = 'https://hm.baidu.com/hm.js?04efcc48b36fb760fb90c123509c9480';
+    var s = document.getElementsByTagName('script')[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+}
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%23efe7d8%22%2F%3E%3Cpath%20d%3D%22M18%2014%20L22%2052%20L42%2052%20L46%2014%22%20fill%3D%22none%22%20stroke%3D%22%233b3229%22%20stroke-width%3D%224%22%20stroke-linejoin%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2228%22%20cy%3D%2238%22%20r%3D%224%22%20fill%3D%22%23d9782e%22%2F%3E%3Ccircle%20cx%3D%2237%22%20cy%3D%2232%22%20r%3D%224%22%20fill%3D%22%236b4322%22%2F%3E%3Cpolygon%20points%3D%2233%2C44%2038%2C49%2033%2C54%2028%2C49%22%20fill%3D%22%23ffffff%22%20stroke%3D%22%233b3229%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -565,6 +581,7 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
             <li>杯子里<b>只有一样酒</b>（比如纯饮一杯威士忌）时不评分，只描述味道——"这杯好不好"不是这个工具能回答的。</li>
             <li>杯子装不下只是提醒，不扣分：你手上那只杯子可能比标称的大，自己判断。</li>
             <li>手机上可以「添加到主屏幕」，打开是全屏、没地址栏，断网也能用。</li>
+            <li>这个页面用<b>百度统计</b>看匿名访问量（多少人来了、从哪来、用什么设备）。你调了什么酒、放了哪些材料都不会被记录——那些只在你自己的浏览器里算。</li>
           </ul>
         </div>
       </details>
