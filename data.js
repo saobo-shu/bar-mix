@@ -218,6 +218,9 @@ var INGREDIENTS = [
   { id:'jiangxiaobai', cat:'otherbase', name:'江小白（清香型白酒）', unit:'ml', mlu:1, def:30, step:5, abv:40, src:'rt',
     f:{sugar:2,acid:0.3,bitter:1.5,booze:9,fruit:1,spice:3,fizz:0,body:4},
     note:'清香型白酒，比浓香型干净、好入口，也有不少人拿它当基酒调。配柠檬和气泡水意外地不错。' },
+  { id:'aquavit', cat:'otherbase', name:'阿夸维特 Aquavit', unit:'ml', mlu:1, def:45, step:5, abv:40, src:'web',
+    f:{sugar:1,acid:0.2,bitter:1.5,booze:9,fruit:0.5,spice:7,fizz:0,body:3},
+    note:'北欧的葛缕子、莳萝风味烈酒，40 度。冰镇纯饮是它的主场，也能替金酒做更"草本"的鸡尾酒。网购能买到小瓶。' },
 
   /* ---------------- 利口酒 ---------------- */
   { id:'cointreau', cat:'liqueur', name:'君度橙酒', unit:'ml', mlu:1, def:15, step:5, abv:40, src:'web',
@@ -352,6 +355,34 @@ var INGREDIENTS = [
   { id:'olive_brine', cat:'liqueur', name:'橄榄汁（腌橄榄的盐水）', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
     f:{sugar:0,acid:1,bitter:2,booze:0,fruit:0,spice:3,fizz:0,body:1},
     note:'就是腌橄榄罐里那点盐水，脏马天尼必需。5-15ml 就够咸，别多。' },
+  /* 下面这些是照着 191 份参考配方补的：都是经典鸡尾酒里点到名、但库里原来没有的 */
+  { id:'cocchi', cat:'liqueur', name:'好奇美国佬（Cocchi Americano）', unit:'ml', mlu:1, def:30, step:5, abv:16.5, src:'web',
+    f:{sugar:5,acid:1.2,bitter:4,booze:2,fruit:5,spice:4,fizz:0,body:3},
+    note:'意大利开胃酒，白葡萄酒底、带奎宁的微苦和橙花味，16.5 度。竹子、僵尸都点它的名。买不到用利莱白顶，味道更淡一点。开瓶后冷藏，2-4 周喝完。' },
+  { id:'falernum', cat:'liqueur', name:'法勒纳姆 Falernum', unit:'ml', mlu:1, def:15, step:5, abv:11, src:'web',
+    f:{sugar:8,acid:1,bitter:1,booze:2,fruit:3,spice:7,fizz:0,body:3},
+    note:'加勒比的糖浆酒：丁香、杏仁、青柠。僵尸、玉米油这类热带酒要用。买不到可以自己泡——丁香+杏仁+糖+青柠皮丢进朗姆里放两周。' },
+  { id:'picon', cat:'liqueur', name:'Amer Picon（橙皮苦酒）', unit:'ml', mlu:1, def:15, step:5, abv:18, src:'web',
+    f:{sugar:5,acid:1,bitter:7,booze:3,fruit:3,spice:4,fizz:0,body:3},
+    note:'法国橙皮苦酒，苦甜、带橙酱味。布鲁克林是它的代表作。买不到就用金巴利加一条橙皮的皮油顶，会更苦更红。' },
+  { id:'montenegro', cat:'liqueur', name:'蒙特内罗 Amaro Montenegro', unit:'ml', mlu:1, def:30, step:5, abv:23, src:'web',
+    f:{sugar:6,acid:0.5,bitter:6,booze:4,fruit:3,spice:6,fizz:0,body:4},
+    note:'意大利阿马罗里最温和的一位，橙皮、玫瑰、香草都有，23 度。加苏打水和一条橙皮就是一杯；也能替诺尼诺。' },
+  { id:'aveze', cat:'liqueur', name:'雅梵娜 Avèze（龙胆草）', unit:'ml', mlu:1, def:30, step:5, abv:20, src:'web',
+    f:{sugar:4,acid:0.3,bitter:6,booze:3,fruit:1,spice:5,fizz:0,body:3},
+    note:'法国龙胆草利口酒，苦、草本、带一点甜，像低度版的阿马罗。做苏姿、金巴利那一类清爽苦酒时能互换。' },
+  { id:'soco', cat:'liqueur', name:'金馥 Southern Comfort', unit:'ml', mlu:1, def:30, step:5, abv:35, src:'rt',
+    f:{sugar:7,acid:0.8,bitter:0.5,booze:5,fruit:5,spice:3,fizz:0,body:4},
+    note:'美国南方的威士忌甜酒（桃子+香料），35 度。单兑可乐或柠檬水就能喝；各国版本度数不一样，以瓶身为准。' },
+  { id:'fireball', cat:'liqueur', name:'火龙肉桂 Fireball', unit:'ml', mlu:1, def:30, step:5, abv:33, src:'rt',
+    f:{sugar:8,acid:0.2,bitter:0.5,booze:6,fruit:1,spice:8,fizz:0,body:3},
+    note:'肉桂威士忌利口酒，甜得像糖水但有 33 度。兑苹果汁、或者加进热苹果酒里，冬天一杯就够。' },
+  { id:'mrblack', cat:'liqueur', name:'黑先生咖啡利口酒 Mr Black', unit:'ml', mlu:1, def:15, step:5, abv:34, src:'web',
+    f:{sugar:5,acid:0.6,bitter:5,booze:5,fruit:1,spice:5,fizz:0,body:4},
+    note:'比甘露度数高、糖更少、咖啡味更真，意式浓缩马天尼指定用它。国内网购能买到。' },
+  { id:'grapefruit_liqueur', cat:'liqueur', name:'西柚利口酒', unit:'ml', mlu:1, def:15, step:5, abv:20, src:'web',
+    f:{sugar:7,acid:1.5,bitter:2,booze:3,fruit:8,spice:1,fizz:0,body:3},
+    note:'西柚味利口酒（Giffard 那类），酸甜偏苦。用西柚汁+一点糖浆也能顶，但香气回不来。' },
   /* 加强酒和葡萄酒：酒吧常用，但都怕氧化 */
   { id:'fino', cat:'wine', name:'干雪莉酒（Fino）', unit:'ml', mlu:1, def:60, step:5, abv:15, src:'web',
     f:{sugar:1,acid:3,bitter:3,booze:2,fruit:3,spice:5,fizz:0,body:3},
@@ -518,6 +549,9 @@ var INGREDIENTS = [
   { id:'cream', cat:'dairy', name:'淡奶油', unit:'ml', mlu:1, def:20, step:5, abv:0, src:'rt',
     f:{sugar:3,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:0,body:10},
     note:'沿勺背浮在表层，一口奶一口酒。' },
+  { id:'butter', cat:'dairy', name:'黄油（一小块）', unit:'g', mlu:1, def:15, step:5, abv:0, src:'rt',
+    f:{sugar:0,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:0,body:10},
+    note:'热黄油朗姆的灵魂。切一小块丢进热酒里搅到化开，甜香立刻起来。住处买最小块、冷藏，用不完抹面包。' },
   { id:'coconut_milk', cat:'dairy', name:'椰浆', unit:'ml', mlu:1, def:30, step:5, abv:0, src:'rt',
     f:{sugar:4,acid:0,bitter:0,booze:0,fruit:3,spice:0,fizz:0,body:9},
     note:'很浓郁，容易腻，需要一点酸或盐来救。' },
@@ -583,6 +617,9 @@ var INGREDIENTS = [
   { id:'tabasco', cat:'bitter', name:'辣椒仔', unit:'滴', mlu:0.05, def:2, step:1, abv:0, src:'rt',
     f:{sugar:0.2,acid:2,bitter:1,booze:0,fruit:0,spice:9,fizz:0,body:0},
     note:'血腥玛丽类用，两三滴就有明显的辣。' },
+  { id:'worcestershire', cat:'bitter', name:'李派林喼汁（辣酱油）', unit:'滴', mlu:0.05, def:3, step:1, abv:0, src:'rt',
+    f:{sugar:1,acid:2,bitter:1.5,booze:0,fruit:0,spice:4,fizz:0,body:1},
+    note:'英式辣酱油，血腥玛丽的灵魂——没有它那杯就只是番茄汁。常温能放很久，一瓶用一年，住处请放心囤。' },
   { id:'salt_water', cat:'bitter', name:'盐水（几滴）', unit:'滴', mlu:0.05, def:3, step:1, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:1,booze:0,fruit:0,spice:2,fizz:0,body:0},
     note:'1 克盐 + 9 毫升水。三滴就能把酸和果味「顶」出来，喝的人会以为你换了配方。' },
@@ -609,6 +646,15 @@ var INGREDIENTS = [
   { id:'egg_white', cat:'garnish', name:'蛋清', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:1,body:9},
     note:'先干摇 15 秒再加冰摇，泡沫才立得起来。鸡蛋就够用了。' },
+  { id:'egg_yolk', cat:'garnish', name:'蛋黄', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
+    f:{sugar:0,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:0,body:10},
+    note:'蛋清给泡沫，蛋黄给厚度和奶香（Flip 类酒）。用了蛋黄那杯不用再加奶；剩下的蛋清可以做蛋白霜。' },
+  { id:'raspberry', cat:'garnish', name:'树莓（鲜果）', unit:'颗', mlu:0, def:3, step:1, abv:0, src:'web',
+    f:{sugar:3,acid:3,bitter:0,booze:0,fruit:7,spice:0,fizz:0,body:1},
+    note:'三叶草俱乐部这类酒要几颗捣碎。鲜树莓不好买也容易坏——用现成的树莓糖浆代替更实际。' },
+  { id:'green_grape', cat:'garnish', name:'青提（5 颗）', unit:'颗', mlu:0, def:5, step:1, abv:0, src:'rt',
+    f:{sugar:3,acid:1,bitter:0,booze:0,fruit:6,spice:0,fizz:0,body:1},
+    note:'恩佐尼里要捣碎的绿葡萄。买一小串，用不完当水果吃；捣轻一点，葡萄皮会发苦。' },
 
     /* 冰不再是材料：它由你选的杯子决定——
        冰杯 / 高球杯 / 古典杯 / 飓风杯自带冰，马天尼杯和一口杯没有。
@@ -802,6 +848,20 @@ var STORE = {
   cucumber: { lv: 'bad', risk: 2, text: '切开的黄瓜当天用完。' },
   cherry: { lv: 'mid', risk: 1, text: '糖渍樱桃开罐后冷藏最好；住处买小罐，2-3 周内用完。' },
   egg_white: { lv: 'bad', risk: 2, text: '蛋清当天用完，别留。剩下的蛋黄正好拿去炒个蛋。' }
+  , egg_yolk: { lv: 'bad', risk: 2, text: '蛋黄当天用完。剩下的蛋清可以打成蛋白霜，或者第二天做蛋白饼。' }
+  , raspberry: { lv: 'bad', risk: 2, text: '鲜树莓买回来 1-2 天内用完，压坏了就发霉。用它不如用树莓糖浆实在。' }
+  , green_grape: { lv: 'bad', risk: 2, text: '一小串放阴凉处能撑 3-5 天，洗过的一定要当天吃完。' }
+  , butter: { lv: 'bad', risk: 2, text: '开封后必须冷藏，一周内用完。住处买最小块，剩下的抹面包。' }
+  , worcestershire: { lv: 'ok', risk: 0, text: '常温阴凉处放一两年都不会坏——血腥玛丽住户最省心的一样。' }
+  , cocchi: { lv: 'bad', risk: 2, text: '开瓶后必须冷藏，2-4 周内喝完（和味美思一样怕氧化）。没冰箱就买 375ml，一次用完。' }
+  , falernum: { lv: 'mid', risk: 1, text: '11 度含糖，未开封常温；开封后阴凉避光 3-6 个月，冷藏更久。' }
+  , mrblack: { lv: 'ok', risk: 1, text: '34 度、糖少，开封后避光能放 1 年以上（比甘露耐放）。' }
+  , soco: { lv: 'ok', risk: 0, text: '35 度，未开封常温；开封后盖紧避光，一年内味道最完整。' }
+  , fireball: { lv: 'ok', risk: 0, text: '33 度，常温放着就行，不怕坏。' }
+  , picon: { lv: 'mid', risk: 1, text: '18 度，开封后避光 2-3 个月，冷藏更久。' }
+  , montenegro: { lv: 'mid', risk: 1, text: '23 度，开封后常温避光 3-6 个月，冷藏更久。' }
+  , aveze: { lv: 'mid', risk: 1, text: '20 度，开封后避光 3-6 个月。' }
+  , grapefruit_liqueur: { lv: 'mid', risk: 1, text: '20 度含糖，开封后避光 3-6 个月。' }
 };
 
 var RISK_LABEL = { 0: '放心买', 1: '注意', 2: '高风险' };
