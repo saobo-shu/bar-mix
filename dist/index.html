@@ -544,6 +544,7 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
             <li><b>「常温」＝ 温度。</b>点一下在 <b>冷冻 -18℃ → 冷藏 5℃ → 常温 25℃</b> 之间轮换，点满一圈回到默认。
               同一瓶可乐，从冰箱拿还是从货架拿，能把杯子里的冰化出好几倍的水——这一步直接决定你这杯最后有多浓。
               摇和、搅拌的也一样：材料越凉，摇壶里的冰化得越少，加进去的水就越少。
+              烈酒向的酒（马天尼、古典）尤其明显：酒吧会把基酒整瓶放冷冻室，同样搅二十秒，加进去的水少一半——结构分里也算这一条。
               热水这类材料只在「热 / 常温」之间换；装饰（柠檬皮、薄荷叶）和按滴算的苦精不占体积，所以没有温度标签。</li>
             <li><b>「40%」＝ 酒精度。</b>点一下改成<b>你瓶子上印的数字</b>。同一款酒各国版本度数不一样
               （哥顿 37.5 / 40、添加利 47.3、美格 46 是产品名不是度数），算浓度和评分都按你填的算。</li>
@@ -2111,6 +2112,8 @@ var BASE_GROUPS = [
     var acidLoad = 0, enzymes = [], dairyName = '';
     /* 每样材料的温度，用来算冰化掉多少（见 meltFrom） */
     var parts = [], tempMix = { frozen: 0, cold: 0, room: 0, hot: 0 };
+    /* 谁是这杯的"主心骨"（贡献酒精最多的那样）——用来判断"基酒是不是冷冻的" */
+    var baseG = null, baseAlc = 0;
 
     state.cup.forEach(function (amt, id) {
       var g = BY_ID[id];
@@ -2122,6 +2125,7 @@ var BASE_GROUPS = [
       if (ml > 0) liquid += ml;
       if (ml > 0) acidLoad += ml * acidPerMl(phOf(g));
       if (g.abv) alcoholMl += ml * abvOf(g) / 100;
+      if (g.abv && ml * abvOf(g) > baseAlc) { baseAlc = ml * abvOf(g); baseG = g; }
       if (g.ice) hasIce = true;
       if (isBase(g)) { hasBase = true; nBase++; baseMl += ml; }
       else if (!g.ice) nOthers++;
@@ -2182,6 +2186,15 @@ var BASE_GROUPS = [
     var dilBase = methodOf(state.method).dil;
     var qRatio = qRoom > 0 ? clamp(qNow / qRoom, 0.45, 1) : 1;
     var prepDil = (neatPour || isHot) ? 0 : liquid * dilBase * qRatio;
+    /* 材料全是常温时摇壶要加多少水——用来对比"换成冷冻基酒能少加多少" */
+    var prepDilRoom = (neatPour || isHot) ? 0 : liquid * dilBase;
+
+    /* 材料平均"冷量"：0 = 全是常温 25℃，1 = 全都冻透了 -18℃。
+       冷藏 5℃ 大约是 0.47。这是百分比，不是温度——
+       它用来给结构分里"这杯端出来够不够冰"那一点打分（见 scoreStructure）。 */
+    var coldSum = 0, coldVol = 0;
+    parts.forEach(function (p) { coldSum += p.ml * (25 - p.c); coldVol += p.ml; });
+    var cold = coldVol > 0 ? clamp(coldSum / (coldVol * 43), 0, 1) : 0;
 
     var meltIce = prepDil > 0 ? 0 : meltFrom(qNow, iceMass);
     var meltRoom = prepDil > 0 ? 0 : meltFrom(qRoom, iceMass);
@@ -2225,7 +2238,8 @@ var BASE_GROUPS = [
       /* 温度那条线的产物：杯里有多少克冰、倒进去就化了多少水、
          以及"如果材料全是常温的"会化多少（用来对比，不参与打分） */
       iceMass: iceMass, meltIce: meltIce, meltRoom: meltRoom, tempMix: tempMix,
-      prepDil: prepDil, parts: parts,
+      prepDil: prepDil, prepDilRoom: prepDilRoom, parts: parts,
+      cold: cold, baseTemp: baseG ? tempIdOf(baseG) : '', baseName: baseG ? baseG.name : '',
       /* 纯饮：杯里只有一样含酒精的东西（加不加冰都算），没有任何配料。
          不限定"必须是基酒"——单喝金巴利、单喝咖啡利口酒同样是纯饮。 */
       neatPour: neatPour, singleSoft: singleSoft, singleName: singleName
@@ -2474,6 +2488,16 @@ var BASE_GROUPS = [
     return '你的口味：' + t.name + '（' + t.lo + '-' + t.hi + '%）· 你这杯 ' + a.abv.toFixed(1) + '%　' + pos;
   }
 
+  /* 给结构那一栏用的一句话：材料到底够不够冰 */
+  function coldLabel(a) {
+    if (!a.hasBase) return '没有酒';
+    var t = a.baseTemp === 'frozen' ? '基酒冷冻'
+      : (a.baseTemp === 'cold' ? '基酒冷藏' : '基酒常温');
+    if (a.cold >= 0.55) return '材料够冰（' + t + '）';
+    if (a.cold >= 0.2) return '材料偏凉（' + t + '）';
+    return t + ' · 冰得不够';
+  }
+
   function scoreStrength(a) {
     if (!a.hasBase) return 76;
     var t = tasteBand(a.taste), abv = a.abv;
@@ -2488,9 +2512,14 @@ var BASE_GROUPS = [
        容量（装不装得下）不参与打分——杯子容量只是个大概值，
        你手上那只可能比标称的大，所以只在建议栏提醒。 */
     var s = 34;
-    /* ① 温度（40）：冰在杯里 / 冰镇滤掉都算冰的；选了不放冰扣一点，但不清零 */
-    if (a.isHot || a.hasIce) s += 40;
-    else if (g.ice === 'chilled') s += 36;
+    /* ① 温度（40）：34 分打底（有冰就算数），剩下 6 分看"材料够不够冰"。
+
+       为什么要管材料温度：马天尼、古典这类酒，酒吧会把基酒整瓶放冷冻室。
+       同样搅二十秒，冷冻的基酒化出来的水少一大截，入口更利落、香气更收得住。
+       这件事分值故意给得小（最多 6 分 × 结构权重 22% ≈ 总分 1.3 分）——
+       平衡永远是最大权重，温度不该盖过它。真正让用户看懂的是化水那栏的数字和建议里那句话。 */
+    if (a.isHot) s += 40;
+    else if (a.hasIce || g.ice === 'chilled') s += 34 + 6 * (a.cold || 0);
     else s += 22;
     /* ② 气泡（26）：长饮该有；短饮本来就不该有，不扣分 */
     var wantsFizz = a.liquid > 130 || a.abv < 13;
@@ -2575,6 +2604,18 @@ var BASE_GROUPS = [
       add(74, 'tip', '这杯只化掉约 ' + a.meltIce + 'ml 冰（' + tempMixText(a.tempMix)
         + '）。材料全放常温的话会化掉 ' + a.meltRoom + 'ml——基酒放冷冻、饮料买冷藏的，'
         + '就是少掉这 ' + (a.meltRoom - a.meltIce) + 'ml 水的办法。');
+
+    /* 基酒的温度：马天尼、古典这类烈酒向的酒，酒吧会把基酒整瓶放冷冻 */
+    if (!a.isHot && !a.neatPour && a.hasBase && a.abv >= 20 && a.baseTemp === 'room'
+        && (a.hasIce || glassOf(state.glass).ice === 'chilled'))
+      add(90, 'tip', '「' + a.baseName + '」现在是常温的。马天尼、古典这类烈酒向的酒，'
+        + '酒吧会把基酒整瓶放冷冻室：同样搅二十秒，冷冻基酒化出来的水少一大截，'
+        + '入口更利落、香气也更收得住。把这一行的温度标签点到「冷冻」就能看到差别'
+        + '（结构分里也算这一条）。');
+    else if (!a.neatPour && a.baseTemp === 'frozen' && a.abv >= 20 && a.prepDilRoom > 0)
+      add(60, 'ok', '基酒是冷冻的：这杯摇壶里只加了约 ' + Math.round(a.prepDil)
+        + 'ml 水，而常温基酒要加约 ' + Math.round(a.prepDilRoom)
+        + 'ml。少掉的这些水就是酒吧把基酒放冷冻的原因——更烈、但不呛。');
 
     /* 滤冰的杯子配兑和：这一步物理上不成立 */
     if (state.method === 'build' && glassOf(state.glass).ice === 'chilled' && !a.isHot && a.nItems >= 2)
@@ -2944,7 +2985,8 @@ var BASE_GROUPS = [
         + (a.hasIce ? iceLevelOf(state.iceLevel).name
            : (glassOf(state.glass).ice === 'chilled' ? '冰镇·滤掉冰' : '没放冰')) + ' · '
         + (a.hasFizzIng ? '有气泡' : '没有气泡') + ' · ' + glassOf(state.glass).name + ' 液体 '
-        + Math.round(a.liquid) + '/' + liquidMaxFor(glassOf(state.glass)) + 'ml') +
+        + Math.round(a.liquid) + '/' + liquidMaxFor(glassOf(state.glass)) + 'ml'
+        + (a.isHot ? '' : ' · ' + coldLabel(a))) +
       bar('浓度', st, '权重 ' + pc(w.strength) + '　' + strengthCaption(a));
 
     /* 主导风味 */

@@ -473,6 +473,47 @@ console.log('\n--- 改温度要真的有反应 ---');
     + room.abv.toFixed(1) + '% → ' + frozen.abv.toFixed(1) + '%');
   if (!ok2) bad('温度', '摇和时改温度没有影响加水量');
   B.state.temps = {};
+
+  /* 冷量：0 = 全常温，1 = 全冻透。这个数决定结构分里"够不够冰"那一项 */
+  function coldOf(items, temps) {
+    B.state.temps = temps || {};
+    B.load(items);
+    return B.analyze().cold;
+  }
+  const ginT = [['tanqueray', 45], ['tonic', 120]];
+  const c0 = coldOf(ginT, { tanqueray: 'room', tonic: 'room' });
+  const c1 = coldOf(ginT, { tanqueray: 'frozen', tonic: 'frozen' });
+  const ok3 = c0 < 0.05 && c1 > 0.95;
+  console.log('  ' + (ok3 ? '✅' : '❌') + ' 冷量：全常温 ' + c0.toFixed(2) + '，全冷冻 ' + c1.toFixed(2));
+  if (!ok3) bad('温度', '冷量算错了：' + c0.toFixed(2) + ' / ' + c1.toFixed(2));
+  B.state.temps = {};
+})();
+
+/* ---- 冷冻基酒做烈酒向的酒，必须真的更好（结构分 + 加水更少）---- */
+console.log('\n--- 冷冻基酒 vs 常温基酒（马天尼）---');
+(function () {
+  const mj = [['tanqueray', 60], ['dry_vermouth', 10], ['orange_bitters', 1]];
+  function martini(temps) {
+    B.state.glass = 'coupe'; B.state.iceLevel = 'none'; B.state.method = 'stir';
+    B.state.taste = 'strong'; B.state.scheme = 'balanced'; B.state.temps = temps;
+    B.load(mj);
+    const a = B.analyze(), s = B.scores();
+    return { a: a, s: s, tips: B.advise(a).map(function (x) { return x.text; }).join(' ') };
+  }
+  const room = martini({});
+  const froz = martini({ tanqueray: 'frozen' });
+  console.log('  常温金酒：加水 ' + Math.round(room.a.prepDil) + 'ml　' + room.a.abv.toFixed(1)
+    + '%　结构 ' + room.s.structure.toFixed(0) + '　总分 ' + room.s.total.toFixed(1));
+  console.log('  冷冻金酒：加水 ' + Math.round(froz.a.prepDil) + 'ml　' + froz.a.abv.toFixed(1)
+    + '%　结构 ' + froz.s.structure.toFixed(0) + '　总分 ' + froz.s.total.toFixed(1));
+  const ok = froz.a.prepDil < room.a.prepDil - 3 && froz.s.structure > room.s.structure
+    && froz.s.total > room.s.total;
+  console.log('  ' + (ok ? '✅' : '❌') + ' 冷冻基酒：加水更少，结构分和总分都更高');
+  if (!ok) bad('温度', '冷冻基酒没有体现出优势');
+  const told = /冷冻/.test(room.tips) && /冷冻/.test(froz.tips);
+  console.log('  ' + (told ? '✅' : '❌') + ' 两种情况都有一句话解释这件事');
+  if (!told) bad('温度', '建议里没解释基酒温度这件事');
+  B.state.temps = {};
 })();
 
 /* ---- 这次补的材料：查得到、度数是规规矩矩的 ---- */
