@@ -20,6 +20,7 @@ global.document = {
 };
 
 const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
+  fs.readFileSync(path.join(dir, 'ref-recipes.js'), 'utf8') + '\n' +
   fs.readFileSync(path.join(dir, 'app.js'), 'utf8') + '\n' +
   'global.__X = { PRESETS: PRESETS, INGREDIENTS: INGREDIENTS, GLASSES: GLASSES,' +
   ' TASTES: TASTES, ICE_LEVELS: ICE_LEVELS, PRESET_METHOD: PRESET_METHOD, TEMPS: TEMPS };';

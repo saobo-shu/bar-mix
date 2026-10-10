@@ -197,7 +197,11 @@
          以手上那瓶为准，所以允许覆盖。 */
       abv: {},
       /* 杯子里哪几行说明展开了（点一下切换） */
-      open: {}
+      open: {},
+      /* ④ 手边有什么：勾了的材料（id → 1）、以及最近一次是从哪条参考配方装进来的 */
+      have: {},
+      refName: '',
+      refMiss: []
     };
 
   /* ---------------------------------------------------------
@@ -1205,6 +1209,18 @@
 
     /* 这杯酒最后是什么构成的 */
     renderMixBar(a);
+
+    /* 这一杯是不是从「④ 手边有什么」点进来的：写清来源和还缺什么 */
+    var refBox = document.getElementById('refNote');
+    if (refBox) {
+      refBox.innerHTML = state.refName
+        ? '这一杯来自 <b>「' + esc(state.refName) + '」</b>（在 ④ 手边有什么 里点的）。'
+          + (state.refMiss.length
+              ? '还缺：<b>' + state.refMiss.map(esc).join('、')
+                + '</b>　杯子里的量按标准配方装好了，缺的那几样记得补。'
+              : '材料齐了，照这个做就行。')
+        : '';
+    }
   }
 
   function statBox(label, val) {
@@ -1300,10 +1316,230 @@
       }).join('');
   }
 
+  /* =========================================================
+     ④ 手边有什么 → 现在能做什么
+
+     反向查：勾上你手上有的酒和材料，算出 191 份参考配方里
+     哪些现在就能做、哪些还差一两样。
+     材料名到本库的对照表在 tools/build-ref-index.js，生成 ref-recipes.js。
+     ========================================================= */
+  var HAVE_KEY = 'barmix.have.v1';
+  var haveQuery = '';
+  var haveOpen = {};          /* 哪一组展开了（默认每组只画前 8 条） */
+  var HAVE_SHOW = 8;
+
+  /* 参考数据里写的杯型 → 本库的杯子 */
+  var REF_GLASS = [
+    [/马天尼杯|coupe|香槟杯|玛格丽特杯|尼克诺拉|红酒杯|葡萄酒杯/i, 'coupe'],
+    [/古典杯|rock|白兰地杯|铜杯|朱丽普/i, 'rocks'],
+    [/柯林杯|高球杯|莫吉托杯|酒杯/i, 'highball'],
+    [/TIKI|飓风/i, 'hurricane'],
+    [/利口酒杯|一口杯|子弹/i, 'shot'],
+    [/马克杯|爱尔兰咖啡|陶杯/i, 'mug'],
+    [/冰杯/i, 'icecup']
+  ];
+  function glassFromRef(r) {
+    var s = String(r.glass || '');
+    for (var i = 0; i < REF_GLASS.length; i++) if (REF_GLASS[i][0].test(s)) return REF_GLASS[i][1];
+    /* 没写杯型就按"要不要滤冰"猜一个 */
+    if (/无冰/.test(r.ice || '') && (r.method === 'stir' || r.method === 'shake')) return 'coupe';
+    return 'highball';
+  }
+  function methodFromRef(m) {
+    if (m === 'shake' || m === 'blended') return 'shake';
+    if (m === 'stir' || m === 'rolling') return 'stir';
+    return 'build';        /* build / smash / 没写 */
+  }
+  /* "45ml / 2dash / 3片 / 一个 / 15g" → 数字。单位对不上就用材料的默认量 */
+  function parseAmount(txt, g) {
+    var s = String(txt || '');
+    var m = s.match(/(\d+(?:\.\d+)?)/);
+    var n = m ? parseFloat(m[1]) : NaN;
+    var u = g.unit;
+    if (u === 'ml') {
+      if (n && /cl\b/.test(s)) return n * 10;
+      if (n && /(oz|盎司)/.test(s)) return n * 30;
+      if (n && /(ml|毫升)/.test(s)) return n;
+      return g.def;
+    }
+    if (u === '滴') return (n && /(dash|滴)/i.test(s)) ? n : g.def;
+    if (u === '片') return (n && /(片|条)/.test(s)) ? n : g.def;
+    if (u === '颗') return (n && /(颗|粒|个)/.test(s)) ? n : g.def;
+    if (u === 'g') return (n && /(g|克)/.test(s)) ? n : g.def;
+    return g.def;
+  }
+  /* 需求指向哪瓶材料——给"用 XX 代替"那句话用 */
+  function nameOfNeed(need) {
+    if (need.id && BY_ID[need.id]) return BY_ID[need.id].name.replace(/（.*?）/g, '');
+    if (need.ids && BY_ID[need.ids[0]]) return BY_ID[need.ids[0]].name.replace(/（.*?）/g, '');
+    if (need.cat) return '同类材料';
+    return '同类材料';
+  }
+
+  /* 勾选状态存在本地，下次打开还在 */
+  function loadHave() {
+    try {
+      var s = window.localStorage && window.localStorage.getItem(HAVE_KEY);
+      if (s) JSON.parse(s).forEach(function (id) { if (BY_ID[id]) state.have[id] = 1; });
+    } catch (e) { /* 无痕模式 / 本地文件用不了存储，不勾也一样能玩 */ }
+  }
+  function saveHave() {
+    try {
+      if (window.localStorage) window.localStorage.setItem(HAVE_KEY, JSON.stringify(Object.keys(state.have)));
+    } catch (e) {}
+  }
+
+  /* 这条需求，勾了的材料能不能满足 */
+  function needOk(need) {
+    var mine = Object.keys(state.have);
+    if (need.cat) return mine.some(function (id) { return BY_ID[id] && BY_ID[id].cat === need.cat; });
+    if (need.id) return !!state.have[need.id];
+    if (need.ids) return need.ids.some(function (id) { return !!state.have[id]; });
+    return true;      /* pantry：冰、水、盐这类默认算有 */
+  }
+  function missingOf(r) {
+    return (r.needs || []).filter(function (nd) {
+      return !nd.need.optional && !needOk(nd.need);
+    });
+  }
+
+  function renderHaveList() {
+    var box = document.getElementById('haveList');
+    if (!box) return;
+    var q = haveQuery.trim().toLowerCase();
+    var html = '';
+    CATS.forEach(function (c) {
+      var list = INGREDIENTS.filter(function (g) {
+        if (g.cat !== c.id) return false;
+        if (!q) return true;
+        return (g.name + ' ' + g.id).toLowerCase().indexOf(q) >= 0;
+      });
+      if (!list.length) return;
+      html += '<div class="havegroup">' + esc(c.name) + '<span>' + list.length + ' 样</span></div>';
+      html += list.map(function (g) {
+        var on = state.have[g.id] ? ' on' : '';
+        return '<button type="button" class="haverow' + on + '" data-have="' + g.id
+          + '" aria-pressed="' + (on ? 'true' : 'false') + '">'
+          + '<span class="hv-name">' + esc(g.name) + '</span>'
+          + '<span class="hv-tick">' + (on ? '✓' : '') + '</span></button>';
+      }).join('');
+    });
+    box.innerHTML = html || '<p class="hint">没找到这个材料。</p>';
+    var n = Object.keys(state.have).length;
+    document.getElementById('haveCount').textContent = n
+      ? '勾了 ' + n + ' 样' : '一样都没勾——挑你手上有的，或者直接搜';
+  }
+
+  function refCard(x) {
+    var miss = x.miss;
+    var missText = miss.length
+      ? '还缺 ' + miss.length + ' 种：' + miss.map(function (nd) {
+          return esc(nd.n) + (nd.need.approx ? '（用' + esc(nameOfNeed(nd.need)) + '代替）' : '');
+        }).join('、')
+      : '材料齐了，现在就能做 ✓';
+    return '<button type="button" class="refcard' + (miss.length ? '' : ' done') + '" data-ref="' + x.i + '">'
+      + '<span class="rc-top"><b>' + esc(x.r.zh) + '</b><i>' + esc(x.r.en || '') + '</i></span>'
+      + '<span class="rc-miss">' + missText + '</span>'
+      + '<span class="rc-meta">' + x.r.needs.length + ' 样材料 · '
+      + ({ shake: '摇和', stir: '搅拌', build: '兑和' }[methodFromRef(x.r.method)] || '兑和')
+      + (x.pick ? ' · 推荐' : '') + '</span>'
+      + '</button>';
+  }
+
+  function renderHaveResult() {
+    var out = document.getElementById('haveOut');
+    if (!out) return;
+    var n = Object.keys(state.have).length;
+    if (!n) {
+      out.innerHTML = '<p class="hint haveempty">左边勾上你手边有的酒和材料，这里就会按顺序列出：'
+        + '<b>现在就能做</b>的、<b>还缺 1 种</b>的、<b>还缺 2 种</b>的，缺的那几样会直接写在名字下面。<br>'
+        + '手上只有一瓶基酒也先勾上——至少能告诉你差什么。</p>';
+      return;
+    }
+    var rows = [];
+    REF_RECIPES.forEach(function (r, i) {
+      var miss = missingOf(r);
+      if (miss.length > 2) return;
+      rows.push({ r: r, i: i, miss: miss, pick: !!r.pick, n: r.needs.length });
+    });
+    rows.sort(function (a, b) {
+      if (a.pick !== b.pick) return a.pick ? -1 : 1;
+      if (a.miss.length !== b.miss.length) return a.miss.length - b.miss.length;
+      return a.n - b.n;
+    });
+
+    var groups = [
+      { k: 0, title: '现在就能做', note: '材料都齐了' },
+      { k: 1, title: '还缺 1 种', note: '多半是饮料或柠檬' },
+      { k: 2, title: '还缺 2 种', note: '顺手一起买' }
+    ];
+    var html = '';
+    groups.forEach(function (g) {
+      var list = rows.filter(function (x) { return x.miss.length === g.k; });
+      if (!list.length) return;
+      var open = !!haveOpen[g.k];
+      var show = open ? list : list.slice(0, HAVE_SHOW);
+      html += '<div class="refgroup"><b>' + g.title + '</b><span>' + list.length + ' 款　'
+        + esc(g.note) + '</span></div>';
+      html += show.map(refCard).join('');
+      if (!open && list.length > HAVE_SHOW)
+        html += '<button type="button" class="ghost refmore" data-havemore="' + g.k + '">'
+          + '展开剩下的 ' + (list.length - HAVE_SHOW) + ' 款</button>';
+    });
+    out.innerHTML = html || '<p class="hint haveempty">勾了的材料还凑不出经典配方——再勾几样试试。</p>';
+  }
+
+  function renderHave() { renderHaveList(); renderHaveResult(); }
+
+  /* 需求 → 具体用哪一瓶：优先用你勾了的那瓶 */
+  function resolveNeedId(need) {
+    if (need.id) return BY_ID[need.id] ? need.id : '';
+    if (need.ids) {
+      var mine = need.ids.filter(function (id) { return state.have[id]; })[0];
+      return mine || (BY_ID[need.ids[0]] ? need.ids[0] : '');
+    }
+    if (need.cat) {
+      var ticked = Object.keys(state.have).filter(function (id) {
+        return BY_ID[id] && BY_ID[id].cat === need.cat;
+      })[0];
+      if (ticked) return ticked;
+      var def = INGREDIENTS.filter(function (g) { return g.cat === need.cat; })[0];
+      return def ? def.id : '';
+    }
+    return '';
+  }
+
+  /* 点一条配方：按标准配方整杯装好（缺的那几样也装，好让你看到差什么） */
+  function loadRefRecipe(i) {
+    var r = REF_RECIPES[i];
+    if (!r) return;
+    state.cup.clear();
+    r.needs.forEach(function (nd) {
+      var id = resolveNeedId(nd.need);
+      if (!id || !BY_ID[id]) return;
+      var g = BY_ID[id];
+      var amt = parseAmount(nd.a, g) || g.def;
+      state.cup.set(id, Math.round(amt * 10) / 10);
+    });
+    var gid = glassFromRef(r);
+    if (gid) state.glass = gid;
+    state.iceLevel = glassOf(state.glass).ice === 'inglass'
+      ? (/无冰/.test(r.ice || '') ? 'none' : 'full') : 'none';
+    state.method = methodFromRef(r.method);
+    state.taste = tasteForAbv(analyze().abv);
+    state.refName = r.zh;
+    state.refMiss = missingOf(r).map(function (nd) { return nd.n; });
+    state.swapOpen = false;
+    renderCup(); renderResult(); renderLib(); renderGlassPick(); renderIcePick();
+    renderMethodPick(); renderTastePick();
+    var anchor = document.getElementById('resultAnchor');
+    if (anchor && anchor.scrollIntoView) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function renderAll() {
     renderCats(); renderLib(); renderCup(); renderResult(); renderPresets();
     renderGlassPick(); renderTastePick(); renderIcePick(); renderSchemePick();
-    renderMethodPick(); renderGlass();
+    renderMethodPick(); renderGlass(); renderHave();
   }
 
   /* ---------------------------------------------------------
@@ -1457,6 +1693,7 @@
   function addToCup(id) {
     var g = BY_ID[id];
     if (!g) return;
+    state.refName = ''; state.refMiss = [];     /* 自己动手加了东西，就不再是那条配方的了 */
     if (state.cup.has(id)) state.cup.set(id, state.cup.get(id) + g.step);
     else state.cup.set(id, g.def);
   }
@@ -1473,6 +1710,27 @@
     if (t.dataset.cat) {
       state.cat = t.dataset.cat;
       renderCats(); renderLib();
+      return;
+    }
+
+    /* ④ 手边有什么：勾 / 取消一样材料 */
+    if (t.dataset.have) {
+      var hid = t.dataset.have;
+      if (state.have[hid]) delete state.have[hid];
+      else state.have[hid] = 1;
+      saveHave();
+      renderHave();
+      return;
+    }
+    /* 结果里"展开剩下的 N 款" */
+    if (t.dataset.havemore !== undefined && t.dataset.havemore !== null && t.dataset.havemore !== '') {
+      haveOpen[t.dataset.havemore] = 1;
+      renderHaveResult();
+      return;
+    }
+    /* 点一条参考配方：装进杯子 */
+    if (t.dataset.ref !== undefined && t.dataset.ref !== null && t.dataset.ref !== '') {
+      loadRefRecipe(+t.dataset.ref);
       return;
     }
 
@@ -1536,6 +1794,7 @@
     if (t.dataset.act) {
       var gid = t.dataset.id, g = BY_ID[gid];
       var cur = state.cup.get(gid) || 0;
+      state.refName = ''; state.refMiss = [];
       if (t.dataset.act === 'plus') state.cup.set(gid, cur + g.step);
       else if (t.dataset.act === 'minus') {
         var next = cur - g.step;
@@ -1547,6 +1806,7 @@
 
     if (t.dataset.preset) {
       var p = PRESETS[+t.dataset.preset];
+      state.refName = ''; state.refMiss = [];
       state.cup.clear();
       p.items.forEach(function (it) { state.cup.set(it[0], it[1]); });
       /* 配方自带杯型：干马天尼配马天尼杯，高球配高球杯 */
@@ -1609,6 +1869,14 @@
     renderCup(); renderResult(); renderLib();
   });
 
+  /* ④ 手边有什么：搜索框 + 清空 */
+  (function () {
+    var box = document.getElementById('haveSearch');
+    if (box) box.addEventListener('input', function () { haveQuery = this.value; renderHaveList(); });
+    var clr = document.getElementById('haveClear');
+    if (clr) clr.addEventListener('click', function () { state.have = {}; saveHave(); renderHave(); });
+  })();
+
   document.getElementById('riskyBtn').addEventListener('click', function () {
     state.hideRisky = !state.hideRisky;
     this.setAttribute('aria-pressed', state.hideRisky ? 'true' : 'false');
@@ -1626,6 +1894,7 @@
      启动
      --------------------------------------------------------- */
   /* 不预置任何基酒——谁来用都从自己手上的那瓶开始 */
+  loadHave();       /* 上次勾的"手边有什么"还在 */
   renderAll();
 
   /* 调试 / 二次开发用：在浏览器控制台可以访问 window.BarMix */
@@ -1633,6 +1902,21 @@
     state: state, analyze: analyze, advise: advise, BY_ID: BY_ID,
     tempIdOf: tempIdOf, tempOf: tempOf,
     hasTemp: hasTemp,
+    /* ④ 手边有什么：给自检和调试用 */
+    have: {
+      recipes: REF_RECIPES,
+      reset: function () { state.have = {}; renderHave(); },
+      toggle: function (id) {
+        if (state.have[id]) delete state.have[id]; else state.have[id] = 1;
+        renderHave();
+      },
+      count: function () { return Object.keys(state.have).length; },
+      missing: function (i) {
+        return missingOf(REF_RECIPES[i]).map(function (nd) { return nd.n; });
+      },
+      load: loadRefRecipe,
+      parse: parseAmount
+    },
     scores: function () {
       var a = analyze(), sc = totalScore(a);
       return { balance: +sc.balance.toFixed(1), strength: +sc.strength.toFixed(1),

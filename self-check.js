@@ -18,10 +18,11 @@ global.document = {
 };
 
 const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
+            fs.readFileSync(path.join(dir, 'ref-recipes.js'), 'utf8') + '\n' +
             fs.readFileSync(path.join(dir, 'app.js'), 'utf8') + '\n' +
             'global.__PRESETS = PRESETS; global.__I = INGREDIENTS; global.__PH = PH; global.__SCHEMES = SCORING_SCHEMES; global.__G = GLASSES; global.__PM = PRESET_METHOD;'
             + ' global.__TEMPS = TEMPS; global.__TD = TEMP_DEFAULT; global.__TF = TEMP; global.__TC = TEMP_CYCLE;'
-            + ' global.__METHODS = METHODS;';
+            + ' global.__METHODS = METHODS; global.__REF = REF_RECIPES;';
 eval(src);
 
 const B = global.BarMix;
@@ -865,6 +866,86 @@ parts.forEach(function (chunk, idx) {
   cardRe.lastIndex = 0;
 });
 console.log('\n共渲染 ' + n + ' 张配方卡，' + seenGroups.length + ' 个分组');
+
+/* ---- ④ 手边有什么：反向查配方 ---- */
+console.log('\n--- 手边有什么 → 现在能做什么 ---');
+(function () {
+  const strip = s => String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const R = global.__REF;
+  console.log('  参考配方 ' + R.length + ' 份，推荐 ' + R.filter(r => r.pick).length + ' 份');
+
+  /* 一份都没勾的时候，右边应该是引导语，不是空的 */
+  B.have.reset();
+  const empty = strip(els.haveOut.innerHTML);
+  const ok0 = empty.indexOf('现在就能做') >= 0 && empty.indexOf('还缺') >= 0;
+  console.log('  ' + (ok0 ? '✅' : '❌') + ' 什么都没勾：给出引导（' + empty.slice(0, 24) + '…）');
+  if (!ok0) bad('手边有什么', '没勾材料时右边没有引导语');
+
+  /* 材料库里能勾的都要画出来 */
+  const rows = (els.haveList.innerHTML.match(/data-have="/g) || []).length;
+  const okRows = rows === global.__I.length;
+  console.log('  ' + (okRows ? '✅' : '❌') + ' 左边列出 ' + rows + ' 样材料（库里共 ' + global.__I.length + ' 样）');
+  if (!okRows) bad('手边有什么', '左边列出的材料数量和库里不一致：' + rows);
+
+  /* 只勾一瓶白朗姆：自由古巴要出现，并写明还缺哪两样 */
+  B.have.toggle('rum');
+  const out1 = strip(els.haveOut.innerHTML);
+  const freeIdx0 = R.findIndex(r => r.zh === '自由古巴');
+  const miss0 = B.have.missing(freeIdx0).join('、');
+  const ok1 = out1.indexOf('还缺 2 种') >= 0 && miss0 === '可乐、青柠汁';
+  console.log('  ' + (ok1 ? '✅' : '❌') + ' 只勾白朗姆：自由古巴"还缺 2 种：' + miss0 + '"');
+  if (!ok1) bad('手边有什么', '勾了白朗姆之后自由古巴缺的东西算错了：' + miss0);
+
+  /* 补上可乐和青柠 → 自由古巴应该变成"现在就能做" */
+  B.have.toggle('coke'); B.have.toggle('lime');
+  const out2 = els.haveOut.innerHTML;
+  const card = out2.match(/<button[^>]*data-ref="(\d+)"[^>]*>[\s\S]*?<\/button>/g) || [];
+  const free = card.find(c => c.indexOf('自由古巴') >= 0);
+  const ok2 = !!free && free.indexOf('refcard done') >= 0 && free.indexOf('材料齐了') >= 0;
+  console.log('  ' + (ok2 ? '✅' : '❌') + ' 补上可乐和青柠：自由古巴变成"材料齐了，现在就能做"');
+  if (!ok2) bad('手边有什么', '材料齐了之后没有标成"现在就能做"');
+
+  /* 点它 → 按标准配方装进杯子 */
+  const idx = R.findIndex(r => r.zh === '自由古巴');
+  B.have.load(idx);
+  const a = B.analyze();
+  const cup = Array.from(B.state.cup.keys());
+  const ok3 = cup.indexOf('rum') >= 0 && cup.indexOf('coke') >= 0 && cup.indexOf('lime') >= 0
+    && B.state.cup.get('coke') === 120 && B.state.method === 'build';
+  console.log('  ' + (ok3 ? '✅' : '❌') + ' 点自由古巴：装进杯子 ' + cup.join('+')
+    + '（可乐 ' + B.state.cup.get('coke') + 'ml，做法 ' + B.state.method + '，' + a.abv.toFixed(1) + '%）');
+  if (!ok3) bad('手边有什么', '点配方没有正确装杯：' + JSON.stringify(cup));
+
+  /* 来源和缺什么要写在杯子下面 */
+  const note = strip(els.refNote.innerHTML);
+  const ok4 = note.indexOf('自由古巴') >= 0;
+  console.log('  ' + (ok4 ? '✅' : '❌') + ' 杯子下面写着这杯的来源：' + note.slice(0, 30) + '…');
+  if (!ok4) bad('手边有什么', '没有写明这杯是从哪条配方来的');
+
+  /* 自己动手改一杯 → 来源提示要消失（不然会误导） */
+  B.state.cup.clear();
+  B.state.cup.set('gin', 45);
+  fire({ add: 'tonic' });
+  const note2 = strip(els.refNote.innerHTML);
+  console.log('  ' + (note2 === '' ? '✅' : '❌') + ' 自己加了别的材料：来源提示自动消失');
+  if (note2 !== '') bad('手边有什么', '自己改了杯子之后还留着"来自某配方"');
+
+  /* 量的换算 */
+  const P = B.have.parse;
+  const cases = [['45ml', 'lemon', 45], ['2dash', 'angostura', 2], ['3片', 'mint', 3],
+    ['一个', 'egg_white', 15], ['15g', 'butter', 15], ['5颗', 'cherry', 5]];
+  const bad4 = cases.filter(c => Math.abs(P(c[0], B.BY_ID[c[1]]) - c[2]) > 0.01);
+  console.log('  ' + (bad4.length ? '❌' : '✅') + ' 用量换算 6 种写法都对'
+    + (bad4.length ? '（错的：' + bad4.map(c => c[0]).join('、') + '）' : ''));
+  if (bad4.length) bad('手边有什么', '用量换算不对：' + bad4.map(c => c[0]).join('、'));
+
+  /* 191 份里不许出现"对不上的需求" */
+  const kinds = R.every(r => r.needs.every(nd => nd.need.id || nd.need.cat || nd.need.ids));
+  console.log('  ' + (kinds ? '✅' : '❌') + ' 191 份配方里的每一条需求都指向了库里的材料');
+  if (!kinds) bad('手边有什么', '有需求的 kind 认不出来');
+
+  B.have.reset();
+})();
 
 /* ---- 汇总 ---- */
 /* ---- 操作说明：用户反馈"没人知道「常温」和「40%」能点" ---- */

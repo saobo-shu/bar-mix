@@ -267,6 +267,68 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .tasterow .glasspick { margin-bottom: 0; }
 .taste-label { font-size: 11.5px; color: var(--muted); flex: none; }
 
+/* ---------------- ④ 手边有什么 → 现在能做什么 ---------------- */
+.havewrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 12px; }
+.havebar { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+.havesearch {
+  flex: 1; min-width: 0; font: inherit; font-size: 16px;
+  padding: 7px 10px; border-radius: 10px;
+  background: var(--card2); border: 1px solid var(--line); color: var(--text);
+}
+.havesearch::placeholder { color: var(--muted); }
+.havecount { margin: 0 0 7px; }
+.havelist {
+  max-height: 380px; overflow-y: auto; padding-right: 2px;
+  border-top: 1px solid var(--line);
+}
+.havegroup {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-size: 11.5px; color: var(--amber); letter-spacing: .05em;
+  padding: 8px 2px 4px;
+}
+.havegroup span { color: var(--muted); font-size: 11px; letter-spacing: 0; }
+.haverow {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  width: 100%; text-align: left; padding: 6px 9px; margin-bottom: 4px;
+  border-radius: 9px; background: var(--card2); border: 1px solid var(--line);
+  font-size: 13px; color: var(--text); min-width: 0;
+}
+.haverow .hv-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.haverow .hv-tick { flex: none; color: var(--amber); font-weight: 600; }
+.haverow.on { border-color: var(--amber); background: rgba(224, 163, 92, .14); }
+.haverow:active { transform: scale(.99); }
+
+.refgroup {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  font-size: 13px; color: var(--text); padding: 10px 2px 6px;
+  border-bottom: 1px solid var(--line); margin-bottom: 7px;
+}
+.refgroup b { font-weight: 600; }
+.refgroup span { color: var(--muted); font-size: 11.5px; flex: none; }
+.refcard {
+  display: block; width: 100%; text-align: left; margin-bottom: 6px;
+  padding: 8px 10px; border-radius: 11px;
+  background: var(--card2); border: 1px solid var(--line);
+}
+.refcard.done { border-color: rgba(127, 176, 105, .5); }
+.refcard:active { transform: scale(.99); }
+.rc-top { display: flex; align-items: baseline; gap: 7px; }
+.rc-top b { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.rc-top i { font-style: normal; font-size: 11px; color: var(--muted); }
+.rc-miss { display: block; font-size: 11.5px; color: var(--amber); margin-top: 3px; }
+.refcard.done .rc-miss { color: var(--green); }
+.rc-meta { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+.refmore { width: 100%; margin: 2px 0 6px; }
+.haveempty { margin: 0; line-height: 1.7; }
+.haveempty b { color: var(--text); font-weight: 600; }
+.refnote { margin: 8px 0 0; line-height: 1.6; }
+.refnote b { color: var(--amber); font-weight: 600; }
+
+@media (max-width: 720px) {
+  .havewrap { grid-template-columns: minmax(0, 1fr); }
+  .havelist { max-height: 300px; }
+}
+
 /* ---------------- 换基酒 ---------------- */
 .swap-panel { margin-bottom: 11px; }
 .swap-panel[hidden] { display: none; }
@@ -569,7 +631,8 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
         <summary>不想一样样挑？两条捷径</summary>
         <div class="body">
           <ul>
-            <li><b>④ 经典配方</b> 里点一张卡片：材料、杯型、冰量、做法、口味会一起装好，就像有人替你摆好了——
+            <li><b>④ 手边有什么</b>：勾上你手上有的酒和材料，它会按"还缺几样"告诉你现在能调什么。点一条就装进杯子，缺的那几样会标出来。</li>
+            <li><b>⑤ 经典配方</b> 里点一张卡片：材料、杯型、冰量、做法、口味会一起装好，就像有人替你摆好了——
               点干马天尼会自动切到「浓烈」，因为它 35 度，本来就不该用「标准」去量。改两下就是你的版本。</li>
             <li>点右上角 <b>「换基酒」</b>：把配方里写的酒换成你手上那瓶，比例不用重算。</li>
           </ul>
@@ -620,7 +683,8 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
     <div class="swap-panel" id="swapPanel" hidden></div>
     <p class="hint cuphint">材料行里的小标签都能点：<b>「常温」换温度</b>（冷冻 / 冷藏 / 常温）、<b>「40%」改度数</b>（按你瓶身上印的填）；点材料名那一行会展开完整说明。</p>
     <div class="cup-list" id="cupList"></div>
-    <p class="empty" id="cupEmpty">杯子是空的。你可以直接在下面「④ 经典配方」里点一个例子，或者从材料库自己挑——手上只有一瓶基酒也没关系，先倒进去，再用「换基酒」换成你有的那瓶。</p>
+    <p class="empty" id="cupEmpty">杯子是空的。你可以直接在下面「④ 手边有什么」里勾上你手上有的，看现在能调什么；也可以从「⑤ 经典配方」点一个例子，或者从材料库自己挑——手上只有一瓶基酒也没关系，先倒进去，再用「换基酒」换成你有的那瓶。</p>
+    <p class="hint refnote" id="refNote"></p>
   </section>
 
   <!-- ③ 材料库 -->
@@ -661,19 +725,40 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
     </div><!-- /col-b -->
   </div><!-- /cols -->
 
-  <!-- ④ 经典配方（整块可以收起，点标题那一行） -->
+  <!-- ④ 手边有什么 → 现在能做什么 -->
+  <details class="panel p-have" open>
+    <summary class="panel-head">
+      <h2>④ 手边有什么 · 现在能做什么</h2>
+      <span class="hint">勾上你有的，就知道能调什么、还差什么　<b class="fold"></b></span>
+    </summary>
+    <div class="havewrap">
+      <div class="havepick">
+        <div class="havebar">
+          <input type="search" id="haveSearch" class="havesearch" placeholder="搜材料名、品牌…" aria-label="搜索材料">
+          <button type="button" class="ghost" id="haveClear">清空</button>
+        </div>
+        <p class="hint havecount" id="haveCount"></p>
+        <div class="havelist" id="haveList"></div>
+      </div>
+      <div class="haveresult">
+        <div id="haveOut" aria-live="polite"></div>
+      </div>
+    </div>
+  </details>
+
+  <!-- ⑤ 经典配方（整块可以收起，点标题那一行） -->
   <details class="panel p-pre" open>
     <summary class="panel-head">
-      <h2>④ 经典配方 · 按家族分</h2>
+      <h2>⑤ 经典配方 · 按家族分</h2>
       <span class="hint">点一下装杯　<b class="fold"></b></span>
     </summary>
     <div class="presets" id="presets"></div>
   </details>
 
-  <!-- ⑤ 生存指南（整块可以收起） -->
+  <!-- ⑥ 生存指南（整块可以收起） -->
   <details class="panel p-guide">
     <summary class="panel-head">
-      <h2>⑤ 没冰箱 · 小空间生存指南</h2>
+      <h2>⑥ 没冰箱 · 小空间生存指南</h2>
       <span class="hint">点标题展开　<b class="fold"></b></span>
     </summary>
     <div class="guide">
@@ -1036,6 +1121,9 @@ var INGREDIENTS = [
   { id:'jiangxiaobai', cat:'otherbase', name:'江小白（清香型白酒）', unit:'ml', mlu:1, def:30, step:5, abv:40, src:'rt',
     f:{sugar:2,acid:0.3,bitter:1.5,booze:9,fruit:1,spice:3,fizz:0,body:4},
     note:'清香型白酒，比浓香型干净、好入口，也有不少人拿它当基酒调。配柠檬和气泡水意外地不错。' },
+  { id:'aquavit', cat:'otherbase', name:'阿夸维特 Aquavit', unit:'ml', mlu:1, def:45, step:5, abv:40, src:'web',
+    f:{sugar:1,acid:0.2,bitter:1.5,booze:9,fruit:0.5,spice:7,fizz:0,body:3},
+    note:'北欧的葛缕子、莳萝风味烈酒，40 度。冰镇纯饮是它的主场，也能替金酒做更"草本"的鸡尾酒。网购能买到小瓶。' },
 
   /* ---------------- 利口酒 ---------------- */
   { id:'cointreau', cat:'liqueur', name:'君度橙酒', unit:'ml', mlu:1, def:15, step:5, abv:40, src:'web',
@@ -1170,6 +1258,34 @@ var INGREDIENTS = [
   { id:'olive_brine', cat:'liqueur', name:'橄榄汁（腌橄榄的盐水）', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
     f:{sugar:0,acid:1,bitter:2,booze:0,fruit:0,spice:3,fizz:0,body:1},
     note:'就是腌橄榄罐里那点盐水，脏马天尼必需。5-15ml 就够咸，别多。' },
+  /* 下面这些是照着 191 份参考配方补的：都是经典鸡尾酒里点到名、但库里原来没有的 */
+  { id:'cocchi', cat:'liqueur', name:'好奇美国佬（Cocchi Americano）', unit:'ml', mlu:1, def:30, step:5, abv:16.5, src:'web',
+    f:{sugar:5,acid:1.2,bitter:4,booze:2,fruit:5,spice:4,fizz:0,body:3},
+    note:'意大利开胃酒，白葡萄酒底、带奎宁的微苦和橙花味，16.5 度。竹子、僵尸都点它的名。买不到用利莱白顶，味道更淡一点。开瓶后冷藏，2-4 周喝完。' },
+  { id:'falernum', cat:'liqueur', name:'法勒纳姆 Falernum', unit:'ml', mlu:1, def:15, step:5, abv:11, src:'web',
+    f:{sugar:8,acid:1,bitter:1,booze:2,fruit:3,spice:7,fizz:0,body:3},
+    note:'加勒比的糖浆酒：丁香、杏仁、青柠。僵尸、玉米油这类热带酒要用。买不到可以自己泡——丁香+杏仁+糖+青柠皮丢进朗姆里放两周。' },
+  { id:'picon', cat:'liqueur', name:'Amer Picon（橙皮苦酒）', unit:'ml', mlu:1, def:15, step:5, abv:18, src:'web',
+    f:{sugar:5,acid:1,bitter:7,booze:3,fruit:3,spice:4,fizz:0,body:3},
+    note:'法国橙皮苦酒，苦甜、带橙酱味。布鲁克林是它的代表作。买不到就用金巴利加一条橙皮的皮油顶，会更苦更红。' },
+  { id:'montenegro', cat:'liqueur', name:'蒙特内罗 Amaro Montenegro', unit:'ml', mlu:1, def:30, step:5, abv:23, src:'web',
+    f:{sugar:6,acid:0.5,bitter:6,booze:4,fruit:3,spice:6,fizz:0,body:4},
+    note:'意大利阿马罗里最温和的一位，橙皮、玫瑰、香草都有，23 度。加苏打水和一条橙皮就是一杯；也能替诺尼诺。' },
+  { id:'aveze', cat:'liqueur', name:'雅梵娜 Avèze（龙胆草）', unit:'ml', mlu:1, def:30, step:5, abv:20, src:'web',
+    f:{sugar:4,acid:0.3,bitter:6,booze:3,fruit:1,spice:5,fizz:0,body:3},
+    note:'法国龙胆草利口酒，苦、草本、带一点甜，像低度版的阿马罗。做苏姿、金巴利那一类清爽苦酒时能互换。' },
+  { id:'soco', cat:'liqueur', name:'金馥 Southern Comfort', unit:'ml', mlu:1, def:30, step:5, abv:35, src:'rt',
+    f:{sugar:7,acid:0.8,bitter:0.5,booze:5,fruit:5,spice:3,fizz:0,body:4},
+    note:'美国南方的威士忌甜酒（桃子+香料），35 度。单兑可乐或柠檬水就能喝；各国版本度数不一样，以瓶身为准。' },
+  { id:'fireball', cat:'liqueur', name:'火龙肉桂 Fireball', unit:'ml', mlu:1, def:30, step:5, abv:33, src:'rt',
+    f:{sugar:8,acid:0.2,bitter:0.5,booze:6,fruit:1,spice:8,fizz:0,body:3},
+    note:'肉桂威士忌利口酒，甜得像糖水但有 33 度。兑苹果汁、或者加进热苹果酒里，冬天一杯就够。' },
+  { id:'mrblack', cat:'liqueur', name:'黑先生咖啡利口酒 Mr Black', unit:'ml', mlu:1, def:15, step:5, abv:34, src:'web',
+    f:{sugar:5,acid:0.6,bitter:5,booze:5,fruit:1,spice:5,fizz:0,body:4},
+    note:'比甘露度数高、糖更少、咖啡味更真，意式浓缩马天尼指定用它。国内网购能买到。' },
+  { id:'grapefruit_liqueur', cat:'liqueur', name:'西柚利口酒', unit:'ml', mlu:1, def:15, step:5, abv:20, src:'web',
+    f:{sugar:7,acid:1.5,bitter:2,booze:3,fruit:8,spice:1,fizz:0,body:3},
+    note:'西柚味利口酒（Giffard 那类），酸甜偏苦。用西柚汁+一点糖浆也能顶，但香气回不来。' },
   /* 加强酒和葡萄酒：酒吧常用，但都怕氧化 */
   { id:'fino', cat:'wine', name:'干雪莉酒（Fino）', unit:'ml', mlu:1, def:60, step:5, abv:15, src:'web',
     f:{sugar:1,acid:3,bitter:3,booze:2,fruit:3,spice:5,fizz:0,body:3},
@@ -1336,6 +1452,9 @@ var INGREDIENTS = [
   { id:'cream', cat:'dairy', name:'淡奶油', unit:'ml', mlu:1, def:20, step:5, abv:0, src:'rt',
     f:{sugar:3,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:0,body:10},
     note:'沿勺背浮在表层，一口奶一口酒。' },
+  { id:'butter', cat:'dairy', name:'黄油（一小块）', unit:'g', mlu:1, def:15, step:5, abv:0, src:'rt',
+    f:{sugar:0,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:0,body:10},
+    note:'热黄油朗姆的灵魂。切一小块丢进热酒里搅到化开，甜香立刻起来。住处买最小块、冷藏，用不完抹面包。' },
   { id:'coconut_milk', cat:'dairy', name:'椰浆', unit:'ml', mlu:1, def:30, step:5, abv:0, src:'rt',
     f:{sugar:4,acid:0,bitter:0,booze:0,fruit:3,spice:0,fizz:0,body:9},
     note:'很浓郁，容易腻，需要一点酸或盐来救。' },
@@ -1401,6 +1520,9 @@ var INGREDIENTS = [
   { id:'tabasco', cat:'bitter', name:'辣椒仔', unit:'滴', mlu:0.05, def:2, step:1, abv:0, src:'rt',
     f:{sugar:0.2,acid:2,bitter:1,booze:0,fruit:0,spice:9,fizz:0,body:0},
     note:'血腥玛丽类用，两三滴就有明显的辣。' },
+  { id:'worcestershire', cat:'bitter', name:'李派林喼汁（辣酱油）', unit:'滴', mlu:0.05, def:3, step:1, abv:0, src:'rt',
+    f:{sugar:1,acid:2,bitter:1.5,booze:0,fruit:0,spice:4,fizz:0,body:1},
+    note:'英式辣酱油，血腥玛丽的灵魂——没有它那杯就只是番茄汁。常温能放很久，一瓶用一年，住处请放心囤。' },
   { id:'salt_water', cat:'bitter', name:'盐水（几滴）', unit:'滴', mlu:0.05, def:3, step:1, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:1,booze:0,fruit:0,spice:2,fizz:0,body:0},
     note:'1 克盐 + 9 毫升水。三滴就能把酸和果味「顶」出来，喝的人会以为你换了配方。' },
@@ -1427,6 +1549,15 @@ var INGREDIENTS = [
   { id:'egg_white', cat:'garnish', name:'蛋清', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:1,body:9},
     note:'先干摇 15 秒再加冰摇，泡沫才立得起来。鸡蛋就够用了。' },
+  { id:'egg_yolk', cat:'garnish', name:'蛋黄', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
+    f:{sugar:0,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:0,body:10},
+    note:'蛋清给泡沫，蛋黄给厚度和奶香（Flip 类酒）。用了蛋黄那杯不用再加奶；剩下的蛋清可以做蛋白霜。' },
+  { id:'raspberry', cat:'garnish', name:'树莓（鲜果）', unit:'颗', mlu:0, def:3, step:1, abv:0, src:'web',
+    f:{sugar:3,acid:3,bitter:0,booze:0,fruit:7,spice:0,fizz:0,body:1},
+    note:'三叶草俱乐部这类酒要几颗捣碎。鲜树莓不好买也容易坏——用现成的树莓糖浆代替更实际。' },
+  { id:'green_grape', cat:'garnish', name:'青提（5 颗）', unit:'颗', mlu:0, def:5, step:1, abv:0, src:'rt',
+    f:{sugar:3,acid:1,bitter:0,booze:0,fruit:6,spice:0,fizz:0,body:1},
+    note:'恩佐尼里要捣碎的绿葡萄。买一小串，用不完当水果吃；捣轻一点，葡萄皮会发苦。' },
 
     /* 冰不再是材料：它由你选的杯子决定——
        冰杯 / 高球杯 / 古典杯 / 飓风杯自带冰，马天尼杯和一口杯没有。
@@ -1620,6 +1751,20 @@ var STORE = {
   cucumber: { lv: 'bad', risk: 2, text: '切开的黄瓜当天用完。' },
   cherry: { lv: 'mid', risk: 1, text: '糖渍樱桃开罐后冷藏最好；住处买小罐，2-3 周内用完。' },
   egg_white: { lv: 'bad', risk: 2, text: '蛋清当天用完，别留。剩下的蛋黄正好拿去炒个蛋。' }
+  , egg_yolk: { lv: 'bad', risk: 2, text: '蛋黄当天用完。剩下的蛋清可以打成蛋白霜，或者第二天做蛋白饼。' }
+  , raspberry: { lv: 'bad', risk: 2, text: '鲜树莓买回来 1-2 天内用完，压坏了就发霉。用它不如用树莓糖浆实在。' }
+  , green_grape: { lv: 'bad', risk: 2, text: '一小串放阴凉处能撑 3-5 天，洗过的一定要当天吃完。' }
+  , butter: { lv: 'bad', risk: 2, text: '开封后必须冷藏，一周内用完。住处买最小块，剩下的抹面包。' }
+  , worcestershire: { lv: 'ok', risk: 0, text: '常温阴凉处放一两年都不会坏——血腥玛丽住户最省心的一样。' }
+  , cocchi: { lv: 'bad', risk: 2, text: '开瓶后必须冷藏，2-4 周内喝完（和味美思一样怕氧化）。没冰箱就买 375ml，一次用完。' }
+  , falernum: { lv: 'mid', risk: 1, text: '11 度含糖，未开封常温；开封后阴凉避光 3-6 个月，冷藏更久。' }
+  , mrblack: { lv: 'ok', risk: 1, text: '34 度、糖少，开封后避光能放 1 年以上（比甘露耐放）。' }
+  , soco: { lv: 'ok', risk: 0, text: '35 度，未开封常温；开封后盖紧避光，一年内味道最完整。' }
+  , fireball: { lv: 'ok', risk: 0, text: '33 度，常温放着就行，不怕坏。' }
+  , picon: { lv: 'mid', risk: 1, text: '18 度，开封后避光 2-3 个月，冷藏更久。' }
+  , montenegro: { lv: 'mid', risk: 1, text: '23 度，开封后常温避光 3-6 个月，冷藏更久。' }
+  , aveze: { lv: 'mid', risk: 1, text: '20 度，开封后避光 3-6 个月。' }
+  , grapefruit_liqueur: { lv: 'mid', risk: 1, text: '20 度含糖，开封后避光 3-6 个月。' }
 };
 
 var RISK_LABEL = { 0: '放心买', 1: '注意', 2: '高风险' };
@@ -1855,6 +2000,11 @@ var BASE_GROUPS = [
 
 </script>
 <script>
+/* 由 tools/build-ref-index.js 从 tools/reference-recipes.json 生成，不要手改 */
+var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":"shake","glass":"coupe","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"水牛足迹波本威士忌","a":"20ml","need":{"id":"buffalo_trace"}},{"n":"Nonino Amaro","a":"20ml","need":{"id":"nonino"}},{"n":"阿佩罗","a":"20ml","need":{"id":"aperol"}},{"n":"柠檬酸溶液","a":"20ml","need":{"id":"lemon","approx":1}}]},{"zh":"长岛冰茶","en":"Long Island Ice Tea","cat":"经典","method":"shake","glass":"柯林杯","ice":"摇冰","garnish":"柠檬片装饰","note":"柠檬片 3 片在摇壶里捣一下。","pick":0,"needs":[{"n":"金酒","a":"10ml","need":{"cat":"gin"}},{"n":"朗姆酒","a":"15ml","need":{"cat":"rum"}},{"n":"龙舌兰","a":"20ml","need":{"cat":"tequila"}},{"n":"伏特加","a":"15ml","need":{"cat":"vodka"}},{"n":"君度","a":"15ml","need":{"id":"cointreau"}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}},{"n":"柠檬片","a":"3片","need":{"id":"lemon_peel"}},{"n":"可乐","a":"30ml","need":{"id":"coke"}}]},{"zh":"僵尸","en":"Zombie","cat":"经典","method":"shake","glass":"TIKI 杯","ice":"","garnish":"菠萝片和薄荷","note":"","pick":0,"needs":[{"n":"白朗姆","a":"15ml","need":{"id":"rum"}},{"n":"黑朗姆","a":"15ml","need":{"id":"dark_rum"}},{"n":"Cubita 151 朗姆","a":"15ml","need":{"id":"dark_rum","approx":1}},{"n":"法勒纳姆","a":"10ml","need":{"id":"falernum"}},{"n":"百香果糖浆","a":"15ml","need":{"id":"passionfruit","approx":1}},{"n":"菠萝糖浆","a":"10ml","need":{"id":"syrup","approx":1}},{"n":"黄柠檬汁","a":"30ml","need":{"id":"lemon"}},{"n":"菠萝汁","a":"45ml","need":{"id":"pineapple"}},{"n":"安高天娜苦精","a":"2ml","need":{"id":"angostura"}}]},{"zh":"斯普莫尼","en":"Spumoni","cat":"经典","method":"build","glass":"柯林杯","ice":"摇冰","garnish":"西柚片","note":"","pick":0,"needs":[{"n":"金巴利","a":"30ml","need":{"id":"campari"}},{"n":"西柚汁","a":"30ml","need":{"id":"grapefruit"}},{"n":"汤力水","a":"60ml","need":{"id":"tonic"}}]},{"zh":"大都会","en":"Cosmopolitan","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"柠檬皮","note":"","pick":1,"needs":[{"n":"柠檬伏特加","a":"45ml","need":{"id":"vodka","approx":1}},{"n":"君度","a":"20ml","need":{"id":"cointreau"}},{"n":"蔓越莓汁","a":"20ml","need":{"id":"cranberry"}},{"n":"蔓越莓糖浆","a":"5ml","need":{"id":"syrup","approx":1}},{"n":"青柠汁","a":"20ml","need":{"id":"lime"}}]},{"zh":"椰林飘香","en":"Pina Colada","cat":"经典","method":"shake","glass":"TIKI 杯","ice":"","garnish":"菠萝片薄荷头","note":"","pick":1,"needs":[{"n":"白朗姆酒","a":"45ml","need":{"id":"rum"}},{"n":"水妈妈椰浆","a":"30ml","need":{"id":"coconut_milk","approx":1}},{"n":"椰子糖浆","a":"10ml","need":{"id":"syrup","approx":1}},{"n":"菠萝糖浆","a":"10ml","need":{"id":"syrup","approx":1}},{"n":"菠萝汁","a":"60ml","need":{"id":"pineapple"}},{"n":"青柠汁","a":"20ml","need":{"id":"lime"}}]},{"zh":"尼格罗尼","en":"Negroni","cat":"经典","method":"stir","glass":"rock 杯","ice":"方冰","garnish":"橙皮","note":"自制味美思：安提卡福门、潘脱蜜、曼奇诺，按 1:1:1 混合。\n自制阿马罗（金巴利风格）：金巴利、尚朵尼、坦福吉大师，按 1:1:1 混合。","pick":1,"needs":[{"n":"季之美金酒","a":"30ml","need":{"cat":"gin","approx":1}},{"n":"自制味美思","a":"30ml","need":{"id":"vermouth","approx":1}},{"n":"自制阿马罗","a":"30ml","need":{"id":"averna","approx":1}}]},{"zh":"盘尼西林","en":"Penicillin","cat":"经典","method":"shake","glass":"rock 杯","ice":"方冰","garnish":"姜片","note":"","pick":0,"needs":[{"n":"苏格兰威士忌","a":"45ml","need":{"cat":"whisky"}},{"n":"3:1蜂蜜糖浆","a":"20ml","need":{"id":"honey_syrup"}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}},{"n":"生姜片","a":"2片","need":{"id":"ginger_fresh","approx":1}},{"n":"拉弗格精锐","a":"10ml","need":{"id":"laphroaig"}}]},{"zh":"蜂之膝","en":"Bee's Knees","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"柠檬皮","note":"","pick":1,"needs":[{"n":"巍城夏日花园金酒","a":"45ml","need":{"cat":"gin","approx":1}},{"n":"3:1蜂蜜糖浆","a":"15ml","need":{"id":"honey_syrup"}},{"n":"黄柠檬汁","a":"15ml","need":{"id":"lemon"}}]},{"zh":"意式浓缩马天尼","en":"Espresso Martini","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":1,"needs":[{"n":"意式浓缩咖啡","a":"20ml","need":{"id":"coffee_hot","approx":1}},{"n":"灰雁伏特加","a":"45ml","need":{"id":"grey_goose"}},{"n":"黑先生咖啡利口酒","a":"10ml","need":{"id":"mrblack","approx":1}},{"n":"3:1蜂蜜糖浆","a":"2.5ml","need":{"id":"honey_syrup"}}]},{"zh":"马天尼","en":"Dry Martini","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"橄榄","note":"出品前酒液喷柠檬皮","pick":1,"needs":[{"n":"干金酒（添加利）","a":"60ml","need":{"cat":"gin"}},{"n":"干味美思（园林）","a":"10ml","need":{"id":"dry_vermouth"}},{"n":"橙味苦精","a":"1dash","need":{"id":"orange_bitters"}}]},{"zh":"曼哈顿","en":"Manhattan","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"橙皮","note":"橙皮喷香。","pick":1,"needs":[{"n":"瑞顿房黑麦威士忌","a":"60ml","need":{"id":"rye"}},{"n":"红味美思","a":"30ml","need":{"id":"vermouth"}},{"n":"安高天娜苦精","a":"1dash","need":{"id":"angostura"}}]},{"zh":"莫吉托","en":"Mojito","cat":"经典","method":"smash","glass":"莫吉托杯","ice":"","garnish":"薄荷头","note":"","pick":1,"needs":[{"n":"白朗姆酒","a":"60ml","need":{"id":"rum"}},{"n":"青柠汁","a":"15ml","need":{"id":"lime"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}},{"n":"青柠角","a":"4 个","need":{"id":"lime"}},{"n":"薄荷叶","a":"一把","need":{"id":"mint"}}]},{"zh":"威士忌酸","en":"Whiskey Sour","cat":"经典","method":"shake","glass":"古典杯","ice":"","garnish":"柠檬皮","note":"","pick":1,"needs":[{"n":"水牛足迹波本威士忌","a":"45ml","need":{"id":"buffalo_trace"}},{"n":"柠檬酸溶液","a":"20ml","need":{"id":"lemon","approx":1}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}},{"n":"苦精","a":"1dash","need":{"id":"angostura","approx":1}},{"n":"1:10盐水","a":"2drop","need":{"id":"salt_water","approx":1}}]},{"zh":"古典鸡尾酒","en":"Old Fashioned","cat":"经典","method":"stir","glass":"古典杯","ice":"方冰","garnish":"橙皮","note":"","pick":1,"needs":[{"n":"瑞顿房黑麦威士忌","a":"40ml","need":{"id":"rye"}},{"n":"美鹤乃舞烧酒","a":"40ml","need":{"id":"soju","approx":1}},{"n":"2:1红糖糖浆","a":"5ml","need":{"id":"demerara","approx":1}}]},{"zh":"黛绮莉","en":"Daiquiri","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"青柠角","note":"","pick":1,"needs":[{"n":"白朗姆（蔗园 3 星）","a":"60ml","need":{"id":"rum"}},{"n":"青柠汁","a":"20ml","need":{"id":"lime"}},{"n":"砂糖","a":"3 把勺","need":{"id":"sugar_cube","approx":1}}]},{"zh":"玛格丽特","en":"Margarita","cat":"经典","method":"shake","glass":"玛格丽特杯","ice":"","garnish":"青柠角","note":"","pick":1,"needs":[{"n":"唐胡里奥龙舌兰","a":"40ml","need":{"id":"donjulio"}},{"n":"奥美佳阿特兹","a":"10ml","need":{"id":"olmeca"}},{"n":"青柠汁","a":"20ml","need":{"id":"lime"}},{"n":"君度","a":"20ml","need":{"id":"cointreau"}},{"n":"糖浆","a":"5ml","need":{"id":"syrup","approx":1}}]},{"zh":"莫斯科骡子","en":"Moscow Mule","cat":"经典","method":"shake","glass":"铜杯","ice":"摇冰","garnish":"薄荷头","note":"","pick":1,"needs":[{"n":"伏特加","a":"60ml","need":{"cat":"vodka"}},{"n":"生姜糖浆","a":"15ml","need":{"id":"ginger_fresh","approx":1}},{"n":"青柠汁","a":"30ml","need":{"id":"lime"}},{"n":"干姜水","a":"up","need":{"ids":["ginger_beer","ginger_ale"]}}]},{"zh":"花花公子","en":"Boulevardier","cat":"经典","method":"stir","glass":"古典杯","ice":"方冰","garnish":"橙皮","note":"","pick":0,"needs":[{"n":"波本威士忌","a":"30ml","need":{"id":"bourbon"}},{"n":"红味美思","a":"30ml","need":{"id":"vermouth"}},{"n":"金巴利","a":"30ml","need":{"id":"campari"}}]},{"zh":"法式马天尼","en":"French Martini","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"菠萝干","note":"","pick":0,"needs":[{"n":"伏特加","a":"45ml","need":{"cat":"vodka"}},{"n":"香博利口酒","a":"15ml","need":{"id":"chambord"}},{"n":"菠萝糖浆","a":"5ml（经典配方没这个）","need":{"id":"syrup","approx":1}},{"n":"菠萝汁","a":"20ml","need":{"id":"pineapple"}}]},{"zh":"凯匹林纳","en":"Caipirinha","cat":"经典","method":"smash","glass":"古典杯","ice":"碎冰","garnish":"青柠","note":"","pick":1,"needs":[{"n":"卡萨莎甘蔗酒","a":"60ml","need":{"id":"cachaca","approx":1}},{"n":"3:1蜂蜜糖浆（经典配方是糖浆）","a":"20ml","need":{"id":"honey_syrup"}},{"n":"青柠檬","a":"半个","need":{"id":"lime"}}]},{"zh":"萨泽拉克","en":"Sazerac","cat":"经典","method":"stir","glass":"白兰地杯","ice":"","garnish":"橙皮喷香扔掉","note":"","pick":0,"needs":[{"n":"干邑（问客人要黑麦还是干邑）","a":"60ml","need":{"id":"cognac"}},{"n":"2:1红糖糖浆","a":"5ml","need":{"id":"demerara","approx":1}},{"n":"佩乔苦精","a":"5dash","need":{"id":"peychaud"}},{"n":"芳泉苦艾酒","a":"5ml","need":{"id":"absinthe"}}]},{"zh":"汤米家的玛格丽特","en":"Tommy's Margarita","cat":"经典","method":"shake","glass":"古典杯","ice":"方冰","garnish":"青柠角","note":"","pick":1,"needs":[{"n":"100% 龙舌兰","a":"45ml","need":{"cat":"tequila"}},{"n":"青柠汁","a":"20ml","need":{"id":"lime"}},{"n":"龙舌兰糖浆","a":"10ml","need":{"cat":"tequila"}}]},{"zh":"迈泰","en":"Mai Tai","cat":"经典","method":"shake","glass":"古典杯","ice":"碎冰","garnish":"菠萝干薄荷头","note":"","pick":0,"needs":[{"n":"蔗园菠萝朗姆","a":"15ml","need":{"id":"plantation3"}},{"n":"白朗姆","a":"30ml","need":{"id":"rum"}},{"n":"杏仁糖浆","a":"15ml","need":{"id":"syrup","approx":1}},{"n":"君度","a":"10ml","need":{"id":"cointreau"}},{"n":"青柠汁","a":"25ml","need":{"id":"lime"}}]},{"zh":"美国佬","en":"Americano","cat":"经典","method":"stir","glass":"柯林杯","ice":"摇冰","garnish":"橙皮","note":"","pick":1,"needs":[{"n":"红味美思","a":"30ml","need":{"id":"vermouth"}},{"n":"金巴利","a":"30ml","need":{"id":"campari"}},{"n":"苏打水","a":"up","need":{"id":"soda"}}]},{"zh":"黑俄罗斯","en":"Black Russian","cat":"经典","method":"stir","glass":"古典杯","ice":"方冰","garnish":"咖啡豆","note":"","pick":1,"needs":[{"n":"伏特加","a":"45ml","need":{"cat":"vodka"}},{"n":"咖啡利口酒","a":"15ml","need":{"id":"kahlua","approx":1}}]},{"zh":"白俄罗斯","en":"White Russian","cat":"经典","method":"stir","glass":"古典杯","ice":"方冰","garnish":"","note":"","pick":1,"needs":[{"n":"伏特加","a":"45ml","need":{"cat":"vodka"}},{"n":"咖啡利口酒","a":"20ml","need":{"id":"kahlua","approx":1}},{"n":"淡奶油","a":"20ml","need":{"id":"cream"}}]},{"zh":"新加坡司令","en":"Singapore Sling","cat":"经典","method":"shake","glass":"柯林杯","ice":"摇冰","garnish":"菠萝干红樱桃","note":"","pick":0,"needs":[{"n":"金酒","a":"45ml","need":{"cat":"gin"}},{"n":"君度","a":"15ml","need":{"id":"cointreau"}},{"n":"樱桃利口酒（Heering）","a":"10ml","need":{"id":"cherry_brandy","approx":1}},{"n":"当酒","a":"10ml","need":{"id":"benedictine"}},{"n":"红石榴糖浆","a":"5ml","need":{"id":"grenadine"}},{"n":"安高天娜苦精","a":"1dash","need":{"id":"angostura"}},{"n":"菠萝汁","a":"45ml","need":{"id":"pineapple"}},{"n":"黄柠檬汁","a":"25ml","need":{"id":"lemon"}}]},{"zh":"马颈","en":"Horse's Neck","cat":"经典","method":"stir","glass":"柯林杯","ice":"摇冰","garnish":"柠檬皮卷","note":"","pick":1,"needs":[{"n":"白兰地","a":"45ml","need":{"id":"calvados","approx":1}},{"n":"干姜水","a":"90ml","need":{"ids":["ginger_beer","ginger_ale"]}}]},{"zh":"白鸽","en":"Paloma","cat":"经典","method":"stir","glass":"柯林杯","ice":"摇冰","garnish":"西柚片","note":"","pick":1,"needs":[{"n":"龙舌兰","a":"45ml","need":{"cat":"tequila"}},{"n":"西柚气泡水（可替代西柚汁 45ml + 苏打水 45ml）","a":"90ml","need":{"id":"grapefruit","approx":1}}]},{"zh":"薄荷朱丽普","en":"Mint Julep","cat":"经典","method":"shake","glass":"朱丽普杯","ice":"碎冰","garnish":"薄荷头","note":"","pick":1,"needs":[{"n":"波本威士忌","a":"45ml","need":{"id":"bourbon"}},{"n":"1:1糖浆","a":"10ml","need":{"id":"syrup"}},{"n":"薄荷叶","a":"6 片","need":{"id":"mint"}}]},{"zh":"树莓","en":"Bramble","cat":"经典","method":"shake","glass":"古典杯","ice":"碎冰","garnish":"树莓装饰","note":"","pick":0,"needs":[{"n":"金酒","a":"45ml","need":{"cat":"gin"}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}},{"n":"1:1糖浆","a":"10ml","need":{"id":"syrup"}},{"n":"香博利口酒","a":"10ml（最后淋上去）","need":{"id":"chambord"}}]},{"zh":"罗布罗伊","en":"Rob Roy","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"橙皮","note":"","pick":0,"needs":[{"n":"苏格兰威士忌","a":"70ml","need":{"cat":"whisky"}},{"n":"红味美思","a":"20ml","need":{"id":"vermouth"}},{"n":"安高天娜苦精","a":"2dash","need":{"id":"angostura"}}]},{"zh":"维斯帕","en":"Vesper","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"柠檬皮","note":"","pick":0,"needs":[{"n":"金酒（电影里用的是哥顿）","a":"45ml","need":{"cat":"gin"}},{"n":"伏特加","a":"15ml","need":{"cat":"vodka"}},{"n":"利莱白","a":"8ml","need":{"id":"lillet"}}]},{"zh":"金菲士","en":"Gin Fizz","cat":"经典","method":"shake","glass":"柯林杯","ice":"摇冰","garnish":"柠檬皮","note":"","pick":1,"needs":[{"n":"金酒（风味金酒）","a":"45ml","need":{"cat":"gin"}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}},{"n":"苏打水","a":"up","need":{"id":"soda"}}]},{"zh":"猴腺","en":"Monkey Gland","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"橙皮","note":"","pick":0,"needs":[{"n":"金酒","a":"45ml","need":{"cat":"gin"}},{"n":"橙汁","a":"30ml","need":{"id":"orange_juice"}},{"n":"红石榴糖浆","a":"5ml","need":{"id":"grenadine"}},{"n":"苦艾酒","a":"3 把勺","need":{"id":"absinthe"}}]},{"zh":"皮斯科酸","en":"Pisco Sour","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"苦精拉花","note":"","pick":0,"needs":[{"n":"皮斯科酒","a":"45ml","need":{"id":"pisco"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}},{"n":"青柠汁","a":"15ml","need":{"id":"lime"}},{"n":"蛋白","a":"20ml","need":{"id":"egg_white"}}]},{"zh":"榛子酸","en":"Frangelico Sour","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"苦精拉花","note":"","pick":0,"needs":[{"n":"榛子利口酒","a":"30ml","need":{"id":"frangelico"}},{"n":"波本","a":"30ml","need":{"id":"bourbon"}},{"n":"1:1糖浆","a":"10ml","need":{"id":"syrup"}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}},{"n":"蛋白","a":"20ml","need":{"id":"egg_white"}}]},{"zh":"白色佳人","en":"White Lady","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"柠檬皮","note":"","pick":0,"needs":[{"n":"干金酒","a":"45ml","need":{"cat":"gin"}},{"n":"君度","a":"20ml","need":{"id":"cointreau"}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}},{"n":"1:1糖浆","a":"5ml","need":{"id":"syrup"}}]},{"zh":"三叶草俱乐部","en":"Clover Club","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"红樱桃","note":"","pick":0,"needs":[{"n":"金酒","a":"45ml","need":{"cat":"gin"}},{"n":"干味美思","a":"15ml（历史上有的）","need":{"id":"dry_vermouth"}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}},{"n":"树莓糖浆","a":"15ml","need":{"id":"syrup","approx":1}},{"n":"蛋清","a":"一个","need":{"id":"egg_white"}}]},{"zh":"飞行","en":"Aviation","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"红樱桃","note":"","pick":0,"needs":[{"n":"金酒","a":"60ml","need":{"cat":"gin"}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}},{"n":"黑樱桃利口酒","a":"15ml","need":{"id":"maraschino"}},{"n":"紫罗兰利口酒","a":"7ml","need":{"id":"violette"}}]},{"zh":"白色尼格罗尼","en":"White Negroni","cat":"经典","method":"stir","glass":"古典杯","ice":"方冰","garnish":"柠檬皮","note":"","pick":0,"needs":[{"n":"金酒","a":"30ml","need":{"cat":"gin"}},{"n":"利莱白","a":"30ml","need":{"id":"lillet"}},{"n":"苏姿龙胆酒","a":"30ml","need":{"id":"suze"}}]},{"zh":"海明威黛绮莉","en":"Hemingway Daiquiri","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"青柠角","note":"","pick":0,"needs":[{"n":"白朗姆","a":"45ml","need":{"id":"rum"}},{"n":"西柚汁","a":"15ml","need":{"id":"grapefruit"}},{"n":"青柠汁","a":"30ml","need":{"id":"lime"}},{"n":"黑樱桃利口酒","a":"15ml","need":{"id":"maraschino"}}]},{"zh":"边车","en":"Sidecar","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"柠檬皮","note":"","pick":1,"needs":[{"n":"干邑白兰地","a":"45ml","need":{"id":"cognac"}},{"n":"君度","a":"10ml","need":{"id":"cointreau"}},{"n":"皮埃尔费朗干库拉索","a":"10ml","need":{"id":"dry_curacao","approx":1}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}},{"n":"1:1糖浆","a":"5ml","need":{"id":"syrup"}}]},{"zh":"血与沙","en":"Blood and Sand","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"橙皮","note":"","pick":0,"needs":[{"n":"苏格兰威士忌","a":"20ml","need":{"cat":"whisky"}},{"n":"樱桃利口酒","a":"20ml","need":{"id":"maraschino","approx":1}},{"n":"红味美思","a":"20ml","need":{"id":"vermouth"}},{"n":"橙汁（调整酸甜）","a":"20ml","need":{"id":"orange_juice"}}]},{"zh":"法兰西 75","en":"French 75","cat":"经典","method":"shake","glass":"香槟杯","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"45ml","need":{"cat":"gin"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}},{"n":"黄柠檬汁","a":"15ml","need":{"id":"lemon"}},{"n":"香槟","a":"加满","need":{"id":"sparkling_wine"}}]},{"zh":"老广场","en":"Vieux Carré","cat":"经典","method":"stir","glass":"coupe 杯","ice":"无冰块","garnish":"橙皮","note":"","pick":0,"needs":[{"n":"干邑白兰地","a":"30ml","need":{"id":"cognac"}},{"n":"黑麦威士忌","a":"30ml","need":{"id":"rye"}},{"n":"红味美思","a":"20ml","need":{"id":"vermouth"}},{"n":"当酒","a":"10ml","need":{"id":"benedictine"}},{"n":"佩乔苦精","a":"2dash","need":{"id":"peychaud"}},{"n":"安高天娜苦精","a":"2dash","need":{"id":"angostura"}}]},{"zh":"遗言","en":"Last Word","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"红樱桃","note":"","pick":0,"needs":[{"n":"金酒","a":"20ml","need":{"cat":"gin"}},{"n":"黑樱桃利口酒","a":"20ml","need":{"id":"maraschino"}},{"n":"青柠汁","a":"20ml","need":{"id":"lime"}},{"n":"查特绿","a":"20ml","need":{"id":"chartreuse"}}]},{"zh":"死者复生2号","en":"Corpse Reviver #2","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"20ml","need":{"cat":"gin"}},{"n":"利莱白","a":"20ml","need":{"id":"lillet"}},{"n":"君度","a":"20ml","need":{"id":"cointreau"}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}},{"n":"芳泉苦艾酒","a":"1 吧勺","need":{"id":"absinthe"}}]},{"zh":"血腥玛丽","en":"Bloody Mary","cat":"经典","method":"rolling","glass":"柯林杯","ice":"摇冰","garnish":"","note":"","pick":1,"needs":[{"n":"伏特加","a":"45ml","need":{"cat":"vodka"}},{"n":"番茄汁","a":"90ml","need":{"id":"tomato"}},{"n":"蔓越莓糖浆","a":"15ml","need":{"id":"syrup","approx":1}},{"n":"柠檬酸溶液","a":"15ml","need":{"id":"lemon","approx":1}},{"n":"李派林喼汁","a":"3dash","need":{"id":"worcestershire"}},{"n":"辣椒仔","a":"3dash","need":{"id":"tabasco"}}]},{"zh":"马丁内斯","en":"Martinez","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"红樱桃","note":"","pick":0,"needs":[{"n":"干金酒","a":"60ml","need":{"cat":"gin"}},{"n":"红味美思","a":"15ml","need":{"id":"vermouth"}},{"n":"黑樱桃利口酒","a":"10ml","need":{"id":"maraschino"}},{"n":"安高天娜苦精","a":"2dash","need":{"id":"angostura"}}]},{"zh":"汉基潘基","en":"Hanky Panky","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"柠檬皮","note":"","pick":0,"needs":[{"n":"干金酒","a":"40ml","need":{"cat":"gin"}},{"n":"红味美思","a":"40ml","need":{"id":"vermouth"}},{"n":"菲奈特","a":"8ml","need":{"id":"fernet"}}]},{"zh":"特蕾莎","en":"Teresa","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"柠檬皮装饰","note":"","pick":0,"needs":[{"n":"金巴利","a":"45ml","need":{"id":"campari"}},{"n":"黑加仑利口酒","a":"20ml","need":{"id":"cassis"}},{"n":"黄柠檬汁","a":"30ml","need":{"id":"lemon"}}]},{"zh":"特立尼达酸","en":"Trinidad Sour","cat":"经典","method":"shake","glass":"古典杯","ice":"方冰","garnish":"肉桂棒","note":"","pick":0,"needs":[{"n":"黑朗姆","a":"30ml","need":{"id":"dark_rum"}},{"n":"安高天娜苦精","a":"20ml","need":{"id":"angostura"}},{"n":"杏仁糖浆","a":"15ml","need":{"id":"syrup","approx":1}},{"n":"火龙肉桂","a":"10ml","need":{"id":"fireball"}},{"n":"黄柠檬汁","a":"25ml","need":{"id":"lemon"}}]},{"zh":"杰克罗斯","en":"Jack Rose","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"苹果白兰地","a":"45ml","need":{"id":"calvados"}},{"n":"红石榴糖浆","a":"15ml","need":{"id":"grenadine"}},{"n":"黄柠檬汁","a":"25ml","need":{"id":"lemon"}}]},{"zh":"","en":"B&B","cat":"经典","method":"stir","glass":"古典杯","ice":"方冰","garnish":"柠檬皮","note":"","pick":0,"needs":[{"n":"干邑","a":"45ml","need":{"id":"cognac"}},{"n":"法国当酒","a":"15ml","need":{"id":"benedictine","approx":1}}]},{"zh":"纽约","en":"New York","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"红樱桃装饰","note":"","pick":0,"needs":[{"n":"波本威士忌","a":"45ml","need":{"id":"bourbon"}},{"n":"红石榴糖浆","a":"15ml","need":{"id":"grenadine"}},{"n":"1:1糖浆","a":"10ml","need":{"id":"syrup"}},{"n":"黄柠檬汁","a":"30ml","need":{"id":"lemon"}}]},{"zh":"宝石","en":"Bijou","cat":"经典","method":"stir","glass":"coupe 杯","ice":"无冰块","garnish":"橙皮喷香后丢弃","note":"原版 1:1:1。","pick":0,"needs":[{"n":"干金酒","a":"30ml","need":{"cat":"gin"}},{"n":"甜味美思","a":"20ml","need":{"id":"vermouth"}},{"n":"查特绿","a":"10ml","need":{"id":"chartreuse"}},{"n":"橙味苦精","a":"1dash","need":{"id":"orange_bitters"}}]},{"zh":"破冰","en":"Ice Breaker","cat":"经典","method":"shake","glass":"古典杯","ice":"方冰","garnish":"盐边青柠角","note":"","pick":0,"needs":[{"n":"龙舌兰酒","a":"30ml","need":{"cat":"tequila"}},{"n":"君度","a":"15ml","need":{"id":"cointreau"}},{"n":"粉西柚汁","a":"30ml","need":{"id":"grapefruit","approx":1}},{"n":"红石榴糖浆","a":"1 把勺","need":{"id":"grenadine"}}]},{"zh":"蓝色夏威夷","en":"Blue Hawaii","cat":"经典","method":"shake","glass":"飓风杯","ice":"","garnish":"红樱桃菠萝干","note":"","pick":1,"needs":[{"n":"朗姆酒","a":"45ml","need":{"cat":"rum"}},{"n":"伏特加","a":"15ml","need":{"cat":"vodka"}},{"n":"蓝橙利口酒","a":"10ml","need":{"id":"curacao_blue"}},{"n":"菠萝汁","a":"45ml","need":{"id":"pineapple"}},{"n":"青柠汁","a":"15ml","need":{"id":"lime"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}}]},{"zh":"大都会2号","en":"Metropole No.2","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"伏特加","a":"45ml","need":{"cat":"vodka"}},{"n":"黑加仑利口酒","a":"15ml","need":{"id":"cassis"}},{"n":"君度","a":"15ml","need":{"id":"cointreau"}},{"n":"青柠汁","a":"20ml","need":{"id":"lime"}}]},{"zh":"鳕鱼角","en":"Cape Cod","cat":"经典","method":"build","glass":"柯林杯","ice":"摇冰","garnish":"红樱桃装饰","note":"","pick":0,"needs":[{"n":"伏特加","a":"30ml","need":{"cat":"vodka"}},{"n":"蔓越莓糖浆","a":"15ml","need":{"id":"syrup","approx":1}},{"n":"蔓越莓汁","a":"90ml","need":{"id":"cranberry"}}]},{"zh":"","en":"XYZ","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"青柠角","note":"","pick":0,"needs":[{"n":"白朗姆","a":"45ml","need":{"id":"rum"}},{"n":"君度","a":"20ml","need":{"id":"cointreau"}},{"n":"青柠汁","a":"20ml","need":{"id":"lime"}}]},{"zh":"巴萨诺瓦","en":"Bossa Nova","cat":"经典","method":"shake","glass":"柯林杯","ice":"摇冰","garnish":"","note":"","pick":0,"needs":[{"n":"白朗姆","a":"30ml","need":{"id":"rum"}},{"n":"加力安奴","a":"20ml","need":{"id":"galliano"}},{"n":"青柠汁","a":"15ml","need":{"id":"lime"}},{"n":"黄杏利口酒","a":"10ml","need":{"id":"apricot"}},{"n":"菠萝汁","a":"60ml","need":{"id":"pineapple"}}]},{"zh":"佛罗里达","en":"Florida No.1","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"樱桃","note":"","pick":0,"needs":[{"n":"白朗姆","a":"60ml","need":{"id":"rum"}},{"n":"黑樱桃利口酒","a":"10ml","need":{"id":"maraschino"}},{"n":"青柠汁","a":"15ml","need":{"id":"lime"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}}]},{"zh":"札幌","en":"Sapporo","cat":"经典","method":"stir","glass":"coupe 杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"伏特加","a":"45ml","need":{"cat":"vodka"}},{"n":"杏仁利口酒","a":"20ml","need":{"id":"disaronno"}},{"n":"干味美思","a":"15ml","need":{"id":"dry_vermouth"}},{"n":"查特绿","a":"10ml","need":{"id":"chartreuse"}}]},{"zh":"魔鬼","en":"El Diablo","cat":"经典","method":"shake","glass":"柯林杯","ice":"摇冰","garnish":"","note":"","pick":0,"needs":[{"n":"龙舌兰","a":"45ml","need":{"cat":"tequila"}},{"n":"黑加仑利口酒","a":"15ml","need":{"id":"cassis"}},{"n":"青柠汁","a":"10ml","need":{"id":"lime"}},{"n":"干姜水","a":"60ml","need":{"ids":["ginger_beer","ginger_ale"]}}]},{"zh":"法国情怀","en":"French Connection","cat":"经典","method":"build","glass":"古典杯","ice":"","garnish":"柠檬皮","note":"","pick":1,"needs":[{"n":"干邑","a":"45ml","need":{"id":"cognac"}},{"n":"杏仁利口酒","a":"20ml","need":{"id":"disaronno"}}]},{"zh":"法式香吻","en":"French Kiss","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"杏仁利口酒","a":"20ml","need":{"id":"disaronno"}},{"n":"百利甜","a":"20ml","need":{"id":"baileys"}},{"n":"榛子利口酒","a":"20ml","need":{"id":"frangelico"}}]},{"zh":"完美女人","en":"Perfect Lady","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"45ml","need":{"cat":"gin"}},{"n":"桃子利口酒","a":"10ml","need":{"id":"peach"}},{"n":"黄柠檬汁","a":"25ml","need":{"id":"lemon"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}},{"n":"蛋白","a":"一整个","need":{"id":"egg_white"}}]},{"zh":"黑夜风暴","en":"Dark & Stormy","cat":"经典","method":"shake","glass":"柯林杯","ice":"摇冰","garnish":"","note":"","pick":0,"needs":[{"n":"黑朗姆","a":"45ml","need":{"id":"dark_rum"}},{"n":"青柠汁","a":"15ml","need":{"id":"lime"}},{"n":"1:1糖浆","a":"5ml","need":{"id":"syrup"}},{"n":"干姜水","a":"60ml","need":{"ids":["ginger_beer","ginger_ale"]}}]},{"zh":"生锈钉","en":"Rusty Nail","cat":"经典","method":"build","glass":"古典杯","ice":"","garnish":"","note":"","pick":1,"needs":[{"n":"苏格兰调和性威士忌","a":"45ml","need":{"id":"jw_black"}},{"n":"杜林标","a":"20ml","need":{"id":"drambuie"}}]},{"zh":"加里波利","en":"Garibaldi","cat":"经典","method":"build","glass":"柯林杯","ice":"摇冰","garnish":"","note":"","pick":1,"needs":[{"n":"金巴利","a":"45ml","need":{"id":"campari"}},{"n":"橙汁","a":"90ml","need":{"id":"orange_juice"}}]},{"zh":"白兰地库斯塔","en":"Brandy Crusta","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"糖边","note":"","pick":0,"needs":[{"n":"干邑","a":"45ml","need":{"id":"cognac"}},{"n":"君度","a":"15ml","need":{"id":"cointreau"}},{"n":"黄柠檬汁","a":"15ml","need":{"id":"lemon"}},{"n":"Maraschino 黑樱桃利口酒","a":"20ml","need":{"id":"maraschino","approx":1}},{"n":"安高天娜苦精","a":"2dash","need":{"id":"angostura"}}]},{"zh":"航空邮件","en":"Airmail","cat":"经典","method":"shake","glass":"香槟杯","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"金朗姆","a":"45ml","need":{"id":"bacardi_oro","approx":1}},{"n":"青柠汁","a":"15ml","need":{"id":"lime"}},{"n":"3:1蜂蜜糖浆","a":"15ml","need":{"id":"honey_syrup"}},{"n":"干香槟","a":"加满","need":{"id":"sparkling_wine"}}]},{"zh":"哈维撞墙","en":"Harvey Wallbanger","cat":"经典","method":"shake","glass":"柯林杯","ice":"摇冰","garnish":"","note":"","pick":1,"needs":[{"n":"伏特加","a":"45ml","need":{"cat":"vodka"}},{"n":"橙汁","a":"90ml","need":{"id":"orange_juice"}},{"n":"加力安奴","a":"10ml","need":{"id":"galliano"}}]},{"zh":"香榭丽舍","en":"Champs-Élysées","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"白兰地","a":"45ml","need":{"id":"calvados","approx":1}},{"n":"查特绿","a":"20ml","need":{"id":"chartreuse"}},{"n":"黄柠檬汁","a":"15ml","need":{"id":"lemon"}},{"n":"1:1糖浆","a":"10ml","need":{"id":"syrup"}},{"n":"安高天娜苦精","a":"1dash","need":{"id":"angostura"}}]},{"zh":"自由自在","en":"Fancy-Free","cat":"经典","method":"build","glass":"古典杯","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"黑麦威士忌","a":"60ml","need":{"id":"rye"}},{"n":"黑樱桃利口酒","a":"15ml","need":{"id":"maraschino"}},{"n":"安高天娜苦精","a":"1dash","need":{"id":"angostura"}},{"n":"橙味苦精","a":"1dash","need":{"id":"orange_bitters"}}]},{"zh":"绿蚱蜢","en":"Grasshopper","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":1,"needs":[{"n":"白可可利口酒","a":"30ml","need":{"id":"cocoa_white"}},{"n":"薄荷利口酒","a":"30ml","need":{"id":"mint"}},{"n":"淡奶油","a":"30ml","need":{"id":"cream"}}]},{"zh":"卢西恩·高丁","en":"Lucien Gaudin","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"干金酒","a":"45ml","need":{"cat":"gin"}},{"n":"干味美思","a":"15ml","need":{"id":"dry_vermouth"}},{"n":"金巴利","a":"15ml","need":{"id":"campari"}},{"n":"君度","a":"15ml","need":{"id":"cointreau"}}]},{"zh":"墨西哥行刑队","en":"Mexican Firing Squad","cat":"经典","method":"shake","glass":"柯林杯","ice":"摇冰","garnish":"","note":"","pick":0,"needs":[{"n":"龙舌兰","a":"45ml","need":{"cat":"tequila"}},{"n":"青柠汁","a":"20ml","need":{"id":"lime"}},{"n":"红石榴糖浆","a":"20ml","need":{"id":"grenadine"}},{"n":"安高天娜苦精","a":"2dash","need":{"id":"angostura"}},{"n":"苏打水","a":"60ml","need":{"id":"soda"}}]},{"zh":"普利克内斯","en":"Preakness","cat":"经典","method":"stir","glass":"coupe 杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"波本","a":"45ml","need":{"id":"bourbon"}},{"n":"红味美思","a":"20ml","need":{"id":"vermouth"}},{"n":"法国当酒","a":"7ml","need":{"id":"benedictine","approx":1}},{"n":"芳香苦精","a":"1dash","need":{"id":"angostura"}}]},{"zh":"多伦多","en":"Toronto","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"黑麦威士忌","a":"60ml","need":{"id":"rye"}},{"n":"菲奈特","a":"15ml","need":{"id":"fernet"}},{"n":"红糖浆","a":"1 把勺","need":{"id":"demerara"}}]},{"zh":"8区","en":"Ward 8","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"黑麦威士忌","a":"60ml","need":{"id":"rye"}},{"n":"黄柠檬汁","a":"15ml","need":{"id":"lemon"}},{"n":"橙汁","a":"15ml","need":{"id":"orange_juice"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}},{"n":"红石榴糖浆","a":"1 把勺","need":{"id":"grenadine"}}]},{"zh":"席琳菲士","en":"Celine Fizz","cat":"经典","method":"shake","glass":"柯林杯","ice":"摇冰","garnish":"","note":"","pick":0,"needs":[{"n":"普利茅斯金酒","a":"45ml","need":{"id":"plymouth"}},{"n":"圣哲曼","a":"15ml","need":{"id":"stgermain"}},{"n":"黄柠檬汁","a":"15ml","need":{"id":"lemon"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}},{"n":"蛋清","a":"一个","need":{"id":"egg_white"}}]},{"zh":"寡妇之吻","en":"Widow's Kiss","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"苹果白兰地","a":"45ml","need":{"id":"calvados"}},{"n":"查特黄","a":"5ml","need":{"id":"chartreuse_jaune"}},{"n":"当酒","a":"10ml","need":{"id":"benedictine"}},{"n":"安高天娜苦精","a":"1dash","need":{"id":"angostura"}}]},{"zh":"修道院","en":"Abbey","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"45ml","need":{"cat":"gin"}},{"n":"利莱白","a":"20ml","need":{"id":"lillet"}},{"n":"橙汁","a":"20ml","need":{"id":"orange_juice"}},{"n":"安高天娜苦精","a":"1dash","need":{"id":"angostura"}}]},{"zh":"阿拉巴马监狱","en":"Alabama Slammer","cat":"经典","method":"shake","glass":"柯林杯","ice":"摇冰","garnish":"","note":"","pick":0,"needs":[{"n":"黑刺李金酒","a":"20ml","need":{"id":"sloe_gin"}},{"n":"杏仁利口酒","a":"20ml","need":{"id":"disaronno"}},{"n":"金馥利口酒","a":"20ml","need":{"id":"soco"}},{"n":"黄柠檬汁","a":"10ml","need":{"id":"lemon"}},{"n":"橙汁","a":"45ml","need":{"id":"orange_juice"}}]},{"zh":"金色的梦","en":"Golden Dream","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"君度","a":"30ml","need":{"id":"cointreau"}},{"n":"橙汁","a":"30ml","need":{"id":"orange_juice"}},{"n":"加力安奴","a":"5ml","need":{"id":"galliano"}},{"n":"淡奶油","a":"20ml","need":{"id":"cream"}}]},{"zh":"茉莉","en":"Jasmine","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"柠檬皮","note":"","pick":0,"needs":[{"n":"金酒","a":"45ml","need":{"cat":"gin"}},{"n":"黄柠檬汁","a":"22.5ml","need":{"id":"lemon"}},{"n":"君度","a":"7.5ml","need":{"id":"cointreau"}},{"n":"金巴利","a":"7.5ml","need":{"id":"campari"}}]},{"zh":"三叉戟","en":"Trident","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"干雪莉酒","a":"30ml","need":{"id":"fino"}},{"n":"希娜","a":"30ml","need":{"id":"cynar"}},{"n":"阿夸维特","a":"30ml","need":{"id":"aquavit"}},{"n":"桃子利口酒（原版是桃子苦精）","a":"1 把勺","need":{"id":"peach"}}]},{"zh":"查特绿史威泽","en":"Chartreuse Swizzle","cat":"经典","method":"shake","glass":"柯林杯","ice":"碎冰","garnish":"薄荷叶","note":"","pick":0,"needs":[{"n":"查特绿","a":"45ml","need":{"id":"chartreuse"}},{"n":"菠萝汁","a":"30ml","need":{"id":"pineapple"}},{"n":"青柠汁","a":"20ml","need":{"id":"lime"}},{"n":"法勒纳姆","a":"15ml","need":{"id":"falernum"}}]},{"zh":"淘金热","en":"Gold Rush","cat":"经典","method":"shake","glass":"古典杯","ice":"","garnish":"橙皮","note":"","pick":0,"needs":[{"n":"波本威士忌","a":"45ml","need":{"id":"bourbon"}},{"n":"黄柠檬汁","a":"15ml","need":{"id":"lemon"}},{"n":"3:1蜂蜜糖浆","a":"15ml","need":{"id":"honey_syrup"}}]},{"zh":"竹子","en":"Bamboo","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"竹子叶","note":"","pick":0,"needs":[{"n":"缇欧佩佩Fino雪莉酒","a":"30ml","need":{"id":"fino"}},{"n":"园林干味美思","a":"15ml","need":{"id":"dry_vermouth","approx":1}},{"n":"好奇美国佬","a":"15ml","need":{"id":"cocchi"}},{"n":"1957雪利酒","a":"15ml","need":{"id":"fino","approx":1}},{"n":"橙味苦精","a":"2dash","need":{"id":"orange_bitters"}}]},{"zh":"红钩子","en":"Red Hook","cat":"经典","method":"stir","glass":"coupe 杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"黑麦威士忌","a":"60ml","need":{"id":"rye"}},{"n":"黑樱桃利口酒","a":"15ml","need":{"id":"maraschino"}},{"n":"潘托密","a":"15ml","need":{"id":"punt_e_mes"}}]},{"zh":"金金骡子","en":"Gin-Gin Mule","cat":"经典","method":"build","glass":"莫吉托杯","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"干金酒","a":"45ml","need":{"cat":"gin"}},{"n":"1:1糖浆","a":"20ml","need":{"id":"syrup"}},{"n":"青柠汁","a":"30ml","need":{"id":"lime"}},{"n":"薄荷叶","a":"6 片","need":{"id":"mint"}},{"n":"干姜水","a":"30ml","need":{"ids":["ginger_beer","ginger_ale"]}}]},{"zh":"路易斯安那","en":"À La Louisiane","cat":"经典","method":"stir","glass":"白兰地杯","ice":"","garnish":"红樱桃装饰","note":"","pick":0,"needs":[{"n":"黑麦威士忌","a":"20ml","need":{"id":"rye"}},{"n":"当酒","a":"20ml","need":{"id":"benedictine"}},{"n":"甜味美思","a":"20ml","need":{"id":"vermouth"}},{"n":"苦艾酒","a":"3dash","need":{"id":"absinthe"}},{"n":"佩乔苦精","a":"3dash","need":{"id":"peychaud"}}]},{"zh":"缅因记忆","en":"Remember the Maine","cat":"经典","method":"stir","glass":"coupe 杯","ice":"无冰块","garnish":"红樱桃","note":"","pick":0,"needs":[{"n":"黑麦","a":"60ml","need":{"id":"rye"}},{"n":"甜味美思","a":"20ml","need":{"id":"vermouth"}},{"n":"希灵樱桃利口酒","a":"15ml","need":{"id":"cherry_brandy","approx":1}},{"n":"苦艾酒","a":"半把勺","need":{"id":"absinthe"}}]},{"zh":"丛林鸟","en":"Jungle Bird","cat":"经典","method":"shake","glass":"TIKI 杯","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"黑朗姆","a":"45ml","need":{"id":"dark_rum"}},{"n":"菠萝汁","a":"45ml","need":{"id":"pineapple"}},{"n":"金巴利","a":"20ml","need":{"id":"campari"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}},{"n":"青柠汁","a":"15ml","need":{"id":"lime"}}]},{"zh":"受苦的混蛋","en":"Suffering Bastard","cat":"经典","method":"shake","glass":"古典杯","ice":"碎冰","garnish":"","note":"","pick":0,"needs":[{"n":"白兰地","a":"30ml","need":{"id":"calvados","approx":1}},{"n":"金酒","a":"30ml","need":{"cat":"gin"}},{"n":"青柠汁","a":"20ml","need":{"id":"lime"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}},{"n":"菠萝汁","a":"20ml","need":{"id":"pineapple"}},{"n":"安高天娜苦精","a":"1dash","need":{"id":"angostura"}},{"n":"干姜水","a":"60ml","need":{"ids":["ginger_beer","ginger_ale"]}}]},{"zh":"性感沙滩","en":"Sex on the Beach","cat":"经典","method":"shake","glass":"飓风杯","ice":"","garnish":"菠萝片红樱桃","note":"","pick":1,"needs":[{"n":"伏特加","a":"30ml","need":{"cat":"vodka"}},{"n":"桃子利口酒","a":"30ml","need":{"id":"peach"}},{"n":"蔓越莓汁","a":"30ml","need":{"id":"cranberry"}},{"n":"橙汁","a":"30ml","need":{"id":"orange_juice"}},{"n":"菠萝汁","a":"30ml","need":{"id":"pineapple"}},{"n":"红石榴糖浆","a":"10ml","need":{"id":"grenadine"}},{"n":"黄柠檬汁","a":"15ml","need":{"id":"lemon"}}]},{"zh":"拉莫斯金菲士","en":"Ramos Gin Fizz","cat":"经典","method":"shake","glass":"柯林杯","ice":"无冰块","garnish":"柠檬皮","note":"","pick":0,"needs":[{"n":"金酒","a":"60ml","need":{"cat":"gin"}},{"n":"淡奶油","a":"30ml","need":{"id":"cream"}},{"n":"1:1糖浆","a":"20ml","need":{"id":"syrup"}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}},{"n":"橙花水","a":"5ml","need":{"id":"orange_flower"}},{"n":"蛋清","a":"1 个","need":{"id":"egg_white"}},{"n":"苏打水","a":"加至顶出 3cm 左右","need":{"id":"soda"}}]},{"zh":"1919","en":"","cat":"经典","method":"stir","glass":"coupe 杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"干邑","a":"22.5ml","need":{"id":"cognac"}},{"n":"梅斯卡尔","a":"22.5ml","need":{"id":"mezcal"}},{"n":"黑樱桃利口酒","a":"15ml","need":{"id":"maraschino"}},{"n":"佩乔苦精","a":"2dash","need":{"id":"peychaud"}}]},{"zh":"可怕的爱","en":"Terrible Love","cat":"经典","method":"stir","glass":"rock 杯","ice":"方冰","garnish":"","note":"","pick":0,"needs":[{"n":"梅斯卡尔","a":"45ml","need":{"id":"mezcal"}},{"n":"苏姿利口酒","a":"20ml","need":{"id":"suze"}},{"n":"圣哲曼","a":"15ml","need":{"id":"stgermain"}},{"n":"橙味苦精","a":"1dash","need":{"id":"orange_bitters"}}]},{"zh":"柚子","en":"Yuzu","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"20ml","need":{"cat":"gin"}},{"n":"阿佩罗","a":"20ml","need":{"id":"aperol"}},{"n":"圣哲曼","a":"20ml","need":{"id":"stgermain"}},{"n":"青柠汁","a":"20ml","need":{"id":"lime"}}]},{"zh":"摇摆","en":"Wibble","cat":"经典","method":"shake","glass":"","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"30ml","need":{"cat":"gin"}},{"n":"黑刺李金酒","a":"30ml","need":{"id":"sloe_gin"}},{"n":"黑加仑利口酒","a":"10ml","need":{"id":"cassis"}},{"n":"西柚汁","a":"30ml","need":{"id":"grapefruit"}},{"n":"青柠汁","a":"10ml","need":{"id":"lime"}},{"n":"1:1糖浆","a":"5ml","need":{"id":"syrup"}}]},{"zh":"国王谷","en":"Kings Valley","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"苏格兰威士忌","a":"60ml","need":{"cat":"whisky"}},{"n":"君度","a":"15ml","need":{"id":"cointreau"}},{"n":"青柠","a":"15ml","need":{"id":"lime","approx":1}},{"n":"蓝橙利口酒","a":"10ml","need":{"id":"curacao_blue"}}]},{"zh":"夹片杯","en":"Clip Joint Cup","cat":"经典","method":"shake","glass":"TIKI 杯","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"雅梵娜","a":"30ml","need":{"id":"aveze"}},{"n":"潘脱蜜","a":"30ml","need":{"id":"punt_e_mes"}},{"n":"德梅拉拉糖浆","a":"15ml","need":{"id":"demerara"}},{"n":"生姜糖浆","a":"7ml","need":{"id":"ginger_fresh","approx":1}},{"n":"青柠汁","a":"7ml","need":{"id":"lime"}},{"n":"苏打水","a":"30ml","need":{"id":"soda"}},{"n":"汤力水","a":"30ml","need":{"id":"tonic"}},{"n":"黄瓜条","a":"1 条","need":{"id":"cucumber"}},{"n":"西柚皮","a":"1 片","need":{"id":"grapefruit","approx":1}}]},{"zh":"外交官","en":"Diplomat","cat":"经典","method":"stir","glass":"coupe 杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"干味美思","a":"45ml","need":{"id":"dry_vermouth"}},{"n":"红味美思","a":"40ml","need":{"id":"vermouth"}},{"n":"黑樱桃利口酒","a":"20ml","need":{"id":"maraschino"}},{"n":"橙味苦精","a":"2dash","need":{"id":"orange_bitters"}}]},{"zh":"死者复生1号","en":"Corpse Reviver #1","cat":"经典","method":"stir","glass":"coupe 杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"干邑","a":"45ml","need":{"id":"cognac"}},{"n":"苹果白兰地","a":"20ml","need":{"id":"calvados"}},{"n":"红味美思","a":"20ml","need":{"id":"vermouth"}}]},{"zh":"乒乓","en":"Ping Pang","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"黑刺李金酒","a":"45ml","need":{"id":"sloe_gin"}},{"n":"紫罗兰利口酒","a":"20ml","need":{"id":"violette"}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}}]},{"zh":"阿拉斯加","en":"Alaska","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"柠檬皮","note":"","pick":0,"needs":[{"n":"老汤姆金酒","a":"60ml","need":{"id":"old_tom"}},{"n":"查特黄","a":"15ml","need":{"id":"chartreuse_jaune"}},{"n":"橙味苦精","a":"适量","need":{"id":"orange_bitters"}}]},{"zh":"丛林中的豪伊","en":"Howie in the Jungle","cat":"经典","method":"shake","glass":"","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"阿马罗","a":"45ml","need":{"id":"averna","approx":1}},{"n":"阿佩罗","a":"22.5ml","need":{"id":"aperol"}},{"n":"菠萝汁","a":"22.5ml","need":{"id":"pineapple"}},{"n":"青柠汁","a":"22.5ml","need":{"id":"lime"}},{"n":"希零樱桃利口酒","a":"15ml","need":{"id":"cherry_brandy","approx":1}},{"n":"百香果糖浆","a":"7.5ml","need":{"id":"passionfruit","approx":1}}]},{"zh":"火鸡摇摆","en":"Jive Turkey","cat":"经典","method":"stir","glass":"","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"黑麦","a":"30ml","need":{"id":"rye"}},{"n":"水牛足迹波本","a":"20ml","need":{"id":"buffalo_trace"}},{"n":"蒙特内罗","a":"10ml","need":{"id":"montenegro"}},{"n":"Nonino","a":"10ml","need":{"id":"nonino"}},{"n":"圣哲曼","a":"7.5ml","need":{"id":"stgermain"}},{"n":"干味美思","a":"20ml","need":{"id":"dry_vermouth"}},{"n":"安高天娜苦精","a":"1dash","need":{"id":"angostura"}}]},{"zh":"福特","en":"Ford","cat":"经典","method":"stir","glass":"","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"老汤姆金酒","a":"40ml","need":{"id":"old_tom"}},{"n":"干味美思","a":"40ml","need":{"id":"dry_vermouth"}},{"n":"当酒","a":"10ml","need":{"id":"benedictine"}}]},{"zh":"吉姆雷特","en":"Gimlet","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"哥顿金酒（南非）","a":"60ml","need":{"id":"gin","approx":1}},{"n":"青柠汁","a":"15ml","need":{"id":"lime"}},{"n":"1:1糖浆","a":"10ml","need":{"id":"syrup"}}]},{"zh":"会馆菲士","en":"Kaikan Fizz","cat":"经典","method":"shake","glass":"柯林杯","ice":"摇冰","garnish":"柠檬皮","note":"","pick":0,"needs":[{"n":"金酒","a":"50ml","need":{"cat":"gin"}},{"n":"牛奶","a":"30ml","need":{"id":"milk"}},{"n":"黄柠檬汁","a":"15ml","need":{"id":"lemon"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}}]},{"zh":"贝里尼","en":"Bellini","cat":"经典","method":"build","glass":"香槟杯","ice":"无冰块","garnish":"桃子片","note":"","pick":1,"needs":[{"n":"桃子果泥","a":"45ml","need":{"id":"peach","approx":1}},{"n":"起泡酒","a":"120ml","need":{"id":"sparkling_wine"}},{"n":"桃子利口酒（可选）","a":"10ml","need":{"id":"peach","optional":1}}]},{"zh":"横滨","en":"Yokohama","cat":"经典","method":"shake","glass":"尼克诺拉杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"30ml","need":{"cat":"gin"}},{"n":"伏特加","a":"20ml","need":{"cat":"vodka"}},{"n":"橙汁","a":"30ml","need":{"id":"orange_juice"}},{"n":"红石榴糖浆","a":"5ml","need":{"id":"grenadine"}},{"n":"芳泉苦艾酒","a":"5ml","need":{"id":"absinthe"}}]},{"zh":"恩佐尼","en":"Enzoni","cat":"经典","method":"shake","glass":"古典杯","ice":"方冰","garnish":"青提","note":"","pick":0,"needs":[{"n":"金酒","a":"30ml","need":{"cat":"gin"}},{"n":"金巴利","a":"30ml","need":{"id":"campari"}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}},{"n":"青提","a":"5颗","need":{"id":"green_grape"}}]},{"zh":"汤姆柯林斯","en":"Tom Collins","cat":"经典","method":"shake","glass":"柯林杯","ice":"摇冰","garnish":"柠檬皮","note":"","pick":1,"needs":[{"n":"老汤姆金酒","a":"45ml","need":{"id":"old_tom"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}},{"n":"黄柠檬汁","a":"15ml","need":{"id":"lemon"}},{"n":"苏打水","a":"60ml","need":{"id":"soda"}}]},{"zh":"弗朗西斯阿尔伯特","en":"Francis Albert","cat":"经典","method":"stir","glass":"古典杯","ice":"方冰","garnish":"","note":"","pick":0,"needs":[{"n":"添加利","a":"40ml","need":{"id":"tanqueray","approx":1}},{"n":"威凤凰珍藏波本","a":"40ml","need":{"id":"wild_turkey"}}]},{"zh":"干草堆","en":"Haystack","cat":"经典","method":"shake","glass":"Coupe杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"波本威士忌","a":"30ml","need":{"id":"bourbon"}},{"n":"苏姿龙胆酒","a":"20ml","need":{"id":"suze"}},{"n":"比特储斯黄杏利口酒","a":"20ml","need":{"id":"apricot","approx":1}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}}]},{"zh":"阿佩罗橙光","en":"Aperol Spritz","cat":"经典","method":"build","glass":"红酒杯","ice":"摇冰","garnish":"橙子片","note":"","pick":1,"needs":[{"n":"阿佩罗","a":"45ml","need":{"id":"aperol"}},{"n":"柠檬酸溶液","a":"10ml","need":{"id":"lemon","approx":1}},{"n":"1:1糖浆","a":"10ml","need":{"id":"syrup"}},{"n":"干型起泡酒","a":"100ml","need":{"id":"sparkling_wine"}}]},{"zh":"杏仁酸","en":"Amaretto Sour","cat":"经典","method":"shake","glass":"Coupe杯","ice":"无冰块","garnish":"柠檬皮","note":"","pick":1,"needs":[{"n":"帝萨诺杏仁利口酒","a":"40ml","need":{"id":"disaronno","approx":1}},{"n":"威凤凰珍藏威士忌","a":"20ml","need":{"id":"wild_turkey"}},{"n":"黄柠檬汁","a":"30ml","need":{"id":"lemon"}},{"n":"1:1糖浆","a":"5ml","need":{"id":"syrup"}},{"n":"蛋清（可选）","a":"15ml","need":{"id":"egg_white","approx":1,"optional":1}}]},{"zh":"蓝月亮","en":"Blue Moon","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"月牙状柠檬皮","note":"月牙装饰直接浮在酒液表面","pick":0,"needs":[{"n":"金酒","a":"45ml","need":{"cat":"gin"}},{"n":"比特储斯紫罗兰利口酒","a":"15ml","need":{"id":"violette","approx":1}},{"n":"黄柠檬汁","a":"15ml","need":{"id":"lemon"}}]},{"zh":"瓦伦西亚","en":"Valencia","cat":"经典","method":"shake","glass":"尼克诺拉杯","ice":"无冰块","garnish":"橙皮","note":"要自己调整橙子酸甜，可以适量加柠檬汁增酸","pick":0,"needs":[{"n":"比特储斯黄杏利口酒","a":"45ml","need":{"id":"apricot","approx":1}},{"n":"橙汁","a":"90ml","need":{"id":"orange_juice"}},{"n":"橙味苦精（可选）","a":"3dash","need":{"id":"orange_bitters","optional":1}}]},{"zh":"脏马天尼","en":"Dirty Martini","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"橄榄","note":"","pick":0,"needs":[{"n":"干金酒","a":"60ml","need":{"cat":"gin"}},{"n":"干味美思","a":"10ml","need":{"id":"dry_vermouth"}},{"n":"橄榄汁","a":"5ml","need":{"id":"olive_brine"}}]},{"zh":"雪莉库博勒","en":"Sherry Cobble","cat":"经典","method":"shake","glass":"红酒杯","ice":"碎冰","garnish":"","note":"所有材料混合，加入碎冰摇合之后直接倒入杯子。","pick":0,"needs":[{"n":"Fino雪利酒","a":"90ml","need":{"id":"fino"}},{"n":"1:1糖浆","a":"20ml","need":{"id":"syrup"}},{"n":"橙子片","a":"2片","need":{"id":"orange_peel"}},{"n":"柠檬片","a":"1片","need":{"id":"lemon_peel"}},{"n":"薄荷（可选）","a":"6片","need":{"id":"mint","optional":1}},{"n":"树莓（可选）","a":"3颗","need":{"id":"raspberry","optional":1}}]},{"zh":"阿多尼斯","en":"Adonis","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"橙皮","note":"","pick":0,"needs":[{"n":"Fino干雪利酒","a":"60ml","need":{"id":"fino"}},{"n":"甜味美思","a":"30ml","need":{"id":"vermouth"}},{"n":"橙味苦精","a":"2dash","need":{"id":"orange_bitters"}}]},{"zh":"村雨","en":"Murasame","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"烧酒（大伊雅美）","a":"50ml","need":{"id":"soju","approx":1}},{"n":"杜林标","a":"15ml","need":{"id":"drambuie"}},{"n":"黄柠檬汁","a":"8ml","need":{"id":"lemon"}}]},{"zh":"沙后-叶卡捷琳娜","en":"Czarina","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"伏特加","a":"60ml","need":{"cat":"vodka"}},{"n":"味美思","a":"15ml","need":{"id":"vermouth","approx":1}},{"n":"比特储斯黄杏","a":"15ml","need":{"id":"apricot"}}]},{"zh":"金Ricky","en":"Gin Ricky","cat":"经典","method":"build","glass":"柯林杯","ice":"摇冰","garnish":"青柠角","note":"","pick":1,"needs":[{"n":"金酒","a":"45ml","need":{"cat":"gin"}},{"n":"青柠汁","a":"10ml","need":{"id":"lime"}},{"n":"苏打水","a":"120ml","need":{"id":"soda"}}]},{"zh":"肉钩子","en":"Meat hook","cat":"经典","method":"stir","glass":"Coupe杯","ice":"无冰块","garnish":"","note":"阿贝10年 5ml 为最后淋面（float），出品时淋在表面，不要直接混入摇匀。","pick":0,"needs":[{"n":"瑞顿房黑麦威士忌","a":"35ml","need":{"id":"rye"}},{"n":"拉弗格1/4桶","a":"20ml","need":{"id":"laphroaig"}},{"n":"路萨朵黑樱桃利口酒","a":"10ml","need":{"id":"maraschino","approx":1}},{"n":"潘脱蜜","a":"10ml","need":{"id":"punt_e_mes"}},{"n":"阿贝10年","a":"5ml","need":{"id":"ardbeg10"}}]},{"zh":"一脱成名","en":"Naked and Famous","cat":"经典","method":"shake","glass":"coupe 杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"Mezcal 梅斯卡尔","a":"20ml","need":{"id":"mezcal"}},{"n":"Yellow Chartreuse 查特黄","a":"20ml","need":{"id":"chartreuse_jaune","approx":1}},{"n":"Aperol 阿佩罗","a":"20ml","need":{"id":"aperol","approx":1}},{"n":"青柠汁","a":"20ml","need":{"id":"lime"}}]},{"zh":"热红酒","en":"Mulled Wine","cat":"经典","method":"","glass":"","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"红酒","a":"一整瓶","need":{"id":"red_wine"}},{"n":"君度","a":"75ml","need":{"id":"cointreau"}},{"n":"黄柠檬汁","a":"100ml","need":{"id":"lemon"}},{"n":"红枣糖浆","a":"75ml","need":{"id":"syrup","approx":1}},{"n":"橙汁","a":"150ml","need":{"id":"orange_juice"}},{"n":"火龙肉桂","a":"75ml","need":{"id":"fireball"}}]},{"zh":"神风","en":"Kamikaze","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":1,"needs":[{"n":"伏特加","a":"30ml","need":{"cat":"vodka"}},{"n":"君度","a":"15ml","need":{"id":"cointreau"}},{"n":"青柠汁","a":"15ml","need":{"id":"lime"}}]},{"zh":"M-30 雨","en":"M-30 Rain","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"上田和男为坂本龙一《末代皇帝》配乐第 30 首 Rain 创作。","pick":0,"needs":[{"n":"伏特加","a":"40ml","need":{"cat":"vodka"}},{"n":"西柚利口酒","a":"10ml","need":{"id":"grapefruit_liqueur"}},{"n":"青柠汁","a":"5ml","need":{"id":"lime"}},{"n":"蓝橙利口酒","a":"5ml","need":{"id":"curacao_blue"}}]},{"zh":"亚历山大","en":"Alexander","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"肉豆蔻","note":"","pick":0,"needs":[{"n":"干邑","a":"30ml","need":{"id":"cognac"}},{"n":"白可可利口酒","a":"30ml","need":{"id":"cocoa_white"}},{"n":"淡奶油","a":"30ml","need":{"id":"cream"}}]},{"zh":"床笫之间","en":"Between the Sheets","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"干邑","a":"25ml","need":{"id":"cognac"}},{"n":"朗姆酒","a":"25ml","need":{"cat":"rum"}},{"n":"皮埃尔费朗干库拉索","a":"25ml","need":{"id":"dry_curacao","approx":1}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}}]},{"zh":"史丁格","en":"Stinger","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"干邑","a":"60ml","need":{"id":"cognac"}},{"n":"白薄荷利口酒","a":"20ml","need":{"id":"menthe_white"}}]},{"zh":"波特菲利普","en":"Port Flip","cat":"经典","method":"shake","glass":"葡萄酒杯","ice":"无冰块","garnish":"肉豆蔻","note":"先干摇打发蛋黄，再加冰摇匀。","pick":0,"needs":[{"n":"波特酒","a":"50ml","need":{"id":"port"}},{"n":"干邑","a":"10ml","need":{"id":"cognac"}},{"n":"蛋黄","a":"1 个","need":{"id":"egg_yolk"}},{"n":"1:1糖浆","a":"10ml","need":{"id":"syrup"}}]},{"zh":"天使之颜","en":"Angel Face","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"30ml","need":{"cat":"gin"}},{"n":"黄杏利口酒","a":"30ml","need":{"id":"apricot"}},{"n":"苹果白兰地","a":"30ml","need":{"id":"calvados"}}]},{"zh":"燕尾服","en":"Tuxedo","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"30ml","need":{"cat":"gin"}},{"n":"白味美思","a":"30ml","need":{"id":"dry_vermouth"}},{"n":"黑樱桃利口酒","a":"5ml","need":{"id":"maraschino"}},{"n":"橙味苦精","a":"1dash","need":{"id":"orange_bitters"}},{"n":"苦艾酒","a":"1dash","need":{"id":"absinthe"}}]},{"zh":"粉红佳人","en":"Pink Lady","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"45ml","need":{"cat":"gin"}},{"n":"黄柠檬汁","a":"20ml","need":{"id":"lemon"}},{"n":"红石榴糖浆","a":"15ml","need":{"id":"grenadine"}},{"n":"蛋清","a":"15ml","need":{"id":"egg_white"}}]},{"zh":"天堂","en":"Paradise","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"35ml","need":{"cat":"gin"}},{"n":"黄杏利口酒","a":"25ml","need":{"id":"apricot"}},{"n":"橙汁","a":"25ml","need":{"id":"orange_juice"}},{"n":"橙味苦精","a":"1dash","need":{"id":"orange_bitters"}}]},{"zh":"德比","en":"Derby","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"60ml","need":{"cat":"gin"}},{"n":"薄荷利口酒","a":"10ml","need":{"id":"mint"}},{"n":"佩乔苦精","a":"2dash","need":{"id":"peychaud"}},{"n":"橙味苦精","a":"2dash","need":{"id":"orange_bitters"}}]},{"zh":"海明威特调","en":"Hemingway Special","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"白朗姆","a":"60ml","need":{"id":"rum"}},{"n":"黑樱桃利口酒","a":"40ml","need":{"id":"maraschino"}},{"n":"西柚汁","a":"30ml","need":{"id":"grapefruit"}},{"n":"青柠汁","a":"15ml","need":{"id":"lime"}},{"n":"1:1糖浆","a":"10ml","need":{"id":"syrup"}}]},{"zh":"佩古俱乐部","en":"Pegu Club","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"60ml","need":{"cat":"gin"}},{"n":"君度","a":"20ml","need":{"id":"cointreau"}},{"n":"青柠汁","a":"20ml","need":{"id":"lime"}},{"n":"安高天娜苦精","a":"1dash","need":{"id":"angostura"}},{"n":"橙味苦精","a":"1dash","need":{"id":"orange_bitters"}}]},{"zh":"二十世纪","en":"20th Century","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"45ml","need":{"cat":"gin"}},{"n":"白可可利口酒","a":"22ml","need":{"id":"cocoa_white"}},{"n":"白味美思","a":"22ml","need":{"id":"dry_vermouth"}},{"n":"黄柠檬汁","a":"22ml","need":{"id":"lemon"}}]},{"zh":"赌场","en":"Casino","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"45ml","need":{"cat":"gin"}},{"n":"黑樱桃利口酒","a":"15ml","need":{"id":"maraschino"}},{"n":"黄柠檬汁","a":"15ml","need":{"id":"lemon"}},{"n":"橙味苦精","a":"1dash","need":{"id":"orange_bitters"}}]},{"zh":"自由古巴","en":"Cuba Libre","cat":"经典","method":"build","glass":"高球杯","ice":"","garnish":"青柠角","note":"","pick":1,"needs":[{"n":"白朗姆","a":"50ml","need":{"id":"rum"}},{"n":"可乐","a":"120ml","need":{"id":"coke"}},{"n":"青柠汁","a":"10ml","need":{"id":"lime"}}]},{"zh":"百加得","en":"Bacardi","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"百加得朗姆","a":"45ml","need":{"id":"rum"}},{"n":"青柠汁","a":"20ml","need":{"id":"lime"}},{"n":"红石榴糖浆","a":"10ml","need":{"id":"grenadine"}}]},{"zh":"种植者潘趣","en":"Planter's Punch","cat":"经典","method":"shake","glass":"柯林杯","ice":"摇冰","garnish":"","note":"","pick":0,"needs":[{"n":"黑朗姆","a":"60ml","need":{"id":"dark_rum"}},{"n":"青柠汁","a":"30ml","need":{"id":"lime"}},{"n":"橙汁","a":"30ml","need":{"id":"orange_juice"}},{"n":"菠萝汁","a":"30ml","need":{"id":"pineapple"}},{"n":"红石榴糖浆","a":"15ml","need":{"id":"grenadine"}},{"n":"安高天娜苦精","a":"2dash","need":{"id":"angostura"}}]},{"zh":"黄鸟","en":"Yellow Bird","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"白朗姆","a":"30ml","need":{"id":"rum"}},{"n":"加力安奴","a":"20ml","need":{"id":"galliano"}},{"n":"君度","a":"20ml","need":{"id":"cointreau"}},{"n":"青柠汁","a":"15ml","need":{"id":"lime"}}]},{"zh":"玛丽·碧克馥","en":"Mary Pickford","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"白朗姆","a":"60ml","need":{"id":"rum"}},{"n":"菠萝汁","a":"60ml","need":{"id":"pineapple"}},{"n":"黑樱桃利口酒","a":"5ml","need":{"id":"maraschino"}},{"n":"红石榴糖浆","a":"5ml","need":{"id":"grenadine"}}]},{"zh":"止痛药","en":"Painkiller","cat":"经典","method":"shake","glass":"柯林杯","ice":"摇冰","garnish":"肉豆蔻","note":"","pick":0,"needs":[{"n":"朗姆酒","a":"60ml","need":{"cat":"rum"}},{"n":"菠萝汁","a":"120ml","need":{"id":"pineapple"}},{"n":"橙汁","a":"60ml","need":{"id":"orange_juice"}},{"n":"水妈妈椰浆","a":"30ml","need":{"id":"coconut_milk","approx":1}}]},{"zh":"热黄油朗姆","en":"Hot Buttered Rum","cat":"经典","method":"build","glass":"马克杯","ice":"","garnish":"肉桂","note":"热水冲调，黄油浮面，肉桂装饰。","pick":0,"needs":[{"n":"朗姆酒","a":"45ml","need":{"cat":"rum"}},{"n":"黄油","a":"15g","need":{"id":"butter"}},{"n":"红糖","a":"15ml","need":{"id":"demerara","approx":1}},{"n":"热水","a":"150ml","need":{"id":"hot_water"}}]},{"zh":"螺丝刀","en":"Screwdriver","cat":"经典","method":"build","glass":"高球杯","ice":"","garnish":"橙角","note":"","pick":1,"needs":[{"n":"伏特加","a":"50ml","need":{"cat":"vodka"}},{"n":"橙汁","a":"100ml","need":{"id":"orange_juice"}}]},{"zh":"爱尔兰咖啡","en":"Irish Coffee","cat":"经典","method":"build","glass":"爱尔兰咖啡杯","ice":"","garnish":"","note":"红糖搅拌溶化后，淡奶油浮面不搅拌。","pick":0,"needs":[{"n":"爱尔兰威士忌","a":"40ml","need":{"id":"jameson","approx":1}},{"n":"热咖啡","a":"120ml","need":{"id":"coffee_hot"}},{"n":"红糖","a":"15ml","need":{"id":"demerara","approx":1}},{"n":"淡奶油","a":"30ml","need":{"id":"cream"}}]},{"zh":"红鲷鱼","en":"Red Snapper","cat":"经典","method":"build","glass":"高球杯","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"金酒","a":"50ml","need":{"cat":"gin"}},{"n":"番茄汁","a":"100ml","need":{"id":"tomato"}},{"n":"黄柠檬汁","a":"15ml","need":{"id":"lemon"}},{"n":"李派林喼汁","a":"2dash","need":{"id":"worcestershire"}},{"n":"辣椒仔","a":"1dash","need":{"id":"tabasco"}}]},{"zh":"凯皮洛斯卡","en":"Caipiroska","cat":"经典","method":"smash","glass":"古典杯","ice":"碎冰","garnish":"","note":"青柠檬切块与糖捣出汁，加碎冰和伏特加。","pick":0,"needs":[{"n":"伏特加","a":"60ml","need":{"cat":"vodka"}},{"n":"青柠檬","a":"半个","need":{"id":"lime"}},{"n":"糖","a":"2 吧勺","need":{"id":"syrup","approx":1}}]},{"zh":"艳星马天尼","en":"Porn Star Martini","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"百香果","note":"香槟单独小杯随附。","pick":0,"needs":[{"n":"伏特加","a":"30ml","need":{"cat":"vodka"}},{"n":"百香果果茸","a":"30ml","need":{"id":"passionfruit","approx":1}},{"n":"香草糖浆","a":"15ml","need":{"id":"monin"}},{"n":"青柠汁","a":"15ml","need":{"id":"lime"}},{"n":"香槟","a":"60ml","need":{"id":"sparkling_wine"}}]},{"zh":"海湾微风","en":"Bay Breeze","cat":"经典","method":"build","glass":"高球杯","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"伏特加","a":"40ml","need":{"cat":"vodka"}},{"n":"蔓越莓汁","a":"120ml","need":{"id":"cranberry"}},{"n":"菠萝汁","a":"40ml","need":{"id":"pineapple"}}]},{"zh":"灰狗","en":"Greyhound","cat":"经典","method":"build","glass":"高球杯","ice":"","garnish":"","note":"","pick":1,"needs":[{"n":"伏特加","a":"40ml","need":{"cat":"vodka"}},{"n":"西柚汁","a":"120ml","need":{"id":"grapefruit"}}]},{"zh":"咸狗","en":"Salty Dog","cat":"经典","method":"build","glass":"古典杯","ice":"方冰","garnish":"盐边","note":"杯口沾盐。","pick":1,"needs":[{"n":"伏特加","a":"40ml","need":{"cat":"vodka"}},{"n":"西柚汁","a":"120ml","need":{"id":"grapefruit"}}]},{"zh":"教父","en":"God Father","cat":"经典","method":"stir","glass":"古典杯","ice":"方冰","garnish":"","note":"","pick":1,"needs":[{"n":"苏格兰威士忌","a":"45ml","need":{"cat":"whisky"}},{"n":"杏仁利口酒","a":"15ml","need":{"id":"disaronno"}}]},{"zh":"教母","en":"God Mother","cat":"经典","method":"stir","glass":"古典杯","ice":"方冰","garnish":"","note":"","pick":1,"needs":[{"n":"伏特加","a":"45ml","need":{"cat":"vodka"}},{"n":"杏仁利口酒","a":"15ml","need":{"id":"disaronno"}}]},{"zh":"纽约酸","en":"New York Sour","cat":"经典","method":"shake","glass":"古典杯","ice":"方冰","garnish":"","note":"红葡萄酒最后浮面。","pick":0,"needs":[{"n":"波本威士忌","a":"60ml","need":{"id":"bourbon"}},{"n":"黄柠檬汁","a":"30ml","need":{"id":"lemon"}},{"n":"1:1糖浆","a":"15ml","need":{"id":"syrup"}},{"n":"红葡萄酒","a":"15ml","need":{"id":"red_wine"}}]},{"zh":"老朋友","en":"Old Pal","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"黑麦威士忌","a":"30ml","need":{"id":"rye"}},{"n":"干味美思","a":"30ml","need":{"id":"dry_vermouth"}},{"n":"金巴利","a":"30ml","need":{"id":"campari"}}]},{"zh":"布鲁克林","en":"Brooklyn","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"原版配方为 2 dash Amer Picon（按 amaro 用量调整为 7.5ml）。","pick":0,"needs":[{"n":"黑麦威士忌","a":"45ml","need":{"id":"rye"}},{"n":"干味美思","a":"30ml","need":{"id":"dry_vermouth"}},{"n":"黑樱桃利口酒","a":"5ml","need":{"id":"maraschino"}},{"n":"Amer Picon","a":"7.5ml","need":{"id":"picon"}}]},{"zh":"香槟鸡尾酒","en":"Champagne Cocktail","cat":"经典","method":"build","glass":"香槟杯","ice":"","garnish":"橙皮","note":"苦精滴在方糖上放入杯底。","pick":1,"needs":[{"n":"香槟","a":"150ml","need":{"id":"sparkling_wine"}},{"n":"干邑","a":"10ml","need":{"id":"cognac"}},{"n":"方糖","a":"1 块","need":{"id":"sugar_cube","approx":1}},{"n":"安高天娜苦精","a":"2dash","need":{"id":"angostura"}}]},{"zh":"含羞草","en":"Mimosa","cat":"经典","method":"build","glass":"香槟杯","ice":"","garnish":"","note":"","pick":1,"needs":[{"n":"香槟","a":"75ml","need":{"id":"sparkling_wine"}},{"n":"橙汁","a":"75ml","need":{"id":"orange_juice"}}]},{"zh":"午后之死","en":"Death in the Afternoon","cat":"经典","method":"build","glass":"香槟杯","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"苦艾酒","a":"30ml","need":{"id":"absinthe"}},{"n":"香槟","a":"120ml","need":{"id":"sparkling_wine"}}]},{"zh":"B-52","en":"B-52","cat":"经典","method":"build","glass":"利口酒杯","ice":"无冰块","garnish":"","note":"依次缓慢倒入分层（甘露→百利甜→柑曼怡）。","pick":1,"needs":[{"n":"甘露咖啡利口酒","a":"20ml","need":{"id":"kahlua"}},{"n":"百利甜","a":"20ml","need":{"id":"baileys"}},{"n":"柑曼怡","a":"20ml","need":{"id":"grand_marnier"}}]},{"zh":"蓝色泻湖","en":"Blue Lagoon","cat":"经典","method":"build","glass":"高球杯","ice":"","garnish":"","note":"","pick":1,"needs":[{"n":"伏特加","a":"30ml","need":{"cat":"vodka"}},{"n":"蓝橙利口酒","a":"20ml","need":{"id":"curacao_blue"}},{"n":"黄柠檬汁","a":"30ml","need":{"id":"lemon"}},{"n":"苏打水","a":"90ml","need":{"id":"soda"}}]},{"zh":"巧克力马天尼","en":"Chocolate Martini","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"伏特加","a":"45ml","need":{"cat":"vodka"}},{"n":"白可可利口酒","a":"30ml","need":{"id":"cocoa_white"}},{"n":"黑可可利口酒","a":"15ml","need":{"id":"cocoa_dark"}},{"n":"淡奶油","a":"15ml","need":{"id":"cream"}}]},{"zh":"天使之吻","en":"Angel's Tit","cat":"经典","method":"build","glass":"利口酒杯","ice":"无冰块","garnish":"红樱桃","note":"淡奶油浮面，点缀红樱桃。","pick":1,"needs":[{"n":"黑可可利口酒","a":"30ml","need":{"id":"cocoa_dark"}},{"n":"淡奶油","a":"15ml","need":{"id":"cream"}}]},{"zh":"香蕉女妖","en":"Banana Banshee","cat":"经典","method":"blended","glass":"高球杯","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"香蕉利口酒","a":"30ml","need":{"id":"banana_liqueur"}},{"n":"白可可利口酒","a":"30ml","need":{"id":"cocoa_white"}},{"n":"淡奶油","a":"30ml","need":{"id":"cream"}}]},{"zh":"芝加哥","en":"Chicago","cat":"经典","method":"stir","glass":"香槟杯","ice":"","garnish":"","note":"搅拌后倒入香槟。","pick":0,"needs":[{"n":"干邑","a":"30ml","need":{"id":"cognac"}},{"n":"君度","a":"15ml","need":{"id":"cointreau"}},{"n":"安高天娜苦精","a":"1dash","need":{"id":"angostura"}},{"n":"香槟","a":"60ml","need":{"id":"sparkling_wine"}}]},{"zh":"火烈鸟","en":"Flamingo","cat":"经典","method":"shake","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"","pick":0,"needs":[{"n":"白朗姆","a":"30ml","need":{"id":"rum"}},{"n":"蔓越莓汁","a":"45ml","need":{"id":"cranberry"}},{"n":"红石榴糖浆","a":"15ml","need":{"id":"grenadine"}},{"n":"青柠汁","a":"15ml","need":{"id":"lime"}}]},{"zh":"弗雷迪·福德帕克","en":"Freddy Fudpucker","cat":"经典","method":"build","glass":"高球杯","ice":"","garnish":"","note":"加力安奴浮面。","pick":0,"needs":[{"n":"龙舌兰","a":"30ml","need":{"cat":"tequila"}},{"n":"橙汁","a":"60ml","need":{"id":"orange_juice"}},{"n":"加力安奴","a":"15ml","need":{"id":"galliano"}}]},{"zh":"烟熏马天尼","en":"Smoky Martini","cat":"经典","method":"stir","glass":"马天尼杯","ice":"无冰块","garnish":"","note":"艾雷威士忌润杯倒出后调制。","pick":0,"needs":[{"n":"金酒","a":"60ml","need":{"cat":"gin"}},{"n":"干味美思","a":"10ml","need":{"id":"dry_vermouth"}},{"n":"艾雷迷雾烟熏威士忌","a":"5ml","need":{"id":"talisker"}}]},{"zh":"瓦哈卡古典","en":"Oaxaca Old Fashioned","cat":"经典","method":"stir","glass":"古典杯","ice":"方冰","garnish":"橙皮","note":"","pick":0,"needs":[{"n":"梅斯卡尔","a":"45ml","need":{"id":"mezcal"}},{"n":"龙舌兰","a":"15ml","need":{"cat":"tequila"}},{"n":"龙舌兰糖浆","a":"10ml","need":{"cat":"tequila"}},{"n":"安高天娜苦精","a":"2dash","need":{"id":"angostura"}}]},{"zh":"梅斯卡尔尼格罗尼","en":"Mezcal Negroni","cat":"经典","method":"stir","glass":"古典杯","ice":"方冰","garnish":"橙皮","note":"","pick":0,"needs":[{"n":"梅斯卡尔","a":"30ml","need":{"id":"mezcal"}},{"n":"红味美思","a":"30ml","need":{"id":"vermouth"}},{"n":"金巴利","a":"30ml","need":{"id":"campari"}}]},{"zh":"吸血鬼","en":"Vampiro","cat":"经典","method":"build","glass":"高球杯","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"龙舌兰","a":"60ml","need":{"cat":"tequila"}},{"n":"番茄汁","a":"90ml","need":{"id":"tomato"}},{"n":"橙汁","a":"30ml","need":{"id":"orange_juice"}},{"n":"青柠汁","a":"15ml","need":{"id":"lime"}},{"n":"3:1蜂蜜糖浆","a":"10ml","need":{"id":"honey_syrup"}},{"n":"辣椒仔","a":"1dash","need":{"id":"tabasco"}}]},{"zh":"坎塔里托","en":"Cantarito","cat":"经典","method":"build","glass":"陶杯","ice":"","garnish":"","note":"","pick":0,"needs":[{"n":"龙舌兰","a":"45ml","need":{"cat":"tequila"}},{"n":"橙汁","a":"60ml","need":{"id":"orange_juice"}},{"n":"西柚汁","a":"60ml","need":{"id":"grapefruit"}},{"n":"青柠汁","a":"30ml","need":{"id":"lime"}},{"n":"苏打水","a":"30ml","need":{"id":"soda"}}]},{"zh":"约翰柯林斯","en":"John Collins","cat":"经典","method":"build","glass":"柯林杯","ice":"摇冰","garnish":"橙皮","note":"","pick":0,"needs":[{"n":"金酒","a":"45ml","need":{"cat":"gin"}},{"n":"黄柠檬汁","a":"30ml","need":{"id":"lemon"}},{"n":"1:1糖浆","a":"20ml","need":{"id":"syrup"}},{"n":"苏打水","a":"90ml","need":{"id":"soda"}}]},{"zh":"皮姆杯","en":"Pimm's Cup","cat":"经典","method":"build","glass":"高球杯","ice":"摇冰","garnish":"黄瓜片","note":"","pick":1,"needs":[{"n":"飘仙一号","a":"50ml","need":{"id":"pimms"}},{"n":"干姜水","a":"100ml","need":{"ids":["ginger_beer","ginger_ale"]}}]},{"zh":"基尔","en":"Kir","cat":"经典","method":"build","glass":"酒杯","ice":"","garnish":"","note":"","pick":1,"needs":[{"n":"白葡萄酒","a":"90ml","need":{"id":"white_wine"}},{"n":"黑加仑利口酒","a":"15ml","need":{"id":"cassis"}}]},{"zh":"皇家基尔","en":"Kir Royale","cat":"经典","method":"build","glass":"香槟杯","ice":"","garnish":"","note":"","pick":1,"needs":[{"n":"香槟","a":"90ml","need":{"id":"sparkling_wine"}},{"n":"黑加仑利口酒","a":"15ml","need":{"id":"cassis"}}]}];
+
+</script>
+<script>
 /* =========================================================
    调酒台 · 逻辑
    ========================================================= */
@@ -2054,7 +2204,11 @@ var BASE_GROUPS = [
          以手上那瓶为准，所以允许覆盖。 */
       abv: {},
       /* 杯子里哪几行说明展开了（点一下切换） */
-      open: {}
+      open: {},
+      /* ④ 手边有什么：勾了的材料（id → 1）、以及最近一次是从哪条参考配方装进来的 */
+      have: {},
+      refName: '',
+      refMiss: []
     };
 
   /* ---------------------------------------------------------
@@ -3062,6 +3216,18 @@ var BASE_GROUPS = [
 
     /* 这杯酒最后是什么构成的 */
     renderMixBar(a);
+
+    /* 这一杯是不是从「④ 手边有什么」点进来的：写清来源和还缺什么 */
+    var refBox = document.getElementById('refNote');
+    if (refBox) {
+      refBox.innerHTML = state.refName
+        ? '这一杯来自 <b>「' + esc(state.refName) + '」</b>（在 ④ 手边有什么 里点的）。'
+          + (state.refMiss.length
+              ? '还缺：<b>' + state.refMiss.map(esc).join('、')
+                + '</b>　杯子里的量按标准配方装好了，缺的那几样记得补。'
+              : '材料齐了，照这个做就行。')
+        : '';
+    }
   }
 
   function statBox(label, val) {
@@ -3157,10 +3323,230 @@ var BASE_GROUPS = [
       }).join('');
   }
 
+  /* =========================================================
+     ④ 手边有什么 → 现在能做什么
+
+     反向查：勾上你手上有的酒和材料，算出 191 份参考配方里
+     哪些现在就能做、哪些还差一两样。
+     材料名到本库的对照表在 tools/build-ref-index.js，生成 ref-recipes.js。
+     ========================================================= */
+  var HAVE_KEY = 'barmix.have.v1';
+  var haveQuery = '';
+  var haveOpen = {};          /* 哪一组展开了（默认每组只画前 8 条） */
+  var HAVE_SHOW = 8;
+
+  /* 参考数据里写的杯型 → 本库的杯子 */
+  var REF_GLASS = [
+    [/马天尼杯|coupe|香槟杯|玛格丽特杯|尼克诺拉|红酒杯|葡萄酒杯/i, 'coupe'],
+    [/古典杯|rock|白兰地杯|铜杯|朱丽普/i, 'rocks'],
+    [/柯林杯|高球杯|莫吉托杯|酒杯/i, 'highball'],
+    [/TIKI|飓风/i, 'hurricane'],
+    [/利口酒杯|一口杯|子弹/i, 'shot'],
+    [/马克杯|爱尔兰咖啡|陶杯/i, 'mug'],
+    [/冰杯/i, 'icecup']
+  ];
+  function glassFromRef(r) {
+    var s = String(r.glass || '');
+    for (var i = 0; i < REF_GLASS.length; i++) if (REF_GLASS[i][0].test(s)) return REF_GLASS[i][1];
+    /* 没写杯型就按"要不要滤冰"猜一个 */
+    if (/无冰/.test(r.ice || '') && (r.method === 'stir' || r.method === 'shake')) return 'coupe';
+    return 'highball';
+  }
+  function methodFromRef(m) {
+    if (m === 'shake' || m === 'blended') return 'shake';
+    if (m === 'stir' || m === 'rolling') return 'stir';
+    return 'build';        /* build / smash / 没写 */
+  }
+  /* "45ml / 2dash / 3片 / 一个 / 15g" → 数字。单位对不上就用材料的默认量 */
+  function parseAmount(txt, g) {
+    var s = String(txt || '');
+    var m = s.match(/(\d+(?:\.\d+)?)/);
+    var n = m ? parseFloat(m[1]) : NaN;
+    var u = g.unit;
+    if (u === 'ml') {
+      if (n && /cl\b/.test(s)) return n * 10;
+      if (n && /(oz|盎司)/.test(s)) return n * 30;
+      if (n && /(ml|毫升)/.test(s)) return n;
+      return g.def;
+    }
+    if (u === '滴') return (n && /(dash|滴)/i.test(s)) ? n : g.def;
+    if (u === '片') return (n && /(片|条)/.test(s)) ? n : g.def;
+    if (u === '颗') return (n && /(颗|粒|个)/.test(s)) ? n : g.def;
+    if (u === 'g') return (n && /(g|克)/.test(s)) ? n : g.def;
+    return g.def;
+  }
+  /* 需求指向哪瓶材料——给"用 XX 代替"那句话用 */
+  function nameOfNeed(need) {
+    if (need.id && BY_ID[need.id]) return BY_ID[need.id].name.replace(/（.*?）/g, '');
+    if (need.ids && BY_ID[need.ids[0]]) return BY_ID[need.ids[0]].name.replace(/（.*?）/g, '');
+    if (need.cat) return '同类材料';
+    return '同类材料';
+  }
+
+  /* 勾选状态存在本地，下次打开还在 */
+  function loadHave() {
+    try {
+      var s = window.localStorage && window.localStorage.getItem(HAVE_KEY);
+      if (s) JSON.parse(s).forEach(function (id) { if (BY_ID[id]) state.have[id] = 1; });
+    } catch (e) { /* 无痕模式 / 本地文件用不了存储，不勾也一样能玩 */ }
+  }
+  function saveHave() {
+    try {
+      if (window.localStorage) window.localStorage.setItem(HAVE_KEY, JSON.stringify(Object.keys(state.have)));
+    } catch (e) {}
+  }
+
+  /* 这条需求，勾了的材料能不能满足 */
+  function needOk(need) {
+    var mine = Object.keys(state.have);
+    if (need.cat) return mine.some(function (id) { return BY_ID[id] && BY_ID[id].cat === need.cat; });
+    if (need.id) return !!state.have[need.id];
+    if (need.ids) return need.ids.some(function (id) { return !!state.have[id]; });
+    return true;      /* pantry：冰、水、盐这类默认算有 */
+  }
+  function missingOf(r) {
+    return (r.needs || []).filter(function (nd) {
+      return !nd.need.optional && !needOk(nd.need);
+    });
+  }
+
+  function renderHaveList() {
+    var box = document.getElementById('haveList');
+    if (!box) return;
+    var q = haveQuery.trim().toLowerCase();
+    var html = '';
+    CATS.forEach(function (c) {
+      var list = INGREDIENTS.filter(function (g) {
+        if (g.cat !== c.id) return false;
+        if (!q) return true;
+        return (g.name + ' ' + g.id).toLowerCase().indexOf(q) >= 0;
+      });
+      if (!list.length) return;
+      html += '<div class="havegroup">' + esc(c.name) + '<span>' + list.length + ' 样</span></div>';
+      html += list.map(function (g) {
+        var on = state.have[g.id] ? ' on' : '';
+        return '<button type="button" class="haverow' + on + '" data-have="' + g.id
+          + '" aria-pressed="' + (on ? 'true' : 'false') + '">'
+          + '<span class="hv-name">' + esc(g.name) + '</span>'
+          + '<span class="hv-tick">' + (on ? '✓' : '') + '</span></button>';
+      }).join('');
+    });
+    box.innerHTML = html || '<p class="hint">没找到这个材料。</p>';
+    var n = Object.keys(state.have).length;
+    document.getElementById('haveCount').textContent = n
+      ? '勾了 ' + n + ' 样' : '一样都没勾——挑你手上有的，或者直接搜';
+  }
+
+  function refCard(x) {
+    var miss = x.miss;
+    var missText = miss.length
+      ? '还缺 ' + miss.length + ' 种：' + miss.map(function (nd) {
+          return esc(nd.n) + (nd.need.approx ? '（用' + esc(nameOfNeed(nd.need)) + '代替）' : '');
+        }).join('、')
+      : '材料齐了，现在就能做 ✓';
+    return '<button type="button" class="refcard' + (miss.length ? '' : ' done') + '" data-ref="' + x.i + '">'
+      + '<span class="rc-top"><b>' + esc(x.r.zh) + '</b><i>' + esc(x.r.en || '') + '</i></span>'
+      + '<span class="rc-miss">' + missText + '</span>'
+      + '<span class="rc-meta">' + x.r.needs.length + ' 样材料 · '
+      + ({ shake: '摇和', stir: '搅拌', build: '兑和' }[methodFromRef(x.r.method)] || '兑和')
+      + (x.pick ? ' · 推荐' : '') + '</span>'
+      + '</button>';
+  }
+
+  function renderHaveResult() {
+    var out = document.getElementById('haveOut');
+    if (!out) return;
+    var n = Object.keys(state.have).length;
+    if (!n) {
+      out.innerHTML = '<p class="hint haveempty">左边勾上你手边有的酒和材料，这里就会按顺序列出：'
+        + '<b>现在就能做</b>的、<b>还缺 1 种</b>的、<b>还缺 2 种</b>的，缺的那几样会直接写在名字下面。<br>'
+        + '手上只有一瓶基酒也先勾上——至少能告诉你差什么。</p>';
+      return;
+    }
+    var rows = [];
+    REF_RECIPES.forEach(function (r, i) {
+      var miss = missingOf(r);
+      if (miss.length > 2) return;
+      rows.push({ r: r, i: i, miss: miss, pick: !!r.pick, n: r.needs.length });
+    });
+    rows.sort(function (a, b) {
+      if (a.pick !== b.pick) return a.pick ? -1 : 1;
+      if (a.miss.length !== b.miss.length) return a.miss.length - b.miss.length;
+      return a.n - b.n;
+    });
+
+    var groups = [
+      { k: 0, title: '现在就能做', note: '材料都齐了' },
+      { k: 1, title: '还缺 1 种', note: '多半是饮料或柠檬' },
+      { k: 2, title: '还缺 2 种', note: '顺手一起买' }
+    ];
+    var html = '';
+    groups.forEach(function (g) {
+      var list = rows.filter(function (x) { return x.miss.length === g.k; });
+      if (!list.length) return;
+      var open = !!haveOpen[g.k];
+      var show = open ? list : list.slice(0, HAVE_SHOW);
+      html += '<div class="refgroup"><b>' + g.title + '</b><span>' + list.length + ' 款　'
+        + esc(g.note) + '</span></div>';
+      html += show.map(refCard).join('');
+      if (!open && list.length > HAVE_SHOW)
+        html += '<button type="button" class="ghost refmore" data-havemore="' + g.k + '">'
+          + '展开剩下的 ' + (list.length - HAVE_SHOW) + ' 款</button>';
+    });
+    out.innerHTML = html || '<p class="hint haveempty">勾了的材料还凑不出经典配方——再勾几样试试。</p>';
+  }
+
+  function renderHave() { renderHaveList(); renderHaveResult(); }
+
+  /* 需求 → 具体用哪一瓶：优先用你勾了的那瓶 */
+  function resolveNeedId(need) {
+    if (need.id) return BY_ID[need.id] ? need.id : '';
+    if (need.ids) {
+      var mine = need.ids.filter(function (id) { return state.have[id]; })[0];
+      return mine || (BY_ID[need.ids[0]] ? need.ids[0] : '');
+    }
+    if (need.cat) {
+      var ticked = Object.keys(state.have).filter(function (id) {
+        return BY_ID[id] && BY_ID[id].cat === need.cat;
+      })[0];
+      if (ticked) return ticked;
+      var def = INGREDIENTS.filter(function (g) { return g.cat === need.cat; })[0];
+      return def ? def.id : '';
+    }
+    return '';
+  }
+
+  /* 点一条配方：按标准配方整杯装好（缺的那几样也装，好让你看到差什么） */
+  function loadRefRecipe(i) {
+    var r = REF_RECIPES[i];
+    if (!r) return;
+    state.cup.clear();
+    r.needs.forEach(function (nd) {
+      var id = resolveNeedId(nd.need);
+      if (!id || !BY_ID[id]) return;
+      var g = BY_ID[id];
+      var amt = parseAmount(nd.a, g) || g.def;
+      state.cup.set(id, Math.round(amt * 10) / 10);
+    });
+    var gid = glassFromRef(r);
+    if (gid) state.glass = gid;
+    state.iceLevel = glassOf(state.glass).ice === 'inglass'
+      ? (/无冰/.test(r.ice || '') ? 'none' : 'full') : 'none';
+    state.method = methodFromRef(r.method);
+    state.taste = tasteForAbv(analyze().abv);
+    state.refName = r.zh;
+    state.refMiss = missingOf(r).map(function (nd) { return nd.n; });
+    state.swapOpen = false;
+    renderCup(); renderResult(); renderLib(); renderGlassPick(); renderIcePick();
+    renderMethodPick(); renderTastePick();
+    var anchor = document.getElementById('resultAnchor');
+    if (anchor && anchor.scrollIntoView) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function renderAll() {
     renderCats(); renderLib(); renderCup(); renderResult(); renderPresets();
     renderGlassPick(); renderTastePick(); renderIcePick(); renderSchemePick();
-    renderMethodPick(); renderGlass();
+    renderMethodPick(); renderGlass(); renderHave();
   }
 
   /* ---------------------------------------------------------
@@ -3314,6 +3700,7 @@ var BASE_GROUPS = [
   function addToCup(id) {
     var g = BY_ID[id];
     if (!g) return;
+    state.refName = ''; state.refMiss = [];     /* 自己动手加了东西，就不再是那条配方的了 */
     if (state.cup.has(id)) state.cup.set(id, state.cup.get(id) + g.step);
     else state.cup.set(id, g.def);
   }
@@ -3330,6 +3717,27 @@ var BASE_GROUPS = [
     if (t.dataset.cat) {
       state.cat = t.dataset.cat;
       renderCats(); renderLib();
+      return;
+    }
+
+    /* ④ 手边有什么：勾 / 取消一样材料 */
+    if (t.dataset.have) {
+      var hid = t.dataset.have;
+      if (state.have[hid]) delete state.have[hid];
+      else state.have[hid] = 1;
+      saveHave();
+      renderHave();
+      return;
+    }
+    /* 结果里"展开剩下的 N 款" */
+    if (t.dataset.havemore !== undefined && t.dataset.havemore !== null && t.dataset.havemore !== '') {
+      haveOpen[t.dataset.havemore] = 1;
+      renderHaveResult();
+      return;
+    }
+    /* 点一条参考配方：装进杯子 */
+    if (t.dataset.ref !== undefined && t.dataset.ref !== null && t.dataset.ref !== '') {
+      loadRefRecipe(+t.dataset.ref);
       return;
     }
 
@@ -3393,6 +3801,7 @@ var BASE_GROUPS = [
     if (t.dataset.act) {
       var gid = t.dataset.id, g = BY_ID[gid];
       var cur = state.cup.get(gid) || 0;
+      state.refName = ''; state.refMiss = [];
       if (t.dataset.act === 'plus') state.cup.set(gid, cur + g.step);
       else if (t.dataset.act === 'minus') {
         var next = cur - g.step;
@@ -3404,6 +3813,7 @@ var BASE_GROUPS = [
 
     if (t.dataset.preset) {
       var p = PRESETS[+t.dataset.preset];
+      state.refName = ''; state.refMiss = [];
       state.cup.clear();
       p.items.forEach(function (it) { state.cup.set(it[0], it[1]); });
       /* 配方自带杯型：干马天尼配马天尼杯，高球配高球杯 */
@@ -3466,6 +3876,14 @@ var BASE_GROUPS = [
     renderCup(); renderResult(); renderLib();
   });
 
+  /* ④ 手边有什么：搜索框 + 清空 */
+  (function () {
+    var box = document.getElementById('haveSearch');
+    if (box) box.addEventListener('input', function () { haveQuery = this.value; renderHaveList(); });
+    var clr = document.getElementById('haveClear');
+    if (clr) clr.addEventListener('click', function () { state.have = {}; saveHave(); renderHave(); });
+  })();
+
   document.getElementById('riskyBtn').addEventListener('click', function () {
     state.hideRisky = !state.hideRisky;
     this.setAttribute('aria-pressed', state.hideRisky ? 'true' : 'false');
@@ -3483,6 +3901,7 @@ var BASE_GROUPS = [
      启动
      --------------------------------------------------------- */
   /* 不预置任何基酒——谁来用都从自己手上的那瓶开始 */
+  loadHave();       /* 上次勾的"手边有什么"还在 */
   renderAll();
 
   /* 调试 / 二次开发用：在浏览器控制台可以访问 window.BarMix */
@@ -3490,6 +3909,21 @@ var BASE_GROUPS = [
     state: state, analyze: analyze, advise: advise, BY_ID: BY_ID,
     tempIdOf: tempIdOf, tempOf: tempOf,
     hasTemp: hasTemp,
+    /* ④ 手边有什么：给自检和调试用 */
+    have: {
+      recipes: REF_RECIPES,
+      reset: function () { state.have = {}; renderHave(); },
+      toggle: function (id) {
+        if (state.have[id]) delete state.have[id]; else state.have[id] = 1;
+        renderHave();
+      },
+      count: function () { return Object.keys(state.have).length; },
+      missing: function (i) {
+        return missingOf(REF_RECIPES[i]).map(function (nd) { return nd.n; });
+      },
+      load: loadRefRecipe,
+      parse: parseAmount
+    },
     scores: function () {
       var a = analyze(), sc = totalScore(a);
       return { balance: +sc.balance.toFixed(1), strength: +sc.strength.toFixed(1),

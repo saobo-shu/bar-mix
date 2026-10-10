@@ -28,6 +28,16 @@
 
 ## 交付
 
+## 生成物：ref-recipes.js
+
+`ref-recipes.js` 是 `tools/build-ref-index.js` 从 `tools/reference-recipes.json`
+（191 份经典配方）生成的，不要手改。改了参考数据或对照表之后要重跑：
+
+    node tools/build-ref-index.js
+
+它会把材料名翻译成本库能认的写法（具体某瓶 / 任意金酒 / 本来就有 / 库里没有），
+并打印覆盖率和还没对上的名字。界面「④ 手边有什么 → 现在能做什么」用它做反向查。
+
 - 用户实际用的是 `dist/调酒台.html`（发给别人也发这一个文件）和上面的线上地址
 - 页面用百度统计看访问量（ID `04efcc48b36fb760fb90c123509c9480`），只在 http(s) 下上报，
   本地双击打开的 html 不计入

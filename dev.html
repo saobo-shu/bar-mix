@@ -134,7 +134,8 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
         <summary>不想一样样挑？两条捷径</summary>
         <div class="body">
           <ul>
-            <li><b>④ 经典配方</b> 里点一张卡片：材料、杯型、冰量、做法、口味会一起装好，就像有人替你摆好了——
+            <li><b>④ 手边有什么</b>：勾上你手上有的酒和材料，它会按"还缺几样"告诉你现在能调什么。点一条就装进杯子，缺的那几样会标出来。</li>
+            <li><b>⑤ 经典配方</b> 里点一张卡片：材料、杯型、冰量、做法、口味会一起装好，就像有人替你摆好了——
               点干马天尼会自动切到「浓烈」，因为它 35 度，本来就不该用「标准」去量。改两下就是你的版本。</li>
             <li>点右上角 <b>「换基酒」</b>：把配方里写的酒换成你手上那瓶，比例不用重算。</li>
           </ul>
@@ -185,7 +186,8 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
     <div class="swap-panel" id="swapPanel" hidden></div>
     <p class="hint cuphint">材料行里的小标签都能点：<b>「常温」换温度</b>（冷冻 / 冷藏 / 常温）、<b>「40%」改度数</b>（按你瓶身上印的填）；点材料名那一行会展开完整说明。</p>
     <div class="cup-list" id="cupList"></div>
-    <p class="empty" id="cupEmpty">杯子是空的。你可以直接在下面「④ 经典配方」里点一个例子，或者从材料库自己挑——手上只有一瓶基酒也没关系，先倒进去，再用「换基酒」换成你有的那瓶。</p>
+    <p class="empty" id="cupEmpty">杯子是空的。你可以直接在下面「④ 手边有什么」里勾上你手上有的，看现在能调什么；也可以从「⑤ 经典配方」点一个例子，或者从材料库自己挑——手上只有一瓶基酒也没关系，先倒进去，再用「换基酒」换成你有的那瓶。</p>
+    <p class="hint refnote" id="refNote"></p>
   </section>
 
   <!-- ③ 材料库 -->
@@ -226,19 +228,40 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
     </div><!-- /col-b -->
   </div><!-- /cols -->
 
-  <!-- ④ 经典配方（整块可以收起，点标题那一行） -->
+  <!-- ④ 手边有什么 → 现在能做什么 -->
+  <details class="panel p-have" open>
+    <summary class="panel-head">
+      <h2>④ 手边有什么 · 现在能做什么</h2>
+      <span class="hint">勾上你有的，就知道能调什么、还差什么　<b class="fold"></b></span>
+    </summary>
+    <div class="havewrap">
+      <div class="havepick">
+        <div class="havebar">
+          <input type="search" id="haveSearch" class="havesearch" placeholder="搜材料名、品牌…" aria-label="搜索材料">
+          <button type="button" class="ghost" id="haveClear">清空</button>
+        </div>
+        <p class="hint havecount" id="haveCount"></p>
+        <div class="havelist" id="haveList"></div>
+      </div>
+      <div class="haveresult">
+        <div id="haveOut" aria-live="polite"></div>
+      </div>
+    </div>
+  </details>
+
+  <!-- ⑤ 经典配方（整块可以收起，点标题那一行） -->
   <details class="panel p-pre" open>
     <summary class="panel-head">
-      <h2>④ 经典配方 · 按家族分</h2>
+      <h2>⑤ 经典配方 · 按家族分</h2>
       <span class="hint">点一下装杯　<b class="fold"></b></span>
     </summary>
     <div class="presets" id="presets"></div>
   </details>
 
-  <!-- ⑤ 生存指南（整块可以收起） -->
+  <!-- ⑥ 生存指南（整块可以收起） -->
   <details class="panel p-guide">
     <summary class="panel-head">
-      <h2>⑤ 没冰箱 · 小空间生存指南</h2>
+      <h2>⑥ 没冰箱 · 小空间生存指南</h2>
       <span class="hint">点标题展开　<b class="fold"></b></span>
     </summary>
     <div class="guide">
@@ -381,6 +404,7 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
 </main>
 
 <script src="data.js"></script>
+<script src="ref-recipes.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

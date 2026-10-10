@@ -14,6 +14,7 @@ const read = f => fs.readFileSync(path.join(dir, f), 'utf8');
 let html = read('dev.html');
 const css = read('app.css');
 const dataJs = read('data.js');
+const refJs = read('ref-recipes.js');
 const appJs = read('app.js');
 
 /* 内联的 JS 里如果出现 </script> 会把标签提前闭合，必须拆开 */
@@ -30,6 +31,7 @@ const favicon = 'data:image/svg+xml,' + encodeURIComponent(
 
 html = html.replace(/<link rel="stylesheet" href="app\.css">\s*/, '');
 html = html.replace(/<script src="data\.js"><\/script>\s*/, '');
+html = html.replace(/<script src="ref-recipes\.js"><\/script>\s*/, '');
 html = html.replace(/<script src="app\.js"><\/script>\s*/, '');
 
 /* 分享用的 meta + 图标 */
@@ -44,6 +46,7 @@ html = html.replace('</head>',
 
 html = html.replace('</body>',
   '<script>\n' + safe(dataJs) + '\n</script>\n' +
+  '<script>\n' + safe(refJs) + '\n</script>\n' +
   '<script>\n' + safe(appJs) + '\n</script>\n</body>');
 
 fs.mkdirSync(dist, { recursive: true });
@@ -52,7 +55,7 @@ fs.writeFileSync(path.join(dist, '调酒台.html'), html, 'utf8');
 
 /* 自检：产物里不该再有任何本地文件引用 */
 const leftovers = [];
-['app.css', 'app.js', 'data.js'].forEach(f => {
+['app.css', 'app.js', 'data.js', 'ref-recipes.js'].forEach(f => {
   if (html.includes('"' + f + '"') || html.includes("'" + f + "'")) leftovers.push(f);
 });
 const scripts = (html.match(/<script/g) || []).length;
@@ -60,8 +63,8 @@ const closes = (html.match(/<\/script>/g) || []).length;
 
 console.log('产物：dist/index.html 和 dist/调酒台.html');
 const kb = (s) => (Buffer.byteLength(s, 'utf8') / 1024).toFixed(1);
-console.log('  大小 ' + kb(html) + ' KB　（原始四个文件合计 '
-  + kb(css + dataJs + appJs) + ' KB）');
+console.log('  大小 ' + kb(html) + ' KB　（原始五个文件合计 '
+  + kb(css + dataJs + refJs + appJs) + ' KB）');
 console.log('  <script> ' + scripts + ' 个，</script> ' + closes + ' 个' + (scripts === closes ? '　配平 ✓' : '　⚠ 不配平'));
 console.log('  残留的本地文件引用：' + (leftovers.length ? leftovers.join('、') + ' ⚠' : '无 ✓'));
 /* 外部请求：只允许百度统计那一处（文件里其它 http 都是 XML 命名空间之类的死字符串）。
@@ -98,9 +101,11 @@ try {
   const glassChips = (els.glassPick.innerHTML.match(/class="gchip/g) || []).length;
   const libChips = (els.lib.innerHTML.match(/class="chip/g) || []).length;
   const glassDrawn = els.glassPreview.innerHTML.length > 200;
-  const ok = presetCards > 0 && glassChips > 0 && libChips > 0 && glassDrawn;
+  const haveRows = (els.haveList.innerHTML.match(/data-have=/g) || []).length;
+  const ok = presetCards > 0 && glassChips > 0 && libChips > 0 && glassDrawn && haveRows > 0;
 console.log('  跑起来：配方卡 ' + presetCards + ' 张、杯型 ' + glassChips + ' 个、材料 ' + libChips
-    + ' 个、杯子预览 ' + (glassDrawn ? '画出来了' : '没画出来') + '　' + (ok ? '✓' : '⚠'));
+    + ' 个、手边有什么 ' + haveRows + ' 样、杯子预览 ' + (glassDrawn ? '画出来了' : '没画出来')
+    + '　' + (ok ? '✓' : '⚠'));
   if (!ok) process.exitCode = 1;
 } catch (e) {
   console.log('  ⚠ 内联脚本跑不起来：' + e.message);
