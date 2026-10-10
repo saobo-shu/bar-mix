@@ -242,27 +242,12 @@ details.panel:not([open]) { padding-bottom: 13px; }
   background: var(--card2); border: 1px solid var(--line); color: var(--text);
 }
 .havesearch::placeholder { color: var(--muted); }
-.havecount { margin: 0 0 7px; }
-.havelist {
-  max-height: 380px; overflow-y: auto; padding-right: 2px;
-  border-top: 1px solid var(--line);
-}
-.havegroup {
-  display: flex; align-items: baseline; justify-content: space-between;
-  font-size: 11.5px; color: var(--amber); letter-spacing: .05em;
-  padding: 8px 2px 4px;
-}
-.havegroup span { color: var(--muted); font-size: 11px; letter-spacing: 0; }
-.haverow {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  width: 100%; text-align: left; padding: 6px 9px; margin-bottom: 4px;
-  border-radius: 9px; background: var(--card2); border: 1px solid var(--line);
-  font-size: 13px; color: var(--text); min-width: 0;
-}
-.haverow .hv-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.haverow .hv-tick { flex: none; color: var(--amber); font-weight: 600; }
-.haverow.on { border-color: var(--amber); background: rgba(224, 163, 92, .14); }
-.haverow:active { transform: scale(.99); }
+.havecount { margin: 0 0 8px; }
+/* 选材料的网格照材料库那套，窄栏里一行两个就够 */
+.havepick .cats { margin-bottom: 8px; }
+.havepick .grid { grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); }
+.havepick .chip.on { border-color: var(--amber); background: rgba(224, 163, 92, .18); }
+.havepick .chip.on .cn::after { content: ' ✓'; color: var(--amber); font-weight: 600; }
 
 .refgroup {
   display: flex; align-items: baseline; justify-content: space-between; gap: 8px;

@@ -200,6 +200,7 @@
       open: {},
       /* ④ 手边有什么：勾了的材料（id → 1）、以及这杯是从哪条配方来的（备注显示在杯子下面） */
       have: {},
+      haveCat: 'gin',
       recipeName: '',
       recipeSub: '',
       recipeTip: '',
@@ -930,24 +931,25 @@
       return true;
     });
 
-    function chip(g) {
-      var inCup = state.cup.has(g.id);
-      var st = storeOf(g);
-      var tp = tempOf(g);
-      return '<button type="button" class="chip' + (inCup ? ' on' : '') + '" data-add="' + g.id +
-        '" title="' + esc(g.note + ' —— ' + st.text + ' —— 建议' + tp.name + '（' + tp.c + '℃）：' + tp.note) + '">' +
-        '<span class="cn">' + esc(g.name) + '</span>' +
-        '<span class="tags">' +
-          '<span class="src s-' + g.src + '">' + SRC_NAME[g.src] + '</span>' +
-          (hasTemp(g) ? '<span class="tagtemp t-' + tempIdOf(g) + '">' + esc(tp.name) + '</span>' : '') +
-          '<span class="risk r' + st.risk + '">' + RISK_LABEL[st.risk] + '</span>' +
-        '</span>' +
-        '</button>';
-    }
-
     document.getElementById('lib').innerHTML =
       '<div class="libgroup">' + esc(catName(state.cat)) + '<span>' + list.length + ' 种</span></div>'
-      + list.map(chip).join('');
+      + list.map(function (g) { return libChip(g, 'data-add', state.cup.has(g.id)); }).join('');
+  }
+
+  /* 材料库和"手边有什么"共用同一张卡片——两处样式必须一样，
+     所以只有 data 属性和"选中"来源不同，其余都从这里出 */
+  function libChip(g, attr, on) {
+    var st = storeOf(g);
+    var tp = tempOf(g);
+    return '<button type="button" class="chip' + (on ? ' on' : '') + '" ' + attr + '="' + g.id +
+      '" title="' + esc(g.note + ' —— ' + st.text + ' —— 建议' + tp.name + '（' + tp.c + '℃）：' + tp.note) + '">' +
+      '<span class="cn">' + esc(g.name) + '</span>' +
+      '<span class="tags">' +
+        '<span class="src s-' + g.src + '">' + SRC_NAME[g.src] + '</span>' +
+        (hasTemp(g) ? '<span class="tagtemp t-' + tempIdOf(g) + '">' + esc(tp.name) + '</span>' : '') +
+        '<span class="risk r' + st.risk + '">' + RISK_LABEL[st.risk] + '</span>' +
+      '</span>' +
+      '</button>';
   }
 
   function catName(id) {
@@ -1413,27 +1415,40 @@
     var box = document.getElementById('haveList');
     if (!box) return;
     var q = haveQuery.trim().toLowerCase();
-    var html = '';
-    CATS.forEach(function (c) {
-      var list = INGREDIENTS.filter(function (g) {
-        if (g.cat !== c.id) return false;
-        if (!q) return true;
+    var list, head;
+    if (q) {
+      /* 搜索的时候跨分类找，省得一个个翻 */
+      list = INGREDIENTS.filter(function (g) {
         return (g.name + ' ' + g.id).toLowerCase().indexOf(q) >= 0;
       });
-      if (!list.length) return;
-      html += '<div class="havegroup">' + esc(c.name) + '<span>' + list.length + ' 样</span></div>';
-      html += list.map(function (g) {
-        var on = state.have[g.id] ? ' on' : '';
-        return '<button type="button" class="haverow' + on + '" data-have="' + g.id
-          + '" aria-pressed="' + (on ? 'true' : 'false') + '">'
-          + '<span class="hv-name">' + esc(g.name) + '</span>'
-          + '<span class="hv-tick">' + (on ? '✓' : '') + '</span></button>';
-      }).join('');
-    });
-    box.innerHTML = html || '<p class="hint">没找到这个材料。</p>';
+      head = '搜到 ' + list.length + ' 样';
+    } else {
+      list = INGREDIENTS.filter(function (g) { return g.cat === state.haveCat; });
+      head = catName(state.haveCat);
+    }
+    box.innerHTML =
+      '<div class="libgroup">' + esc(head) + '<span>' + list.length + ' 样</span></div>'
+      + (list.length ? list.map(function (g) {
+          return libChip(g, 'data-have', !!state.have[g.id]);
+        }).join('') : '<p class="hint">没找到这个材料。</p>');
     var n = Object.keys(state.have).length;
     document.getElementById('haveCount').textContent = n
-      ? '勾了 ' + n + ' 样' : '一样都没勾——挑你手上有的，或者直接搜';
+      ? '勾了 ' + n + ' 样' : '一样都没勾——点卡片就是"我有这个"';
+  }
+
+  /* ④ 的分类标签：跟材料库同一套样式，只是换成"我有哪一类" */
+  function renderHaveCats() {
+    var box = document.getElementById('haveCats');
+    if (!box) return;
+    var keep = box.scrollLeft;
+    box.innerHTML = CATS.map(function (c, i) {
+      var on = c.id === state.haveCat ? ' on' : '';
+      var sep = (i > 0 && CATS[i - 1].id === 'otherbase') ? '<span class="cat-sep"></span>' : '';
+      return sep + '<button type="button" class="cat' + on + '" data-havecat="' + c.id + '">'
+        + c.name + '</button>';
+    }).join('');
+    box.scrollLeft = keep;
+    scrollCatIntoView(box);
   }
 
   function refCard(x) {
@@ -1507,7 +1522,7 @@
     out.innerHTML = html || '<p class="hint haveempty">勾了的材料还凑不出经典配方——再勾几样试试。</p>';
   }
 
-  function renderHave() { renderHaveList(); renderHaveResult(); }
+  function renderHave() { renderHaveCats(); renderHaveList(); renderHaveResult(); }
 
   /* 需求 → 具体用哪一瓶：优先用你勾了的那瓶 */
   function resolveNeedId(need) {
@@ -1739,6 +1754,15 @@
       return;
     }
 
+    /* ④ 手边有什么：切分类标签 */
+    if (t.dataset.havecat) {
+      state.haveCat = t.dataset.havecat;
+      haveQuery = '';
+      var hq = document.getElementById('haveSearch');
+      if (hq) hq.value = '';
+      renderHaveCats(); renderHaveList();
+      return;
+    }
     /* ④ 手边有什么：勾 / 取消一样材料 */
     if (t.dataset.have) {
       var hid = t.dataset.have;
@@ -1939,6 +1963,8 @@
         renderHave();
       },
       count: function () { return Object.keys(state.have).length; },
+      render: renderHave,
+      setCat: function (id) { state.haveCat = id; haveQuery = ''; renderHave(); },
       missing: function (i) {
         return missingOf(REF_RECIPES[i]).map(function (nd) { return nd.n; });
       },

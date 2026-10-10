@@ -22,7 +22,7 @@ const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
             fs.readFileSync(path.join(dir, 'app.js'), 'utf8') + '\n' +
             'global.__PRESETS = PRESETS; global.__I = INGREDIENTS; global.__PH = PH; global.__SCHEMES = SCORING_SCHEMES; global.__G = GLASSES; global.__PM = PRESET_METHOD;'
             + ' global.__TEMPS = TEMPS; global.__TD = TEMP_DEFAULT; global.__TF = TEMP; global.__TC = TEMP_CYCLE;'
-            + ' global.__METHODS = METHODS; global.__REF = REF_RECIPES;';
+            + ' global.__METHODS = METHODS; global.__REF = REF_RECIPES; global.__CATS = CATS;';
 eval(src);
 
 const B = global.BarMix;
@@ -881,11 +881,21 @@ console.log('\n--- 手边有什么 → 现在能做什么 ---');
   console.log('  ' + (ok0 ? '✅' : '❌') + ' 什么都没勾：给出引导（' + empty.slice(0, 24) + '…）');
   if (!ok0) bad('手边有什么', '没勾材料时右边没有引导语');
 
-  /* 材料库里能勾的都要画出来 */
-  const rows = (els.haveList.innerHTML.match(/data-have="/g) || []).length;
-  const okRows = rows === global.__I.length;
-  console.log('  ' + (okRows ? '✅' : '❌') + ' 左边列出 ' + rows + ' 样材料（库里共 ' + global.__I.length + ' 样）');
-  if (!okRows) bad('手边有什么', '左边列出的材料数量和库里不一致：' + rows);
+  /* 左边改成"分类标签 + 九宫格"了：每个分类里画出来的卡片数，必须和库里那个分类的数量一样 */
+  const catBad = [];
+  global.__CATS.forEach(function (c) {
+    B.have.setCat(c.id);
+    const got = (els.haveList.innerHTML.match(/data-have="/g) || []).length;
+    const want = global.__I.filter(function (g) { return g.cat === c.id; }).length;
+    if (got !== want) catBad.push(c.name + ' ' + got + '/' + want);
+  });
+  const catTabs = (els.haveCats.innerHTML.match(/data-havecat="/g) || []).length;
+  const okRows = catBad.length === 0 && catTabs === global.__CATS.length;
+  console.log('  ' + (okRows ? '✅' : '❌') + ' 左边 ' + catTabs + ' 个分类标签，每个分类的材料数都对得上（共 '
+    + global.__I.length + ' 样）' + (catBad.length ? '：' + catBad.join('、') : ''));
+  if (!okRows) bad('手边有什么', '分类里的材料数对不上：' + catBad.join('、'));
+  B.have.setCat('rum');
+  B.have.reset();
 
   /* 只勾一瓶白朗姆：自由古巴要出现，并写明还缺哪两样 */
   B.have.toggle('rum');

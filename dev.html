@@ -134,7 +134,8 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
         <summary>不想一样样挑？两条捷径</summary>
         <div class="body">
           <ul>
-            <li><b>④ 手边有什么</b>：勾上你手上有的酒和材料，它会按"还缺几样"告诉你现在能调什么。点一条就装进杯子，缺的那几样会标出来。</li>
+            <li><b>④ 手边有什么</b>：和材料库一样按分类翻，点一下卡片就是"我有这个"（再点取消）。
+              它会按"还缺几样"告诉你现在能调什么，点一条配方就装进杯子，缺的那几样会写在名字下面。</li>
             <li><b>⑤ 经典配方</b> 里点一张卡片：材料、杯型、冰量、做法、口味会一起装好，就像有人替你摆好了——
               点干马天尼会自动切到「浓烈」，因为它 35 度，本来就不该用「标准」去量。改两下就是你的版本。</li>
             <li>点右上角 <b>「换基酒」</b>：把配方里写的酒换成你手上那瓶，比例不用重算。</li>
@@ -243,7 +244,8 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
           <button type="button" class="ghost" id="haveClear">清空</button>
         </div>
         <p class="hint havecount" id="haveCount"></p>
-        <div class="havelist" id="haveList"></div>
+        <nav class="cats" id="haveCats"></nav>
+        <div class="grid" id="haveList"></div>
       </div>
       <div class="haveresult">
         <div id="haveOut" aria-live="polite"></div>
