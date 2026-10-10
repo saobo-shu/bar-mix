@@ -492,28 +492,65 @@ console.log('\n--- 改温度要真的有反应 ---');
 /* ---- 冷冻基酒做烈酒向的酒，必须真的更好（结构分 + 加水更少）---- */
 console.log('\n--- 冷冻基酒 vs 常温基酒（马天尼）---');
 (function () {
-  const mj = [['tanqueray', 60], ['dry_vermouth', 10], ['orange_bitters', 1]];
+  const idx = global.__PRESETS.findIndex(function (p) { return p.name === '干马天尼'; });
   function martini(temps) {
-    B.state.glass = 'coupe'; B.state.iceLevel = 'none'; B.state.method = 'stir';
-    B.state.taste = 'strong'; B.state.scheme = 'balanced'; B.state.temps = temps;
-    B.load(mj);
+    B.state.scheme = 'balanced'; B.state.temps = temps;
+    B.preset(idx);                 /* 走和用户点卡片一样的路：顺带把口味也设好 */
     const a = B.analyze(), s = B.scores();
-    return { a: a, s: s, tips: B.advise(a).map(function (x) { return x.text; }).join(' ') };
+    return { a: a, s: s, taste: B.state.taste,
+             tips: B.advise(a).map(function (x) { return x.text; }).join(' ') };
   }
   const room = martini({});
   const froz = martini({ tanqueray: 'frozen' });
+  console.log('  点配方自带的口味：' + room.taste + '（马天尼 35% 该配「浓烈」）');
   console.log('  常温金酒：加水 ' + Math.round(room.a.prepDil) + 'ml　' + room.a.abv.toFixed(1)
     + '%　结构 ' + room.s.structure.toFixed(0) + '　总分 ' + room.s.total.toFixed(1));
   console.log('  冷冻金酒：加水 ' + Math.round(froz.a.prepDil) + 'ml　' + froz.a.abv.toFixed(1)
     + '%　结构 ' + froz.s.structure.toFixed(0) + '　总分 ' + froz.s.total.toFixed(1));
   const ok = froz.a.prepDil < room.a.prepDil - 3 && froz.s.structure > room.s.structure
     && froz.s.total > room.s.total;
-  console.log('  ' + (ok ? '✅' : '❌') + ' 冷冻基酒：加水更少，结构分和总分都更高');
+  console.log('  ' + (ok ? '✅' : '❌') + ' 冷冻基酒：加水更少，结构分和总分都更高（用户说过：常温不能比冷冻高）');
   if (!ok) bad('温度', '冷冻基酒没有体现出优势');
+  if (room.taste !== 'strong') bad('评分', '点马天尼没有自动配好口味：' + room.taste);
   const told = /冷冻/.test(room.tips) && /冷冻/.test(froz.tips);
   console.log('  ' + (told ? '✅' : '❌') + ' 两种情况都有一句话解释这件事');
   if (!told) bad('温度', '建议里没解释基酒温度这件事');
   B.state.temps = {};
+})();
+
+/* ---- 点配方要顺手把「口味」也配好（不然点马天尼一进来就被判"太烈"）---- */
+console.log('\n--- 点配方自动配口味 ---');
+(function () {
+  const cases = [['干马天尼', 'strong'], ['金汤力', 'normal'], ['养乐多烧酒', 'light'], ['威士忌酸', 'normal']];
+  cases.forEach(function (c) {
+    const i = global.__PRESETS.findIndex(function (p) { return p.name === c[0]; });
+    B.state.taste = 'normal'; B.state.temps = {}; B.state.scheme = 'balanced';
+    B.preset(i);
+    const got = B.state.taste, abv = B.analyze().abv;
+    const ok = got === c[1];
+    console.log('  ' + (ok ? '✅' : '❌') + ' ' + c[0] + '（' + abv.toFixed(1) + '%）→ ' + got
+      + (ok ? '' : '（预期 ' + c[1] + '）'));
+    if (!ok) bad('评分', '点 ' + c[0] + ' 应该把口味设成 ' + c[1] + '，现在是 ' + got);
+  });
+})();
+
+/* ---- "这杯没经过冰"这句话不能乱说：滤冰出品的酒也做过冰 ---- */
+console.log('\n--- "没经过冰"什么时候才该说 ---');
+(function () {
+  function tips(items, glass, ice, method) {
+    B.state.glass = glass; B.state.iceLevel = ice; B.state.method = method;
+    B.state.taste = 'normal'; B.state.temps = {}; B.state.scheme = 'balanced';
+    B.load(items);
+    return B.advise(B.analyze()).map(function (x) { return x.text; }).join(' ');
+  }
+  const stirred = tips([['tanqueray', 60], ['dry_vermouth', 10]], 'coupe', 'none', 'stir');
+  const noIce = tips([['jw_black', 45], ['soda', 60]], 'highball', 'none', 'build');
+  const okA = stirred.indexOf('没碰过冰') < 0;
+  const okB = noIce.indexOf('没碰过冰') >= 0;
+  console.log('  ' + (okA ? '✅' : '❌') + ' 搅拌后滤进马天尼杯：不说"没经过冰"（它是搅拌出来的）');
+  console.log('  ' + (okB ? '✅' : '❌') + ' 兑和 + 不放冰：才说"这杯从头到尾没碰过冰"');
+  if (!okA) bad('文案', '把搅拌出来的酒说成"没有冰/没经过冰"了');
+  if (!okB) bad('文案', '真的没碰过冰的酒反而不提醒了');
 })();
 
 /* ---- 这次补的材料：查得到、度数是规规矩矩的 ---- */

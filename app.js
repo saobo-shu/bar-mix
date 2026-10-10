@@ -476,6 +476,21 @@
     return TASTES[1];
   }
 
+  /* 这杯多少度，就配哪一档口味
+
+     点开一杯干马天尼，如果带着默认的「标准（7-26%）」，一进来就被判"太烈了"——
+     不是这杯酒的问题，是口味选错了。所以点配方时按它实际的度数挑最贴的区间：
+     马天尼（35%）→ 浓烈，金汤力（12%）→ 标准，养乐多烧酒（4.5%）→ 清淡。
+     这样"冷冻基酒让酒更浓"才不会被"太烈"这条反过来罚。 */
+  function tasteForAbv(abv) {
+    var best = TASTES[1], bestD = Infinity;
+    TASTES.forEach(function (t) {
+      var d = abv < t.lo ? t.lo - abv : (abv > t.hi ? abv - t.hi : 0);
+      if (d < bestD) { bestD = d; best = t; }
+    });
+    return best.id;
+  }
+
   function glassOf(id) {
     for (var i = 0; i < GLASSES.length; i++) if (GLASSES[i].id === id) return GLASSES[i];
     return GLASSES[0];
@@ -647,7 +662,11 @@
     var t = tasteBand(a.taste), abv = a.abv;
     if (abv >= t.lo && abv <= t.hi) return 100;
     if (abv < t.lo) return interp(abv / t.lo, [[0, 15], [0.35, 45], [0.6, 72], [0.82, 90], [1, 100]]);
-    return interp((abv - t.hi) / (t.out - t.hi), [[0, 100], [0.35, 86], [0.7, 66], [1, 45]]);
+    /* 超出你选的区间，只轻轻扣——烈度本来就该是"浮动"，不该盖过平衡和工艺。
+       原来最多扣到 45 分，一杯马天尼光这一项就能吃掉 4 分多；
+       现在最多掉到 68。警告文字照常说，只是不再一棍子打死。
+       （太淡那条曲线没动：喝起来像饮料是真的缺陷。） */
+    return interp((abv - t.hi) / (t.out - t.hi), [[0, 100], [0.35, 90], [0.7, 80], [1, 68]]);
   }
 
   function scoreStructure(a) {
@@ -736,8 +755,13 @@
         + a.ph.toFixed(1) + '（低于 5.0 就开始结块）。这杯要么去掉奶，要么去掉酸。'
         + '（养乐多、可尔必思这类本身很酸的乳酸菌饮料不在此列——它们的体系是稳定的，加柠檬没问题。）');
 
-    if (!a.hasIce && !a.isHot && a.abv > 12)
-      add(96, 'warn', '没有冰。同一杯酒降到 10-15℃ 之后，甜味会收、香气会打开，差别比换一瓶酒还大。便利店的冰杯加一个泡沫保温箱就能解决。');
+    /* "这杯没经过冰"——注意不能说成"没有冰"：
+       马天尼是马天尼杯里没有冰，但它是搅拌出来的，做过冰了。
+       只有"兑和、又没放冰"才是真的从头到尾没碰过冰。 */
+    if (!a.hasIce && !a.isHot && a.abv > 12 && a.prepDil <= 0)
+      add(96, 'warn', '这杯从头到尾没碰过冰（兑和 + 不放冰），现在就是常温的。'
+        + '同一杯酒降到 10-15℃ 之后，甜味会收、香气会打开，差别比换一瓶酒还大。'
+        + '便利店的冰杯加一个泡沫保温箱就能解决；或者换成「搅拌 Stir」再倒进来。');
 
     /* 温度这条线：材料是冰的还是常温的，冰化掉多少完全不一样 */
     if (a.iceMass > 0 && a.meltIce >= 25)
@@ -1531,8 +1555,11 @@
       /* 配方也自带做法：兑和 / 搅拌 / 摇和。这一步以前漏了，
          于是点"萨泽拉克"出来的是兑和——35 度，比实际的 31 度烈。 */
       state.method = PRESET_METHOD[p.name] || state.method;
+      /* 口味也跟着这杯的度数走（见 tasteForAbv），不然点马天尼一进来就被判"太烈" */
+      state.taste = tasteForAbv(analyze().abv);
       state.swapOpen = false;
-      renderCup(); renderResult(); renderLib(); renderGlassPick(); renderIcePick(); renderMethodPick();
+      renderCup(); renderResult(); renderLib(); renderGlassPick(); renderIcePick();
+      renderMethodPick(); renderTastePick();
       document.getElementById('resultAnchor').scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
@@ -1629,6 +1656,7 @@
       if (p.glass) state.glass = p.glass;
       state.iceLevel = glassOf(state.glass).ice === 'inglass' ? 'full' : 'none';
       state.method = PRESET_METHOD[p.name] || 'build';
+      state.taste = tasteForAbv(analyze().abv);
       renderCup(); renderResult(); renderLib();
       return this.scores();
     },
