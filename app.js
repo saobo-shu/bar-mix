@@ -275,10 +275,9 @@
       if (DAIRY_FAT[g.id]) { dairyFat = true; if (!dairyName) dairyName = g.name; }
       if (ENZYMES[g.id] && ml > 0) enzymes.push(ENZYMES[g.id]);
       if (isHotIng(g)) isHot = true;
-      if (ml > 0 && g.cat !== 'ice') {
-        parts.push({ g: g, ml: ml, abv: abvOf(g), c: tempOf(g).c });
-        tempMix[tempIdOf(g)]++;
-      }
+      if (ml > 0 && g.cat !== 'ice') parts.push({ g: g, ml: ml, abv: abvOf(g), c: tempOf(g).c });
+      /* "冷藏 2 样、常温 1 样"只数真有温度的材料，装饰和苦精不算 */
+      if (hasTemp(g)) tempMix[tempIdOf(g)]++;
       if (g.cat !== 'ice') nNonIce++;
       if ((g.f.fizz || 0) >= 6) hasFizzIng = true;
       nItems++;
@@ -304,14 +303,12 @@
       if (BY_ID[id]) singleName = BY_ID[id].name;
     });
 
-    var prepDil = (neatPour || isHot) ? 0 : liquid * methodOf(state.method).dil;
-
     /* 倒进去那一刻化掉的水：材料降温到 0℃ 放出的热，减去把冰从 -18℃ 捂到 0℃ 要的热。
        同时算一遍"如果这些材料都是常温的"——两个数字一比，就知道把基酒放冷冻、饮料买冷藏的
        到底省下了多少水。
 
        摇和 / 搅拌出来的酒不算这一笔：它在摇壶里就已经和冰换过热量、滤出来接近 0℃，
-       再倒进放了冰的杯子里几乎化不出水——那部分水已经算在做法的 20% / 25% 里了。 */
+       再倒进放了冰的杯子里几乎化不出水——那部分水算在摇壶那笔里（见下）。 */
     var iceMass = hasIce ? iceMassOf(gsel0) : 0;
     var qNow = 0, qRoom = 0;
     parts.forEach(function (p) {
@@ -319,6 +316,18 @@
       qNow += p.ml * cp * p.c;
       qRoom += p.ml * cp * 25;          /* 25℃ = 常温 */
     });
+
+    /* 摇和 / 搅拌加的水，也跟材料温度有关
+
+       摇壶里的冰是靠材料带来的热化开的：材料越凉，化出来的水越少。
+       做法表里的 25% / 20% 是"材料全常温"时的基准值，这里按热量比例缩放。
+       最低留 45%——摇壶本身、室温和手温还是会化掉一些冰，不会真的趋近 0。
+       （以前这里用的是固定百分比，于是把基酒从冷冻改到常温，酒精度一动不动，
+        看起来像温度那个按钮坏了。） */
+    var dilBase = methodOf(state.method).dil;
+    var qRatio = qRoom > 0 ? clamp(qNow / qRoom, 0.45, 1) : 1;
+    var prepDil = (neatPour || isHot) ? 0 : liquid * dilBase * qRatio;
+
     var meltIce = prepDil > 0 ? 0 : meltFrom(qNow, iceMass);
     var meltRoom = prepDil > 0 ? 0 : meltFrom(qRoom, iceMass);
 
@@ -484,6 +493,16 @@
   }
   function tempOf(g) { return tempInfo(tempIdOf(g)); }
   function isHotIng(g) { return tempIdOf(g) === 'hot'; }
+  /* 哪些材料才有"温度"这回事
+
+     只有真会倒进杯子、而且一次至少 5ml 的液体才有：酒、气泡饮料、果汁、奶、糖浆、蛋清……
+     两类东西没有：
+       · 装饰（柠檬皮、薄荷叶、黄瓜片、迷迭香、樱桃）——它们不占体积，也谈不上"冷藏的薄荷叶"；
+       · 按滴算的（苦精、盐水、辣椒仔、橙花水）——一次不到 1ml，对热量没有影响。
+     以前这两类也带着"常温"标签，点了半天化水一动不动，看起来像坏了。 */
+  function hasTemp(g) {
+    return g.cat !== 'ice' && (g.mlu || 0) > 0 && (g.def || 0) * (g.mlu || 0) >= 5;
+  }
   /* 「冷藏 3 样、常温 2 样」这种说法 */
   function tempMixText(mix) {
     var bits = [];
@@ -564,7 +583,7 @@
       : '放着十几分钟，室温大约会化出 ' + melt + 'ml 水';
     /* 摇和 / 搅拌的酒，那笔水是在摇壶里加的；杯子里的冰是室温慢慢化的，两笔不冲突 */
     var shaken = (a.prepDil > 0 && a.iceMass > 0)
-      ? '（摇和 / 搅拌加的 ' + Math.round(a.prepDil) + 'ml 水是在摇壶里进去的，'
+      ? '（摇和 / 搅拌加的 ' + Math.round(a.prepDil) + 'ml 水是在摇壶里进去的，材料越凉它就加得越少；'
         + '跟杯里这些冰被室温化开是两回事，不会重复算。）' : '';
     if (melt <= 0) {
       return { level: '不用管', short: '冰镇后滤掉冰，不会越喝越淡',
@@ -850,7 +869,7 @@
         '<span class="cn">' + esc(g.name) + '</span>' +
         '<span class="tags">' +
           '<span class="src s-' + g.src + '">' + SRC_NAME[g.src] + '</span>' +
-          (g.cat === 'ice' ? '' : '<span class="tagtemp t-' + tempIdOf(g) + '">' + esc(tp.name) + '</span>') +
+          (hasTemp(g) ? '<span class="tagtemp t-' + tempIdOf(g) + '">' + esc(tp.name) + '</span>' : '') +
           '<span class="risk r' + st.risk + '">' + RISK_LABEL[st.risk] + '</span>' +
         '</span>' +
         '</button>';
@@ -891,10 +910,10 @@
             (hint ? ' <i class="ci-eq">' + esc(hint) + '</i>' : '') +
             '</span>' +
             (st.risk > 0 ? ' <span class="risk r' + st.risk + '">' + RISK_LABEL[st.risk] + '</span>' : '') +
-            (g.cat === 'ice' ? '' :
+            (hasTemp(g) ?
               ' <span class="tempchip t-' + tempIdOf(g) + '" data-temp="' + id + '" role="button" tabindex="0"' +
               ' title="' + esc(tp.name + ' ' + tp.c + '℃　' + tp.note + '　点一下换一个温度') + '">'
-              + esc(tp.name) + '</span>') +
+              + esc(tp.name) + '</span>' : '') +
           '</span>' +
           '<span class="ci-note">' + esc(g.note) + '</span>' +
           '<span class="ci-fold">' + (state.open[id] ? '收起 ▴' : '看全部 ▾') + '</span>' +
@@ -1405,7 +1424,7 @@
        同一瓶可乐，从冰箱拿和从货架拿，化出来的水能差好几倍，所以这个由你说了算。 */
     if (t.dataset.temp) {
       var tg = BY_ID[t.dataset.temp];
-      if (tg) {
+      if (tg && hasTemp(tg)) {
         var cyc = TEMP_FIXED[tg.id] ? ['hot', 'room'] : TEMP_CYCLE;
         var now = tempIdOf(tg), at = cyc.indexOf(now);
         var next = cyc[(at + 1) % cyc.length];
@@ -1545,6 +1564,7 @@
   window.BarMix = {
     state: state, analyze: analyze, advise: advise, BY_ID: BY_ID,
     tempIdOf: tempIdOf, tempOf: tempOf,
+    hasTemp: hasTemp,
     scores: function () {
       var a = analyze(), sc = totalScore(a);
       return { balance: +sc.balance.toFixed(1), strength: +sc.strength.toFixed(1),

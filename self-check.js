@@ -398,6 +398,103 @@ console.log('\n--- 点温度标签 ---');
   B.state.temps = {};
 })();
 
+/* ---- 哪些材料才该有温度标签：装饰、苦精不该有（点了也不会有反应，像坏了）---- */
+console.log('\n--- 哪些材料才有温度 ---');
+(function () {
+  const noTemp = ['mint', 'lemon_peel', 'orange_peel', 'cucumber', 'rosemary', 'cherry',
+    'angostura', 'salt_water', 'orange_flower', 'tabasco'];
+  const wrong = noTemp.filter(function (id) { return B.BY_ID[id] && B.hasTemp(B.BY_ID[id]); });
+  console.log('  ' + (wrong.length ? '❌' : '✅') + ' 装饰和按滴算的材料一共 ' + noTemp.length
+    + ' 样，都不该有温度' + (wrong.length ? '，可是这些有：' + wrong.join('、') : ''));
+  if (wrong.length) bad('温度', '这些东西不该有温度标签：' + wrong.join('、'));
+
+  B.state.temps = {};
+  B.load([['mint', 8], ['lemon_peel', 1], ['angostura', 2], ['makers', 45]]);
+  const cup = els['cupList'].innerHTML;
+  const drawn = noTemp.filter(function (id) { return cup.indexOf('data-temp="' + id + '"') >= 0; });
+  const okCup = drawn.length === 0 && cup.indexOf('data-temp="makers"') >= 0;
+  console.log('  ' + (okCup ? '✅' : '❌') + ' 杯子那行：装饰和苦精上没有温度标签，美格波本上有');
+  if (!okCup) bad('温度', '杯子那行的温度标签画错了：' + (drawn.length ? drawn.join('、') : '波本没画出来'));
+
+  const before2 = B.analyze().meltIce;
+  fire({ temp: 'mint' }, 'span');          /* 万一还有人点到装饰 */
+  const after2 = B.analyze().meltIce;
+  const okMis = before2 === after2 && !B.state.temps.mint;
+  console.log('  ' + (okMis ? '✅' : '❌') + ' 误点薄荷的温度：不会往状态里塞一个没用的温度');
+  if (!okMis) bad('温度', '点装饰的温度仍然会改状态');
+
+  /* 材料库：每个分类里的温度标签数，必须正好等于"有温度的材料"数。
+     蛋清是个特例——它归在「点缀」里，但一次 15ml、是真会倒进杯子的液体，所以它有温度；
+     柠檬皮、薄荷叶那些才是真装饰。用这条不变量兜住，比一个个列出来可靠。 */
+  B.state.hideRisky = false;
+  const cats = Array.from(new Set(global.__I.map(function (g) { return g.cat; })));
+  const libBad = [];
+  cats.forEach(function (c) {
+    B.state.cat = c;
+    B.load([]);
+    const html = els['lib'].innerHTML;
+    const got = (html.match(/class="tagtemp/g) || []).length;
+    const want = global.__I.filter(function (g) { return g.cat === c && B.hasTemp(g); }).length;
+    const shown = (html.match(/class="chip/g) || []).length;
+    const total = global.__I.filter(function (g) { return g.cat === c; }).length;
+    if (got !== want || shown !== total) libBad.push(c + '（标签 ' + got + '/' + want + '，材料 ' + shown + '/' + total + '）');
+  });
+  console.log('  ' + (libBad.length ? '❌' : '✅') + ' 材料库 ' + cats.length
+    + ' 个分类里，温度标签的数量都对得上' + (libBad.length ? '：' + libBad.join('、') : ''));
+  if (libBad.length) bad('温度', '材料库的温度标签数量对不上：' + libBad.join('、'));
+  B.state.cat = 'sour';
+})();
+
+/* ---- 改温度必须真的改变结果：兑和看化水，摇和看加水量 ---- */
+console.log('\n--- 改温度要真的有反应 ---');
+(function () {
+  /* 兑和 + 冰杯：可乐从冷藏改成常温，冰化出来的水必须变多 */
+  B.state.glass = 'icecup'; B.state.iceLevel = 'full'; B.state.method = 'build';
+  B.state.temps = {};
+  B.load([['havana3', 45], ['coke', 100]]);
+  const coldBefore = B.analyze();
+  fire({ temp: 'coke' }, 'span');          /* 冷藏 → 常温 */
+  const warmAfter = B.analyze();
+  const ok1 = warmAfter.meltIce > coldBefore.meltIce;
+  console.log('  ' + (ok1 ? '✅' : '❌') + ' 兑和：可乐 冷藏→常温，冰化的水 '
+    + coldBefore.meltIce + 'ml → ' + warmAfter.meltIce + 'ml');
+  if (!ok1) bad('温度', '改温度没有影响化水：' + coldBefore.meltIce + ' → ' + warmAfter.meltIce);
+
+  /* 摇和：基酒从常温改成冷冻，摇壶加的水必须变少、酒精度变高 */
+  B.state.temps = {};
+  B.state.glass = 'coupe'; B.state.iceLevel = 'none'; B.state.method = 'shake';
+  B.load([['tanqueray', 45], ['lemon', 20], ['syrup', 15]]);
+  const room = B.analyze();
+  fire({ temp: 'tanqueray' }, 'span');     /* 常温 → 冷冻 */
+  const frozen = B.analyze();
+  const ok2 = frozen.prepDil < room.prepDil - 0.5 && frozen.abv > room.abv;
+  console.log('  ' + (ok2 ? '✅' : '❌') + ' 摇和：基酒 常温→冷冻，摇壶加的水 '
+    + Math.round(room.prepDil) + 'ml → ' + Math.round(frozen.prepDil) + 'ml，酒精度 '
+    + room.abv.toFixed(1) + '% → ' + frozen.abv.toFixed(1) + '%');
+  if (!ok2) bad('温度', '摇和时改温度没有影响加水量');
+  B.state.temps = {};
+})();
+
+/* ---- 这次补的材料：查得到、度数是规规矩矩的 ---- */
+console.log('\n--- 补的材料 ---');
+(function () {
+  const want = [
+    ['malibu', '马利宝', 21],
+    ['botanist', '植物学家', 46],
+    ['nordes', '诺迪斯', 40],
+    ['monkey47', '猴王47', 47],
+    ['roku', '六金酒', 43]
+  ];
+  want.forEach(function (w) {
+    const g = B.BY_ID[w[0]];
+    const ok = g && g.name.indexOf(w[1]) >= 0 && Math.abs(g.abv - w[2]) < 0.05;
+    console.log('  ' + (ok ? '✅' : '❌') + ' ' + (g ? g.name + '　' + g.abv + '%' : w[0] + ' 没找到'));
+    if (!ok) bad('材料', '没查到这个材料的正确数据：' + w[0]);
+  });
+  console.log('  ✅ 金酒 ' + global.__I.filter(function (g) { return g.cat === 'gin'; }).length
+    + ' 瓶，材料一共 ' + global.__I.length + ' 样');
+})();
+
 /* ---- 三种模式：鸡尾酒评分 / 纯饮描述 / 单独一样材料不算酒 ---- */
 console.log('\n--- 三种模式 ---');
 (function () {
