@@ -146,6 +146,9 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
         <summary>怎么读结果</summary>
         <div class="body">
           <ul>
+            <li><b>杯子里的那张图怎么看：</b>每一颗小图形就是一种材料，<b>颜色是它的类别</b>
+              （深棕=基酒、砖红=利口酒、黄=酸、浅金=甜、橙=果汁、米=气泡饮料、暗红=苦精、绿=点缀），
+              <b>形状是具体哪一瓶</b>，颗粒的多少就是它占的比例。白色菱形是冰。</li>
             <li><b>分数只是参考</b>。真正有用的是下面三块：风味图（这杯是什么味道）、「冰化开会怎么样」（会变多淡）、「怎么再调一步」（下一步加什么）。</li>
             <li>杯子里<b>只有一样酒</b>（比如纯饮一杯威士忌）时不评分，只描述味道——"这杯好不好"不是这个工具能回答的。</li>
             <li>杯子装不下只是提醒，不扣分：你手上那只杯子可能比标称的大，自己判断。</li>
@@ -178,7 +181,7 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
       </div>
     </div>
     <div class="mixbar" id="mixBar"></div>
-    <p class="hint legendline">杯子里每一颗小图形就是一种材料，<b>颜色是它的类别</b>（深棕=基酒、砖红=利口酒、黄=酸、浅金=甜、橙=果汁、米=气泡饮料、暗红=苦精、绿=点缀），<b>形状是具体哪一瓶</b>，颗粒的多少就是它占的比例。白色菱形是冰。</p>
+    <div class="recipenote" id="recipeNote"></div>
     <div class="tasterow"><span class="taste-label">口味</span><div class="glasspick" id="tastePick"></div></div>
     <div class="tasterow"><span class="taste-label">冰量</span><div class="glasspick" id="icePick"></div></div>
     <div class="tasterow"><span class="taste-label">做法</span><div class="glasspick" id="methodPick"></div></div>
@@ -187,7 +190,6 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
     <p class="hint cuphint">材料行里的小标签都能点：<b>「常温」换温度</b>（冷冻 / 冷藏 / 常温）、<b>「40%」改度数</b>（按你瓶身上印的填）；点材料名那一行会展开完整说明。</p>
     <div class="cup-list" id="cupList"></div>
     <p class="empty" id="cupEmpty">杯子是空的。你可以直接在下面「④ 手边有什么」里勾上你手上有的，看现在能调什么；也可以从「⑤ 经典配方」点一个例子，或者从材料库自己挑——手上只有一瓶基酒也没关系，先倒进去，再用「换基酒」换成你有的那瓶。</p>
-    <p class="hint refnote" id="refNote"></p>
   </section>
 
   <!-- ③ 材料库 -->

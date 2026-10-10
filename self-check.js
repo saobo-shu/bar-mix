@@ -917,16 +917,16 @@ console.log('\n--- 手边有什么 → 现在能做什么 ---');
   if (!ok3) bad('手边有什么', '点配方没有正确装杯：' + JSON.stringify(cup));
 
   /* 来源和缺什么要写在杯子下面 */
-  const note = strip(els.refNote.innerHTML);
-  const ok4 = note.indexOf('自由古巴') >= 0;
-  console.log('  ' + (ok4 ? '✅' : '❌') + ' 杯子下面写着这杯的来源：' + note.slice(0, 30) + '…');
+  const note = strip(els.recipeNote.innerHTML);
+  const ok4 = note.indexOf('自由古巴') >= 0 && note.indexOf('Cuba Libre') >= 0;
+  console.log('  ' + (ok4 ? '✅' : '❌') + ' 杯子下面写着这杯的来源和备注：' + note.slice(0, 34) + '…');
   if (!ok4) bad('手边有什么', '没有写明这杯是从哪条配方来的');
 
   /* 自己动手改一杯 → 来源提示要消失（不然会误导） */
   B.state.cup.clear();
   B.state.cup.set('gin', 45);
   fire({ add: 'tonic' });
-  const note2 = strip(els.refNote.innerHTML);
+  const note2 = strip(els.recipeNote.innerHTML);
   console.log('  ' + (note2 === '' ? '✅' : '❌') + ' 自己加了别的材料：来源提示自动消失');
   if (note2 !== '') bad('手边有什么', '自己改了杯子之后还留着"来自某配方"');
 
@@ -945,6 +945,83 @@ console.log('\n--- 手边有什么 → 现在能做什么 ---');
   if (!kinds) bad('手边有什么', '有需求的 kind 认不出来');
 
   B.have.reset();
+})();
+
+/* ---- 点缀和"口感"类不算缺（用户：威士忌酸带不带蛋清都能喝）---- */
+console.log('\n--- 蛋清、柠檬片这类不算"还缺一样" ---');
+(function () {
+  const strip = s => String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const R = global.__REF;
+  B.have.reset();
+  ['pisco', 'syrup', 'lime'].forEach(id => B.have.toggle(id));
+  const i = R.findIndex(r => r.zh === '皮斯科酸');
+  const miss = B.have.missing(i);
+  const html = els.haveOut.innerHTML;
+  const card = (html.match(/<button[^>]*class="refcard[^"]*"[^>]*>[\s\S]*?<\/button>/g) || [])
+    .find(c => c.indexOf('皮斯科酸') >= 0);
+  const ok = miss.length === 0 && !!card && card.indexOf('refcard done') >= 0
+    && card.indexOf('可选：蛋白') >= 0;
+  console.log('  ' + (ok ? '✅' : '❌') + ' 皮斯科酸配齐三样：判成"现在就能做"，蛋清写成"可选"'
+    + '（缺 ' + miss.length + ' 样）');
+  if (!ok) bad('手边有什么', '蛋清被当成缺一样了');
+  B.have.reset();
+})();
+
+/* ---- 展开之后要能收回去 ---- */
+console.log('\n--- 展开 / 收起 ---');
+(function () {
+  B.have.reset();
+  ['rum', 'coke'].forEach(id => B.have.toggle(id));
+  const before = els.haveOut.innerHTML;
+  const hasMore = before.indexOf('data-havemore="2"') >= 0 && before.indexOf('展开剩下的') >= 0;
+  fire({ havemore: '2' });
+  const afterOpen = els.haveOut.innerHTML;
+  const hasHide = afterOpen.indexOf('data-havemore="2"') >= 0 && afterOpen.indexOf('收起') >= 0;
+  fire({ havemore: '2' });
+  const afterClose = els.haveOut.innerHTML;
+  const backToMore = afterClose.indexOf('展开剩下的') >= 0 && afterClose.indexOf('收起') < 0;
+  console.log('  ' + (hasMore ? '✅' : '❌') + ' 结果多的那一组有「展开剩下的 N 款」');
+  console.log('  ' + (hasHide ? '✅' : '❌') + ' 展开之后出现「收起」按钮');
+  console.log('  ' + (backToMore ? '✅' : '❌') + ' 点收起能收回原样');
+  if (!hasMore) bad('手边有什么', '没有展开按钮');
+  if (!hasHide) bad('手边有什么', '展开之后没有收起按钮（用户提的）');
+  if (!backToMore) bad('手边有什么', '点了收起没有收回去');
+  B.have.reset();
+})();
+
+/* ---- 经典配方的备注挪到杯子下面 ---- */
+console.log('\n--- 备注挪到杯子下面 ---');
+(function () {
+  const strip = s => String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const i = global.__PRESETS.findIndex(p => p.name === '威士忌酸');
+  B.preset(i);
+  const tip = global.__PRESETS[i].tip;
+  const note = strip(els.recipeNote.innerHTML);
+  const cardHtml = els.presets.innerHTML;
+  const ok1 = note.indexOf('威士忌酸') >= 0 && tip && note.indexOf(tip.slice(0, 12)) >= 0;
+  const ok2 = cardHtml.indexOf('p-tip') < 0;
+  console.log('  ' + (ok1 ? '✅' : '❌') + ' 点卡片后，备注显示在杯子下面：' + note.slice(0, 30) + '…');
+  console.log('  ' + (ok2 ? '✅' : '❌') + ' 配方卡片上不再重复这段备注');
+  if (!ok1) bad('版式', '备注没有显示到杯子下面');
+  if (!ok2) bad('版式', '配方卡片上还留着备注');
+  /* 自己动手改一杯 → 备注收起来 */
+  B.state.cup.set('gin', 45);
+  fire({ add: 'tonic' });
+  const after = strip(els.recipeNote.innerHTML);
+  console.log('  ' + (after === '' ? '✅' : '❌') + ' 自己改了杯子：备注自动收走');
+  if (after !== '') bad('版式', '改了杯子之后还挂着别的配方备注');
+})();
+
+/* ---- 杯子那张图的说明已经搬进「怎么用」 ---- */
+console.log('\n--- 图例搬进怎么用 ---');
+(function () {
+  const html = fs.readFileSync(path.join(dir, 'dev.html'), 'utf8');
+  const inHowto = /杯子里的那张图怎么看/.test(html);
+  const oldLine = /class="hint legendline"/.test(html);
+  console.log('  ' + (inHowto ? '✅' : '❌') + ' 「怎么用」里有「杯子里的那张图怎么看」');
+  console.log('  ' + (!oldLine ? '✅' : '❌') + ' ① 杯子里那行旧图例已经挪走');
+  if (!inHowto) bad('版式', '怎么用里没有图例说明');
+  if (oldLine) bad('版式', '① 里还留着旧的图例行');
 })();
 
 /* ---- 汇总 ---- */

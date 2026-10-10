@@ -198,9 +198,11 @@
       abv: {},
       /* 杯子里哪几行说明展开了（点一下切换） */
       open: {},
-      /* ④ 手边有什么：勾了的材料（id → 1）、以及最近一次是从哪条参考配方装进来的 */
+      /* ④ 手边有什么：勾了的材料（id → 1）、以及这杯是从哪条配方来的（备注显示在杯子下面） */
       have: {},
-      refName: '',
+      recipeName: '',
+      recipeSub: '',
+      recipeTip: '',
       refMiss: []
     };
 
@@ -1210,16 +1212,21 @@
     /* 这杯酒最后是什么构成的 */
     renderMixBar(a);
 
-    /* 这一杯是不是从「④ 手边有什么」点进来的：写清来源和还缺什么 */
-    var refBox = document.getElementById('refNote');
-    if (refBox) {
-      refBox.innerHTML = state.refName
-        ? '这一杯来自 <b>「' + esc(state.refName) + '」</b>（在 ④ 手边有什么 里点的）。'
+    /* 这杯是哪条配方、这条配方的备注——原来备注挤在配方卡片里，
+       现在卡片只留名字用料，备注挪到杯子下面（用户要求的） */
+    var noteBox = document.getElementById('recipeNote');
+    if (noteBox) {
+      if (!state.recipeName) noteBox.innerHTML = '';
+      else {
+        noteBox.innerHTML =
+          '<div class="rn-head"><b>' + esc(state.recipeName) + '</b>'
+          + (state.recipeSub ? '<span>' + esc(state.recipeSub) + '</span>' : '') + '</div>'
+          + (state.recipeTip ? '<p class="rn-tip">' + esc(state.recipeTip) + '</p>' : '')
           + (state.refMiss.length
-              ? '还缺：<b>' + state.refMiss.map(esc).join('、')
-                + '</b>　杯子里的量按标准配方装好了，缺的那几样记得补。'
-              : '材料齐了，照这个做就行。')
-        : '';
+              ? '<p class="rn-miss">还缺：<b>' + state.refMiss.map(esc).join('、')
+                + '</b>　杯子里的量按标准配方装好了，缺的那几样记得补。</p>'
+              : '');
+      }
     }
   }
 
@@ -1303,7 +1310,6 @@
         '<span class="p-name">' + esc(x.p.name) + '</span>' +
         '<span class="p-sub">' + esc(x.p.sub) + '</span>' +
         '<span class="p-comp">' + esc(compLine(x.p)) + '</span>' +
-        '<span class="p-tip">' + esc(x.p.tip) + '</span>' +
         '</button>';
     }
 
@@ -1437,12 +1443,17 @@
           return esc(nd.n) + (nd.need.approx ? '（用' + esc(nameOfNeed(nd.need)) + '代替）' : '');
         }).join('、')
       : '材料齐了，现在就能做 ✓';
+    /* 排版照材料库那张卡片来（用户说别自己发明） */
     return '<button type="button" class="refcard' + (miss.length ? '' : ' done') + '" data-ref="' + x.i + '">'
-      + '<span class="rc-top"><b>' + esc(x.r.zh) + '</b><i>' + esc(x.r.en || '') + '</i></span>'
-      + '<span class="rc-miss">' + missText + '</span>'
-      + '<span class="rc-meta">' + x.r.needs.length + ' 样材料 · '
-      + ({ shake: '摇和', stir: '搅拌', build: '兑和' }[methodFromRef(x.r.method)] || '兑和')
-      + (x.pick ? ' · 推荐' : '') + '</span>'
+      + '<span class="rc-main">'
+        + '<span class="rc-name">' + esc(x.r.zh)
+          + (x.pick ? '<i class="rc-pick">推荐</i>' : '') + '</span>'
+        + '<span class="rc-en">' + esc(x.r.en || '') + '</span>'
+      + '</span>'
+      + '<span class="rc-tags">'
+        + '<span class="rc-miss">' + missText + '</span>'
+        + (x.opt.length ? '<span class="rc-opt">可选：' + x.opt.map(esc).join('、') + '</span>' : '')
+      + '</span>'
       + '</button>';
   }
 
@@ -1460,7 +1471,11 @@
     REF_RECIPES.forEach(function (r, i) {
       var miss = missingOf(r);
       if (miss.length > 2) return;
-      rows.push({ r: r, i: i, miss: miss, pick: !!r.pick, n: r.needs.length });
+      /* 点缀和"口感"类缺了不算缺，只在卡片上写一句"可选：" */
+      var opt = r.needs.filter(function (nd) {
+        return nd.need.optional && !needOk(nd.need);
+      }).map(function (nd) { return nd.n; });
+      rows.push({ r: r, i: i, miss: miss, opt: opt, pick: !!r.pick, n: r.needs.length });
     });
     rows.sort(function (a, b) {
       if (a.pick !== b.pick) return a.pick ? -1 : 1;
@@ -1481,10 +1496,13 @@
       var show = open ? list : list.slice(0, HAVE_SHOW);
       html += '<div class="refgroup"><b>' + g.title + '</b><span>' + list.length + ' 款　'
         + esc(g.note) + '</span></div>';
-      html += show.map(refCard).join('');
+      html += '<div class="refgrid">' + show.map(refCard).join('') + '</div>';
+      /* 展开之后要能收回去（用户提的） */
       if (!open && list.length > HAVE_SHOW)
         html += '<button type="button" class="ghost refmore" data-havemore="' + g.k + '">'
           + '展开剩下的 ' + (list.length - HAVE_SHOW) + ' 款</button>';
+      else if (open && list.length > HAVE_SHOW)
+        html += '<button type="button" class="ghost refmore" data-havemore="' + g.k + '">收起</button>';
     });
     out.innerHTML = html || '<p class="hint haveempty">勾了的材料还凑不出经典配方——再勾几样试试。</p>';
   }
@@ -1527,7 +1545,10 @@
       ? (/无冰/.test(r.ice || '') ? 'none' : 'full') : 'none';
     state.method = methodFromRef(r.method);
     state.taste = tasteForAbv(analyze().abv);
-    state.refName = r.zh;
+    forgetRecipe();
+    state.recipeName = r.zh;
+    state.recipeSub = r.en || '';
+    state.recipeTip = r.note || '';
     state.refMiss = missingOf(r).map(function (nd) { return nd.n; });
     state.swapOpen = false;
     renderCup(); renderResult(); renderLib(); renderGlassPick(); renderIcePick();
@@ -1693,9 +1714,14 @@
   function addToCup(id) {
     var g = BY_ID[id];
     if (!g) return;
-    state.refName = ''; state.refMiss = [];     /* 自己动手加了东西，就不再是那条配方的了 */
+    forgetRecipe();                             /* 自己动手加了东西，就不再是那条配方的了 */
     if (state.cup.has(id)) state.cup.set(id, state.cup.get(id) + g.step);
     else state.cup.set(id, g.def);
+  }
+
+  /* 忘掉"这杯是哪条配方"——用户自己动过杯子之后就不该再挂着某条配方的备注 */
+  function forgetRecipe() {
+    state.recipeName = ''; state.recipeSub = ''; state.recipeTip = ''; state.refMiss = [];
   }
 
   document.addEventListener('click', function (e) {
@@ -1724,7 +1750,7 @@
     }
     /* 结果里"展开剩下的 N 款" */
     if (t.dataset.havemore !== undefined && t.dataset.havemore !== null && t.dataset.havemore !== '') {
-      haveOpen[t.dataset.havemore] = 1;
+      haveOpen[t.dataset.havemore] = haveOpen[t.dataset.havemore] ? 0 : 1;
       renderHaveResult();
       return;
     }
@@ -1794,7 +1820,7 @@
     if (t.dataset.act) {
       var gid = t.dataset.id, g = BY_ID[gid];
       var cur = state.cup.get(gid) || 0;
-      state.refName = ''; state.refMiss = [];
+      forgetRecipe();
       if (t.dataset.act === 'plus') state.cup.set(gid, cur + g.step);
       else if (t.dataset.act === 'minus') {
         var next = cur - g.step;
@@ -1806,7 +1832,7 @@
 
     if (t.dataset.preset) {
       var p = PRESETS[+t.dataset.preset];
-      state.refName = ''; state.refMiss = [];
+      forgetRecipe();
       state.cup.clear();
       p.items.forEach(function (it) { state.cup.set(it[0], it[1]); });
       /* 配方自带杯型：干马天尼配马天尼杯，高球配高球杯 */
@@ -1817,6 +1843,8 @@
       state.method = PRESET_METHOD[p.name] || state.method;
       /* 口味也跟着这杯的度数走（见 tasteForAbv），不然点马天尼一进来就被判"太烈" */
       state.taste = tasteForAbv(analyze().abv);
+      /* 备注挪到杯子下面显示（用户说挤在卡片里太乱） */
+      state.recipeName = p.name; state.recipeSub = p.sub; state.recipeTip = p.tip || '';
       state.swapOpen = false;
       renderCup(); renderResult(); renderLib(); renderGlassPick(); renderIcePick();
       renderMethodPick(); renderTastePick();
@@ -1941,6 +1969,8 @@
       state.iceLevel = glassOf(state.glass).ice === 'inglass' ? 'full' : 'none';
       state.method = PRESET_METHOD[p.name] || 'build';
       state.taste = tasteForAbv(analyze().abv);
+      state.refMiss = [];
+      state.recipeName = p.name; state.recipeSub = p.sub; state.recipeTip = p.tip || '';
       renderCup(); renderResult(); renderLib();
       return this.scores();
     },

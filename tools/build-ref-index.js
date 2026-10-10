@@ -219,6 +219,14 @@ const RULES = [
    装饰不在此列——莫吉托没薄荷就是做不了，那是真缺。 */
 const OPTIONAL = /(可选|随意|装饰用|非必需)/;
 
+/* 点缀和"口感"类的材料：有没有都能喝，不该算成"还缺一样"。
+   用户原话：威士忌酸可以喝带蛋清的，也可以喝不带蛋清的。
+   （薄荷、黄瓜不在里面——莫吉托没薄荷就是做不了。） */
+const OPTIONAL_IDS = {
+  egg_white: 1, egg_yolk: 1, lemon_peel: 1, orange_peel: 1, cherry: 1,
+  raspberry: 1, green_grape: 1, olive_brine: 1, rosemary: 1
+};
+
 function needOf(raw) {
   const n = String(raw).trim().replace(/^[*·\s]+/, '');
   if (!n) return { pantry: 1 };
@@ -263,6 +271,7 @@ ref.forEach(r => {
   (r.ingredients || []).forEach(ing => {
     const need = needOf(ing.n);
     if (OPTIONAL.test(ing.n)) need.optional = 1;
+    if (need.id && OPTIONAL_IDS[need.id]) need.optional = 1;
     if (need.pantry) { stat.pantry++; return; }
     if (need.no) { stat.no++; unresolved[need.no] = (unresolved[need.no] || 0) + 1; }
     if (need.approx) stat.approx++;
