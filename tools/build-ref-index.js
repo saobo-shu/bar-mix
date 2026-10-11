@@ -32,33 +32,33 @@ I.forEach(g => { byId[g.id] = g; });
 /* ---------- 精确名字优先（有歧义的、品牌的） ---------- */
 const EXACT = {
   /* 威士忌：泥煤、波本、黑麦、调和分清楚 */
-  '苏格兰威士忌': { cat: 'whisky' },
-  '苏格兰调和性威士忌': { id: 'jw_black' },
-  '威凤凰珍藏波本': { id: 'wild_turkey' },
-  '威凤凰珍藏威士忌': { id: 'wild_turkey' },
-  '拉弗格精锐': { id: 'laphroaig' },
-  '拉弗格1/4桶': { id: 'laphroaig' },
-  '阿贝10年': { id: 'ardbeg10' },
-  '艾雷迷雾烟熏威士忌': { id: 'talisker' },
-  '水牛足迹波本威士忌': { id: 'buffalo_trace' },
+  '苏格兰威士忌': { type: 'scotch' },
+  '苏格兰调和性威士忌': { type: 'scotch' },
+  '威凤凰珍藏波本': { type: 'bourbon' },
+  '威凤凰珍藏威士忌': { type: 'bourbon' },
+  '拉弗格精锐': { type: 'peated_scotch' },
+  '拉弗格1/4桶': { type: 'peated_scotch' },
+  '阿贝10年': { type: 'peated_scotch' },
+  '艾雷迷雾烟熏威士忌': { type: 'peated_scotch' },
+  '水牛足迹波本威士忌': { type: 'bourbon' },
   /* 朗姆 */
-  '百加得朗姆': { id: 'rum' },
-  '蔗园菠萝朗姆': { id: 'plantation3' },
-  'Cubita 151 朗姆': { id: 'dark_rum', approx: 1 },
+  '百加得朗姆': { type: 'white_rum' },
+  '蔗园菠萝朗姆': { type: 'white_rum', approx: 1 },
+  'Cubita 151 朗姆': { type: 'dark_rum', approx: 1 },
   /* 龙舌兰 */
-  '唐胡里奥龙舌兰': { id: 'donjulio' },
-  '奥美佳阿特兹': { id: 'olmeca' },
-  '100% 龙舌兰': { cat: 'tequila' },
-  'Mezcal 梅斯卡尔': { id: 'mezcal' },
+  '唐胡里奥龙舌兰': { type: 'tequila' },
+  '奥美佳阿特兹': { type: 'tequila' },
+  '100% 龙舌兰': { type: 'tequila' },
+  'Mezcal 梅斯卡尔': { type: 'mezcal' },
   /* 金酒 / 伏特加 / 烧酒：不认识的金酒牌子统一按金酒算 */
-  '季之美金酒': { cat: 'gin', approx: 1 },
-  '巍城夏日花园金酒': { cat: 'gin', approx: 1 },
-  '柠檬伏特加': { id: 'vodka', approx: 1 },
-  '美鹤乃舞烧酒': { id: 'soju', approx: 1 },
-  '烧酒（大伊雅美）': { id: 'soju', approx: 1 },
+  '季之美金酒': { family: 'gin_dry', approx: 1 },
+  '巍城夏日花园金酒': { family: 'gin_dry', approx: 1 },
+  '柠檬伏特加': { type: 'vodka', approx: 1 },
+  '美鹤乃舞烧酒': { type: 'soju', approx: 1 },
+  '烧酒（大伊雅美）': { type: 'soju', approx: 1 },
   /* 干邑 / 白兰地 */
-  '干邑白兰地': { id: 'cognac' },
-  '干邑（问客人要黑麦还是干邑）': { id: 'cognac' },
+  '干邑白兰地': { type: 'cognac' },
+  '干邑（问客人要黑麦还是干邑）': { type: 'cognac' },
   /* 开胃酒 / 苦味酒 */
   'Nonino Amaro': { id: 'nonino' },
   'Nonino': { id: 'nonino' },
@@ -121,20 +121,24 @@ const EXACT = {
 
 /* ---------- 常规规则：能一眼看出归哪一类的 ---------- */
 const RULES = [
-  [/^(金酒|干金酒|伦敦干金|琴酒)/, { cat: 'gin' }],
-  [/^(伏特加|伏特加酒)/, { cat: 'vodka' }],
-  [/^(白朗姆|白朗姆酒)/, { id: 'rum' }],
-  [/^(黑朗姆|深色朗姆)/, { id: 'dark_rum' }],
-  [/^(朗姆酒|朗姆)/, { cat: 'rum' }],
-  [/^(银龙舌兰|龙舌兰)/, { cat: 'tequila' }],
-  [/^(梅斯卡尔|美斯卡尔)/, { id: 'mezcal' }],
-  [/^(波本威士忌|波本)/, { id: 'bourbon' }],
-  [/^(黑麦威士忌|黑麦)/, { id: 'rye' }],
-  [/^(苏格兰|调和威士忌)/, { cat: 'whisky' }],
-  [/^(威士忌)/, { cat: 'whisky' }],
-  [/^(干邑|科涅克)/, { id: 'cognac' }],
-  [/^(苹果白兰地)/, { id: 'calvados' }],
-  [/^(皮斯科)/, { id: 'pisco' }],
+  [/^(金酒|干金酒|伦敦干金|琴酒)/, { family: 'gin_dry' }],
+  [/^(伏特加|伏特加酒)/, { type: 'vodka' }],
+  [/^(白朗姆|白朗姆酒)/, { type: 'white_rum' }],
+  [/^(黑朗姆|深色朗姆)/, { type: 'dark_rum' }],
+  [/^(朗姆酒|朗姆)/, { family: 'rum' }],
+  [/^(银龙舌兰|龙舌兰)/, { type: 'tequila' }],
+  [/^(梅斯卡尔|美斯卡尔)/, { type: 'mezcal' }],
+  [/^(泥煤|艾雷|烟熏威士忌)/, { type: 'peated_scotch' }],
+  [/^(波本威士忌|波本)/, { type: 'bourbon' }],
+  [/^(黑麦威士忌|黑麦)/, { type: 'rye' }],
+  [/^(田纳西)/, { type: 'tennessee' }],
+  [/^(爱尔兰威士忌)/, { type: 'irish' }],
+  [/^(日本威士忌)/, { type: 'japanese_whisky' }],
+  [/^(苏格兰|调和威士忌|调和麦芽)/, { type: 'scotch' }],
+  [/^(威士忌)/, { family: 'whisky' }],
+  [/^(干邑|科涅克)/, { type: 'cognac' }],
+  [/^(苹果白兰地)/, { type: 'calvados' }],
+  [/^(皮斯科)/, { type: 'pisco' }],
   [/^(黄柠檬汁|柠檬汁|鲜柠檬汁)/, { id: 'lemon' }],
   [/^(青柠汁|青柠檬汁|莱姆汁)/, { id: 'lime' }],
   [/^(1:1糖浆|简单糖浆|单糖浆|白糖浆|基础糖浆)/, { id: 'syrup' }],
@@ -275,7 +279,7 @@ ref.forEach(r => {
     if (need.pantry) { stat.pantry++; return; }
     if (need.no) { stat.no++; unresolved[need.no] = (unresolved[need.no] || 0) + 1; }
     if (need.approx) stat.approx++;
-    if (need.id || need.cat || need.ids) stat.resolved++;
+    if (need.id || need.cat || need.ids || need.type || need.group) stat.resolved++;
     stat.uses++;
     needs.push({ n: ing.n, a: String(ing.a || ''), need: need });
   });

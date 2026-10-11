@@ -278,6 +278,18 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .rc-miss { font-size: 10px; color: var(--amber); text-align: right; }
 .refcard.done .rc-miss { color: var(--green); }
 .rc-opt { font-size: 9.5px; color: var(--muted); text-align: right; }
+.rc-used { font-size: 9.5px; color: var(--green); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-swap { font-size: 9.5px; color: var(--muted); text-align: right; }
+/* 手上没有酒时的"先买哪一类" */
+.buybox {
+  margin: 0 0 11px; padding: 10px 12px; border-radius: 11px;
+  background: rgba(224, 163, 92, .10); border: 1px solid rgba(224, 163, 92, .35);
+}
+.buy-title { font-size: 13px; font-weight: 600; color: var(--amber); }
+.buy-lead { margin: 5px 0 6px; font-size: 12px; line-height: 1.6; color: #ddd3c9; }
+.buybox ul { margin: 0; padding-left: 18px; }
+.buybox li { font-size: 12.5px; line-height: 1.75; color: #ddd3c9; }
+.buybox li b { color: var(--amber); font-weight: 600; }
 .refmore { width: 100%; margin: 7px 0 4px; }
 .haveempty { margin: 0; line-height: 1.7; }
 .haveempty b { color: var(--text); font-weight: 600; }

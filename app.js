@@ -1376,13 +1376,91 @@
     if (u === 'g') return (n && /(g|克)/.test(s)) ? n : g.def;
     return g.def;
   }
-  /* 需求指向哪瓶材料——给"用 XX 代替"那句话用 */
-  function nameOfNeed(need) {
-    if (need.id && BY_ID[need.id]) return BY_ID[need.id].name.replace(/（.*?）/g, '');
-    if (need.ids && BY_ID[need.ids[0]]) return BY_ID[need.ids[0]].name.replace(/（.*?）/g, '');
-    if (need.cat) return '同类材料';
-    return '同类材料';
+  /* ---------------------------------------------------------
+     类型：谁跟谁能替（表在 data.js，规则见那里的注释）
+     --------------------------------------------------------- */
+  function typeOf(id) { return DRINK_TYPE[id] || id; }      /* 没登记的：自己是自己一类 */
+  /* 能替这条类型的全部类型（含自己）：威士忌七类互相能替，其余只认自己 */
+  function swapTypesOf(t) {
+    var out = [t];
+    var g = TYPE_SWAP[t];
+    if (!g) return out;
+    Object.keys(TYPE_SWAP).forEach(function (k) { if (TYPE_SWAP[k] === g) out.push(k); });
+    return out;
   }
+  /* 这条类型属于哪个"家族"（用来给买酒建议去重、写"你不在这类"） */
+  function familyOfType(t) {
+    var hit = '';
+    Object.keys(FAMILY_TYPES).forEach(function (f) {
+      if (FAMILY_TYPES[f].indexOf(t) >= 0) hit = f;
+    });
+    return hit || t;
+  }
+  function typeName(t) {
+    if (TYPE_NAME[t]) return TYPE_NAME[t];
+    if (BY_ID[t]) return BY_ID[t].name.replace(/（.*?）/g, '');
+    return t;
+  }
+  /* 这个类型属于哪个材料分类（用来判断"你手上有同大类、但不能替的那瓶"） */
+  function catOfType(t) {
+    if (BY_ID[t]) return BY_ID[t].cat;
+    for (var i = 0; i < INGREDIENTS.length; i++) {
+      if (typeOf(INGREDIENTS[i].id) === t) return INGREDIENTS[i].cat;
+    }
+    return '';
+  }
+  function isSpiritCat(c) {
+    return c === 'gin' || c === 'whisky' || c === 'rum' || c === 'vodka'
+      || c === 'tequila' || c === 'brandy' || c === 'otherbase';
+  }
+
+  /* 这条需求，勾了的材料能不能满足；是"完全一样"还是"同组能替" */
+  function needStatus(need) {
+    return needStatusWith(need, Object.keys(state.have));
+  }
+  function needStatusWith(need, mine) {
+    var hits = [];
+    if (need.pantry) return { ok: true, exact: true, hits: [] };
+    if (need.id) {
+      hits = mine.filter(function (id) { return id === need.id; });
+      return { ok: hits.length > 0, exact: hits.length > 0, hits: hits };
+    }
+    if (need.ids) {
+      hits = mine.filter(function (id) { return need.ids.indexOf(id) >= 0; });
+      return { ok: hits.length > 0, exact: hits.length > 0, hits: hits };
+    }
+    if (need.cat) {
+      hits = mine.filter(function (id) { return BY_ID[id] && BY_ID[id].cat === need.cat; });
+      return { ok: hits.length > 0, exact: hits.length > 0, hits: hits };
+    }
+    if (need.type) {
+      hits = mine.filter(function (id) { return typeOf(id) === need.type; });
+      if (hits.length) return { ok: true, exact: true, hits: hits };
+      var allow = swapTypesOf(need.type);
+      hits = mine.filter(function (id) { return allow.indexOf(typeOf(id)) >= 0; });
+      if (hits.length) return { ok: true, exact: false, hits: hits, wantType: need.type };
+      return { ok: false, exact: false, hits: [] };
+    }
+    if (need.family) {
+      var fam = FAMILY_TYPES[need.family] || [];
+      hits = mine.filter(function (id) { return fam.indexOf(typeOf(id)) >= 0; });
+      return { ok: hits.length > 0, exact: hits.length > 0, hits: hits };
+    }
+    return { ok: false, exact: false, hits: [] };
+  }
+
+  /* 缺的那一样，界面上叫什么 */
+  function needLabel(nd) {
+    var n = nd.need;
+    if (n.type) return typeName(n.type);
+    if (n.family) return FAMILY_NAME[n.family] || n.n;
+    if (n.id && BY_ID[n.id]) return BY_ID[n.id].name.replace(/（.*?）/g, '');
+    if (n.ids && BY_ID[n.ids[0]]) return BY_ID[n.ids[0]].name.replace(/（.*?）/g, '');
+    if (n.cat) return catName(n.cat);
+    return n.n;
+  }
+  /* 勾的东西里，哪几瓶满足这条需求（用来写"用上你的：……"） */
+  function needHits(nd) { return needStatus(nd.need).hits; }
 
   /* 勾选状态存在本地，下次打开还在 */
   function loadHave() {
@@ -1397,18 +1475,48 @@
     } catch (e) {}
   }
 
-  /* 这条需求，勾了的材料能不能满足 */
-  function needOk(need) {
-    var mine = Object.keys(state.have);
-    if (need.cat) return mine.some(function (id) { return BY_ID[id] && BY_ID[id].cat === need.cat; });
-    if (need.id) return !!state.have[need.id];
-    if (need.ids) return need.ids.some(function (id) { return !!state.have[id]; });
-    return true;      /* pantry：冰、水、盐这类默认算有 */
-  }
+  function needOk(need) { return needStatus(need).ok; }
+
+  /* 硬缺口：真缺的东西（点缀和"可选"不算） */
   function missingOf(r) {
     return (r.needs || []).filter(function (nd) {
       return !nd.need.optional && !needOk(nd.need);
     });
+  }
+  /* 用上了你几样（只数非"可选"的） */
+  function usedOf(r) {
+    return (r.needs || []).filter(function (nd) {
+      return !nd.need.optional && needOk(nd.need);
+    });
+  }
+  /* 替用提醒：同组不同类型 → "配方一般是 X，你的 Y 也能做，风味会不一样" */
+  function swapNotes(r) {
+    var out = [];
+    (r.needs || []).forEach(function (nd) {
+      if (nd.need.optional) return;
+      var st = needStatus(nd.need);
+      if (!st.ok || st.exact || !st.wantType || !st.hits.length) return;
+      out.push('配方一般是' + typeName(st.wantType) + '，你的'
+        + BY_ID[st.hits[0]].name.replace(/（.*?）/g, '') + '也能做，风味会不一样');
+    });
+    return out;
+  }
+  /* 缺的是酒、而你手上有同大类但不能替的那瓶 → 说明一句，免得你困惑 */
+  function familyNote(r) {
+    var mine = Object.keys(state.have);
+    var out = [];
+    missingOf(r).forEach(function (nd) {
+      var n = nd.need, allow = [], cat = '';
+      if (n.type) { allow = swapTypesOf(n.type); cat = catOfType(n.type); }
+      else if (n.family) { allow = FAMILY_TYPES[n.family] || []; cat = FAMILY_CAT[n.family] || ''; }
+      else return;
+      if (!isSpiritCat(cat)) return;
+      var sameCat = mine.filter(function (id) {
+        return BY_ID[id] && BY_ID[id].cat === cat && allow.indexOf(typeOf(id)) < 0;
+      });
+      if (sameCat.length) out.push(BY_ID[sameCat[0]].name.replace(/（.*?）/g, '') + '不在这一类');
+    });
+    return out;
   }
 
   function renderHaveList() {
@@ -1455,19 +1563,36 @@
     var miss = x.miss;
     var missText = miss.length
       ? '还缺 ' + miss.length + ' 种：' + miss.map(function (nd) {
-          return esc(nd.n) + (nd.need.approx ? '（用' + esc(nameOfNeed(nd.need)) + '代替）' : '');
+          var lab = needLabel(nd);
+          /* 库里只有近似物时才说明，而且写"配方写的是……"——写"用XX代替XX"是废话 */
+          var raw = String(nd.n).replace(/（.*?）/g, '').trim();
+          return esc(lab) + (nd.need.approx && raw && raw !== lab ? '（配方写的是' + esc(raw) + '）' : '');
         }).join('、')
       : '材料齐了，现在就能做 ✓';
+    /* 用上你哪些东西：写类型名或瓶子名，让人一眼看出"这杯跟我的材料有关系" */
+    var usedNames = [];
+    x.used.forEach(function (nd) {
+      needHits(nd).forEach(function (id) {
+        var nm = BY_ID[id].name.replace(/（.*?）/g, '');
+        if (usedNames.indexOf(nm) < 0) usedNames.push(nm);
+      });
+    });
+    var usedText = usedNames.length
+      ? '用上你的：' + usedNames.slice(0, 3).join('、') + (usedNames.length > 3 ? ' 等 ' + usedNames.length + ' 样' : '')
+      : '';
     /* 排版照材料库那张卡片来（用户说别自己发明） */
     return '<button type="button" class="refcard' + (miss.length ? '' : ' done') + '" data-ref="' + x.i + '">'
       + '<span class="rc-main">'
         + '<span class="rc-name">' + esc(x.r.zh)
           + (x.pick ? '<i class="rc-pick">推荐</i>' : '') + '</span>'
         + '<span class="rc-en">' + esc(x.r.en || '') + '</span>'
+        + (usedText ? '<span class="rc-used">' + esc(usedText) + '</span>' : '')
       + '</span>'
       + '<span class="rc-tags">'
         + '<span class="rc-miss">' + missText + '</span>'
         + (x.opt.length ? '<span class="rc-opt">可选：' + x.opt.map(esc).join('、') + '</span>' : '')
+        + (x.swap.length ? '<span class="rc-swap">' + esc(x.swap.join('；')) + '</span>' : '')
+        + (x.fam.length ? '<span class="rc-swap">' + esc(x.fam.join('；')) + '</span>' : '')
       + '</span>'
       + '</button>';
   }
@@ -1486,24 +1611,40 @@
     REF_RECIPES.forEach(function (r, i) {
       var miss = missingOf(r);
       if (miss.length > 2) return;
+      /* 核心：这杯必须用得上你勾的东西，否则勾了等于白勾（原来会推荐教父这种毫无关系的） */
+      var used = usedOf(r);
+      if (!used.length) return;
       /* 点缀和"口感"类缺了不算缺，只在卡片上写一句"可选：" */
       var opt = r.needs.filter(function (nd) {
         return nd.need.optional && !needOk(nd.need);
-      }).map(function (nd) { return nd.n; });
-      rows.push({ r: r, i: i, miss: miss, opt: opt, pick: !!r.pick, n: r.needs.length });
+      }).map(function (nd) { return String(nd.n).replace(/[（(]可选[)）]/g, '').trim(); });
+      rows.push({
+        r: r, i: i, miss: miss, opt: opt, used: used,
+        swap: swapNotes(r), fam: familyNote(r),
+        pick: !!r.pick, n: r.needs.length
+      });
     });
+    /* 排序：用上你最多的 → 缺得最少的 → 材料少的 → 推荐款（推荐只做平手规则） */
     rows.sort(function (a, b) {
-      if (a.pick !== b.pick) return a.pick ? -1 : 1;
+      if (a.used.length !== b.used.length) return b.used.length - a.used.length;
       if (a.miss.length !== b.miss.length) return a.miss.length - b.miss.length;
-      return a.n - b.n;
+      if (a.n !== b.n) return a.n - b.n;
+      if (a.pick !== b.pick) return a.pick ? -1 : 1;
+      return 0;
     });
+
+    /* 手上有没有"酒"（abv≥15 的算酒）——没有的话要专门指一条路 */
+    var mine = Object.keys(state.have);
+    var noBooze = !mine.some(function (id) { return BY_ID[id] && BY_ID[id].abv >= 15; });
 
     var groups = [
       { k: 0, title: '现在就能做', note: '材料都齐了' },
       { k: 1, title: '还缺 1 种', note: '多半是饮料或柠檬' },
-      { k: 2, title: '还缺 2 种', note: '顺手一起买' }
+      { k: 2, title: '还缺 2 种', note: noBooze ? '含一瓶酒，顺手一起买' : '顺手一起买' }
     ];
     var html = '';
+    /* 没有酒、或者一条都凑不出 → 把"先买哪类酒最划算"放最上面 */
+    if (noBooze || !rows.length) html += buyBox(noBooze);
     groups.forEach(function (g) {
       var list = rows.filter(function (x) { return x.miss.length === g.k; });
       if (!list.length) return;
@@ -1524,6 +1665,80 @@
 
   function renderHave() { renderHaveCats(); renderHaveList(); renderHaveResult(); }
 
+  /* ---------------------------------------------------------
+     先买哪一类酒最划算
+
+     用户的要求：只报类型（金酒、伏特加、白朗姆），不报牌子——
+     有人不喜欢蓝宝石、有人不喜欢添加利，出现牌子只会添乱。
+     排序按"最简单解锁"：先看买了立刻能做的款数，再看"再补一样能做几款"。
+     --------------------------------------------------------- */
+  var TYPE_REP = {};
+  /* 每一类挑一个代表瓶，优先"超市/便利店买得到"的（只用来算数，不显示给人看） */
+  function typeRep(t) {
+    if (TYPE_REP[t] !== undefined) return TYPE_REP[t];
+    var best = '', score = -1;
+    INGREDIENTS.forEach(function (g) {
+      if (typeOf(g.id) !== t) return;
+      var s = g.src === 'rt' ? 3 : (g.src === 'near' ? 2 : 1);
+      if (s > score) { score = s; best = g.id; }
+    });
+    TYPE_REP[t] = best;
+    return best;
+  }
+  /* 手上再加这一类的酒，能多做几款 */
+  function buyGain(t) {
+    var rep = typeRep(t);
+    if (!rep) return null;
+    var mine = Object.keys(state.have).concat([rep]);
+    var m0 = [], m1 = 0;
+    REF_RECIPES.forEach(function (r) {
+      var miss = 0, used = 0;
+      (r.needs || []).forEach(function (nd) {
+        if (nd.need.optional) return;
+        if (needStatusWith(nd.need, mine).ok) used++;
+        else miss++;
+      });
+      if (!used) return;
+      if (!miss) m0.push(r);
+      else if (miss === 1) m1++;
+    });
+    return { type: t, m0: m0, m1: m1 };
+  }
+  /* 同一组只报一次（金酒报一条，不要伦敦干金、现代干金各来一条） */
+  function buySuggest(limit) {
+    var best = {};
+    Object.keys(TYPE_NAME).forEach(function (t) {
+      var g = buyGain(t);
+      if (!g || (!g.m0.length && !g.m1)) return;
+      var grp = familyOfType(t), score = g.m0.length * 100 + g.m1;
+      if (!best[grp] || best[grp].score < score) best[grp] = { score: score, g: g };
+    });
+    var out = Object.keys(best).map(function (k) { return best[k].g; });
+    out.sort(function (a, b) {
+      if (b.m0.length !== a.m0.length) return b.m0.length - a.m0.length;
+      return b.m1 - a.m1;
+    });
+    return out.slice(0, limit || 3);
+  }
+  function buyBox(noBooze) {
+    var list = buySuggest(3);
+    if (!list.length) return '';
+    var lines = list.map(function (g) {
+      if (g.m0.length) {
+        var names = g.m0.slice(0, 2).map(function (r) { return '「' + r.zh + '」'; }).join('');
+        return '<b>' + esc(typeName(g.type)) + '</b>：买了立刻能做' + esc(names)
+          + (g.m1 ? '；再补一样还能做 ' + g.m1 + ' 款' : '');
+      }
+      return '<b>' + esc(typeName(g.type)) + '</b>：再补一样就能做 ' + g.m1 + ' 款';
+    });
+    return '<div class="buybox">'
+      + '<div class="buy-title">先买哪一类酒最划算</div>'
+      + '<p class="buy-lead">' + (noBooze
+          ? '你勾的都是饮料——经典鸡尾酒至少要有一样酒。按"买哪一类最简单解锁"排：'
+          : '你勾的这些，经典配方里还没凑成一杯。试试先加一样：')
+      + '</p><ul>' + lines.map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ul></div>';
+  }
+
   /* 需求 → 具体用哪一瓶：优先用你勾了的那瓶 */
   function resolveNeedId(need) {
     if (need.id) return BY_ID[need.id] ? need.id : '';
@@ -1538,6 +1753,28 @@
       if (ticked) return ticked;
       var def = INGREDIENTS.filter(function (g) { return g.cat === need.cat; })[0];
       return def ? def.id : '';
+    }
+    /* 按类型要的：优先用你勾了的那瓶（同类型最好，同组也行），否则拿代表瓶 */
+    if (need.type) {
+      var exact = Object.keys(state.have).filter(function (id) { return typeOf(id) === need.type; })[0];
+      if (exact) return exact;
+      var allowT = swapTypesOf(need.type);
+      var same = Object.keys(state.have).filter(function (id) {
+        return allowT.indexOf(typeOf(id)) >= 0;
+      })[0];
+      if (same) return same;
+      return typeRep(need.type);
+    }
+    if (need.family) {
+      var famT = FAMILY_TYPES[need.family] || [];
+      var ing = Object.keys(state.have).filter(function (id) {
+        return famT.indexOf(typeOf(id)) >= 0;
+      })[0];
+      if (ing) return ing;
+      var first = INGREDIENTS.filter(function (g) {
+        return famT.indexOf(typeOf(g.id)) >= 0;
+      })[0];
+      return first ? first.id : '';
     }
     return '';
   }
@@ -1564,7 +1801,7 @@
     state.recipeName = r.zh;
     state.recipeSub = r.en || '';
     state.recipeTip = r.note || '';
-    state.refMiss = missingOf(r).map(function (nd) { return nd.n; });
+    state.refMiss = missingOf(r).map(needLabel);
     state.swapOpen = false;
     renderCup(); renderResult(); renderLib(); renderGlassPick(); renderIcePick();
     renderMethodPick(); renderTastePick();
@@ -1968,6 +2205,9 @@
       missing: function (i) {
         return missingOf(REF_RECIPES[i]).map(function (nd) { return nd.n; });
       },
+      missingLabel: function (i) { return missingOf(REF_RECIPES[i]).map(needLabel); },
+      used: function (i) { return usedOf(REF_RECIPES[i]).length; },
+      buy: buySuggest,
       load: loadRefRecipe,
       parse: parseAmount
     },

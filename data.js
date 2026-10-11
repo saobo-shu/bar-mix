@@ -1038,6 +1038,88 @@ var THERMO = {
   icePack: 0.85     /* 冰填到杯口，中间有空隙，折算成质量 */
 };
 
+/* =========================================================
+   调酒类型：谁跟谁能互相替
+
+   配方写"干金酒"，你手上是植物学家——算不算"有"？分两层看：
+
+     DRINK_TYPE   准确类型：伦敦干金 / 现代干金 / 老汤姆金酒……（给人看的名字也是它）
+     TYPE_GROUP   可替换组：干金组 = 伦敦干金 + 现代干金（判断"算不算有"）
+
+   规则（用户定的）：
+     · 类型完全相同 → 有
+     · 类型不同、同一组 → 有，但界面要标注"风味会不一样"
+     · 不同组 → 缺
+
+   几个关键决定（都是用户拍板的）：
+     · 老汤姆、普利茅斯不进干金组——它们做金汤力不能算替；
+     · 现代干金（植物学家、诺迪斯、猴王47、六、亨利爵士、添加利十号）
+       进干金组，因为多数干金配方可以替，只是风味不同；
+     · 金朗姆不能替白朗姆；卡莎莎单列（库里的分类挂在朗姆下，但配方写"朗姆酒"时不算它）；
+     · 威士忌七类互相能替：波本 / 田纳西 / 黑麦 / 泥煤苏格兰 / 苏格兰 / 爱尔兰 / 日本；
+     · 没列到的材料（利口酒、味美思、果汁、糖浆……）默认"自己是自己一类"，不跟别人换。
+   ========================================================= */
+var DRINK_TYPE = {
+  /* 金酒 */
+  gin: 'london_dry', tanqueray: 'london_dry', beefeater: 'london_dry', bombay: 'london_dry',
+  hendricks: 'contemporary_dry', tanqueray10: 'contemporary_dry', roku: 'contemporary_dry',
+  botanist: 'contemporary_dry', nordes: 'contemporary_dry', monkey47: 'contemporary_dry',
+  old_tom: 'old_tom_gin', plymouth: 'plymouth_gin',
+  /* 威士忌 */
+  bourbon: 'bourbon', makers: 'bourbon', buffalo_trace: 'bourbon', wild_turkey: 'bourbon',
+  jack: 'tennessee', rye: 'rye',
+  laphroaig: 'peated_scotch', ardbeg10: 'peated_scotch', talisker: 'peated_scotch',
+  jw_black: 'scotch', chivas12: 'scotch', glenlivet: 'scotch', glenfiddich: 'scotch',
+  macallan: 'scotch', ballantines: 'scotch', jw_red: 'scotch', monkey: 'scotch',
+  jameson: 'irish', kakubin: 'japanese_whisky',
+  /* 朗姆 */
+  rum: 'white_rum', havana3: 'white_rum', plantation3: 'white_rum',
+  bacardi_oro: 'gold_rum', havana7: 'gold_rum', appleton: 'gold_rum',
+  dark_rum: 'dark_rum', plantation_dark: 'dark_rum',
+  captain: 'spiced_rum', cachaca: 'cachaca',
+  /* 其他基酒 */
+  vodka: 'vodka', grey_goose: 'vodka', smirnoff: 'vodka', belvedere: 'vodka', finlandia: 'vodka',
+  tequila: 'tequila', patron: 'tequila', olmeca: 'tequila', donjulio: 'tequila',
+  mezcal: 'mezcal',
+  cognac: 'cognac', remymartin: 'cognac', keya: 'cognac',
+  calvados: 'calvados', pisco: 'pisco', soju: 'soju', jiangxiaobai: 'baijiu', aquavit: 'aquavit'
+};
+
+var TYPE_NAME = {
+  london_dry: '伦敦干金', contemporary_dry: '现代干金',
+  old_tom_gin: '老汤姆金酒', plymouth_gin: '普利茅斯金酒',
+  bourbon: '波本威士忌', tennessee: '田纳西威士忌', rye: '黑麦威士忌',
+  peated_scotch: '泥煤苏格兰威士忌', scotch: '苏格兰威士忌',
+  irish: '爱尔兰威士忌', japanese_whisky: '日本威士忌',
+  white_rum: '白朗姆', gold_rum: '金朗姆', dark_rum: '黑朗姆',
+  spiced_rum: '香料朗姆', cachaca: '卡莎莎',
+  vodka: '伏特加', tequila: '龙舌兰', mezcal: '梅斯卡尔',
+  cognac: '干邑', calvados: '苹果白兰地', pisco: '皮斯科',
+  soju: '烧酒', baijiu: '白酒', aquavit: '阿夸维特'
+};
+
+/* 配方只写"金酒""朗姆酒""威士忌"（没指定品种）时，认哪些类型。
+   注意几件用户定下的事：
+     · 干金 = 伦敦干金 + 现代干金（植物学家、诺迪斯、猴王47、六、亨利爵士、添加利十号）；
+     · 老汤姆、普利茅斯谁都不替，所以不在干金里；
+     · 朗姆这里不含卡莎莎（配方写"朗姆酒"时不算它）；
+     · 白朗姆和金朗姆虽然都算"朗姆酒"，但谁也不替谁——所以"能替"和"算同一类"是两回事。 */
+var FAMILY_TYPES = {
+  gin_dry: ['london_dry', 'contemporary_dry'],
+  rum: ['white_rum', 'gold_rum', 'dark_rum', 'spiced_rum'],
+  whisky: ['bourbon', 'tennessee', 'rye', 'peated_scotch', 'scotch', 'irish', 'japanese_whisky']
+};
+var FAMILY_NAME = { gin_dry: '干金酒', rum: '朗姆酒', whisky: '威士忌' };
+var FAMILY_CAT = { gin_dry: 'gin', rum: 'rum', whisky: 'whisky' };
+
+/* 同大类里"能互相替、但风味会不一样"的类型——界面会标注。
+   目前只有威士忌七类：用户原话是"威士忌酸用波本还是苏格兰都能做，但要标注一下"。
+   其他类型只认自己：金朗姆替不了白朗姆，老汤姆替不了干金。 */
+var TYPE_SWAP = {
+  bourbon: 'whisky', tennessee: 'whisky', rye: 'whisky', peated_scotch: 'whisky',
+  scotch: 'whisky', irish: 'whisky', japanese_whisky: 'whisky'
+};
+
 /* 口味偏好：该多浓是口味问题，不是客观事实，所以由你来定 */
 var TASTES = [
   { id: 'light', name: '清淡', lo: 3.5, hi: 8, out: 14, note: '沙瓦、养乐多烧酒那种，喝着像饮料' },

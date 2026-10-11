@@ -950,9 +950,110 @@ console.log('\n--- 手边有什么 → 现在能做什么 ---');
   if (bad4.length) bad('手边有什么', '用量换算不对：' + bad4.map(c => c[0]).join('、'));
 
   /* 191 份里不许出现"对不上的需求" */
-  const kinds = R.every(r => r.needs.every(nd => nd.need.id || nd.need.cat || nd.need.ids));
+  const kinds = R.every(r => r.needs.every(nd => nd.need.id || nd.need.cat || nd.need.ids
+    || nd.need.type || nd.need.family));
   console.log('  ' + (kinds ? '✅' : '❌') + ' 191 份配方里的每一条需求都指向了库里的材料');
   if (!kinds) bad('手边有什么', '有需求的 kind 认不出来');
+
+  B.have.reset();
+})();
+
+/* ---- 类型：谁跟谁能替（用户逐条定的规则）---- */
+console.log('\n--- 类型：同组能替要标注，不能替就算缺 ---');
+(function () {
+  const strip = s => String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const R = global.__REF;
+  const cardOf = (name) => (els.haveOut.innerHTML.match(/<button[^>]*class="refcard[^"]*"[^>]*>[\s\S]*?<\/button>/g) || [])
+    .find(c => c.indexOf('>' + name + '<') >= 0 || c.indexOf(name) >= 0);
+  const martini = R.findIndex(r => r.zh === '马天尼');
+
+  /* 1. 干金是一个家族（伦敦干金 + 现代干金）：植物学家算"有"，而且不用标注——
+        因为配方只要"干金"，不挑风格。以前会把"季之美"这种配料名当成要求，多出没用的标注。 */
+  B.have.reset();
+  B.have.toggle('botanist'); B.have.toggle('dry_vermouth');
+  const miss1 = B.have.missingLabel(martini);
+  const card1 = cardOf('马天尼') || '';
+  const ok1 = miss1.indexOf('干金酒') < 0 && card1.indexOf('用上你的') >= 0
+    && card1.indexOf('植物学家') >= 0 && card1.indexOf('风味会不一样') < 0;
+  console.log('  ' + (ok1 ? '✅' : '❌') + ' 植物学家金酒算干金：算有，不用标注'
+    + '（还缺：' + miss1.join('、') + '）');
+  if (!ok1) bad('类型', '现代干金没有被算进干金家族');
+
+  /* 2. 老汤姆 → 不能替，算缺，并说明"不在这一类" */
+  B.have.reset();
+  B.have.toggle('old_tom'); B.have.toggle('dry_vermouth');
+  const miss2 = B.have.missingLabel(martini);
+  const card2 = cardOf('马天尼') || '';
+  const ok2 = miss2.indexOf('干金酒') >= 0 && card2.indexOf('不在这一类') >= 0;
+  console.log('  ' + (ok2 ? '✅' : '❌') + ' 老汤姆：算缺（还缺：' + miss2.join('、') + '），并说明"你的老汤姆金酒不在这一类"');
+  if (!ok2) bad('类型', '老汤姆替干金没有被判成缺');
+
+  /* 2b. 威士忌反过来：跨风格能替，但必须标注（用户原话） */
+  B.have.reset();
+  /* 苏格兰 + 其它几样，让这杯够得着（缺 ≤2 才会画出来） */
+  ['jw_black', 'lemon', 'syrup', 'angostura'].forEach(function (id) { B.have.toggle(id); });
+  const sour = R.findIndex(r => r.zh === '威士忌酸');
+  const missW = B.have.missingLabel(sour);
+  const cardW = cardOf('威士忌酸') || '';
+  const okW = missW.indexOf('波本威士忌') < 0 && cardW.indexOf('风味会不一样') >= 0
+    && cardW.indexOf('波本威士忌') >= 0;
+  console.log('  ' + (okW ? '✅' : '❌') + ' 苏格兰替波本做威士忌酸：算有，但标注"配方一般是波本威士忌，风味会不一样"');
+  if (!okW) bad('类型', '威士忌跨风格的替换没有标注');
+
+  /* 2c. 白朗姆替不了黑朗姆（用户说不能） */
+  B.have.reset();
+  B.have.toggle('rum');               /* 百加得白朗姆 */
+  const dark = R.findIndex(r => r.zh === '黑夜风暴');
+  const missD = B.have.missingLabel(dark);
+  console.log('  ' + (missD.indexOf('黑朗姆') >= 0 ? '✅' : '❌')
+    + ' 只有白朗姆：黑朗姆那杯仍然算缺（还缺：' + missD.join('、') + '）');
+  if (missD.indexOf('黑朗姆') < 0) bad('类型', '白朗姆被当成了黑朗姆');
+
+  /* 3. 白朗姆是按类型认的：勾哈瓦那3年，自由古巴就认账 */
+  B.have.reset(); B.have.toggle('havana3');
+  const cuba = R.findIndex(r => r.zh === '自由古巴');
+  const miss3 = B.have.missingLabel(cuba);
+  const ok3 = miss3.join('、') === '可乐、鲜青柠汁';
+  console.log('  ' + (ok3 ? '✅' : '❌') + ' 勾哈瓦那3年：自由古巴还缺「' + miss3.join('、') + '」'
+    + '（不再说缺白朗姆）');
+  if (!ok3) bad('类型', '白朗姆没有按类型认账：' + miss3.join('、'));
+
+  /* 4. 卡莎莎不算"朗姆酒" */
+  B.have.reset(); B.have.toggle('cachaca');
+  const rumRec = R.findIndex(r => r.needs.some(nd => nd.need.family === 'rum'));
+  const miss4 = B.have.missingLabel(rumRec);
+  console.log('  ' + (miss4.indexOf('朗姆酒') >= 0 ? '✅' : '❌')
+    + ' 只有卡莎莎：配方要"朗姆酒"时仍然算缺（还缺：' + miss4.join('、') + '）');
+  if (miss4.indexOf('朗姆酒') < 0) bad('类型', '卡莎莎被当成了朗姆酒');
+
+  /* 5. 硬门槛：勾了金酒，不该冒出教父这种跟金酒无关的 */
+  B.have.reset(); B.have.toggle('gin');
+  const html5 = els.haveOut.innerHTML;
+  const ok5 = html5.indexOf('教父') < 0 && html5.indexOf('马天尼') >= 0;
+  console.log('  ' + (ok5 ? '✅' : '❌') + ' 只勾金酒：不再推荐教父，只推用得上金酒的');
+  if (!ok5) bad('手边有什么', '还是推荐了跟勾选材料无关的配方');
+
+  /* 6. 买单建议：只报类型，不报牌子 */
+  B.have.reset(); B.have.toggle('orange_juice');
+  const html6 = els.haveOut.innerHTML;
+  const brand = ['绝对伏特加', '斯米诺', '添加利', '百加得', '美格', '轩尼诗'].filter(b => html6.indexOf(b) >= 0);
+  const ok6 = html6.indexOf('先买哪一类酒最划算') >= 0 && html6.indexOf('伏特加') >= 0 && brand.length === 0;
+  console.log('  ' + (ok6 ? '✅' : '❌') + ' 只勾橙汁：给出"先买哪一类酒"的建议，且不含品牌名'
+    + (brand.length ? '（出现了：' + brand.join('、') + '）' : ''));
+  if (!ok6) bad('手边有什么', '买单建议里出现了品牌，或者没给建议');
+
+  /* 7. 排序：每个分组里，"用上你最多的"排前面 */
+  B.have.reset();
+  ['gin', 'lime', 'syrup', 'soda', 'coke'].forEach(id => B.have.toggle(id));
+  const chunks = els.haveOut.innerHTML.split('<div class="refgroup">').slice(1);
+  let orderBad = 0;
+  chunks.forEach(chunk => {
+    const ids = [...chunk.matchAll(/data-ref="(\d+)"/g)].map(m => +m[1]);
+    const used = ids.map(i => B.have.used(i));
+    for (let i = 1; i < used.length; i++) if (used[i] > used[i - 1]) orderBad++;
+  });
+  console.log('  ' + (orderBad === 0 ? '✅' : '❌') + ' 每个分组里都按"用上你几样"从多到少排');
+  if (orderBad) bad('手边有什么', '排序没有按"用上你最多"来');
 
   B.have.reset();
 })();
@@ -981,7 +1082,8 @@ console.log('\n--- 蛋清、柠檬片这类不算"还缺一样" ---');
 console.log('\n--- 展开 / 收起 ---');
 (function () {
   B.have.reset();
-  ['rum', 'coke'].forEach(id => B.have.toggle(id));
+  /* 勾一批常见的，好让某一组的结果超过 8 条（不然没有"展开"按钮） */
+  ['rum', 'coke', 'gin', 'lemon', 'lime', 'syrup', 'soda'].forEach(id => B.have.toggle(id));
   const before = els.haveOut.innerHTML;
   const hasMore = before.indexOf('data-havemore="2"') >= 0 && before.indexOf('展开剩下的') >= 0;
   fire({ havemore: '2' });
