@@ -22,7 +22,8 @@ const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
             fs.readFileSync(path.join(dir, 'app.js'), 'utf8') + '\n' +
             'global.__PRESETS = PRESETS; global.__I = INGREDIENTS; global.__PH = PH; global.__SCHEMES = SCORING_SCHEMES; global.__G = GLASSES; global.__PM = PRESET_METHOD;'
             + ' global.__TEMPS = TEMPS; global.__TD = TEMP_DEFAULT; global.__TF = TEMP; global.__TC = TEMP_CYCLE;'
-            + ' global.__METHODS = METHODS; global.__REF = REF_RECIPES; global.__CATS = CATS;';
+            + ' global.__METHODS = METHODS; global.__REF = REF_RECIPES; global.__CATS = CATS;'
+            + ' global.__OPT = OPTIONAL_ING;';
 eval(src);
 
 const B = global.BarMix;
@@ -1063,6 +1064,27 @@ console.log('\n--- 蛋清、柠檬片这类不算"还缺一样" ---');
 (function () {
   const strip = s => String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   const R = global.__REF;
+
+  /* 不变量：装饰这一栏里的每一样，都必须在"可省"表里。
+     用户在界面上看到的是"装饰"——它要是不算缺，表里就必须有它。
+     以后往装饰栏加东西忘了同步，这条会报红。 */
+  const deco = global.__I.filter(g => g.cat === 'garnish').map(g => g.id);
+  const notOptional = deco.filter(id => !global.__OPT[id]);
+  console.log('  ' + (notOptional.length ? '❌' : '✅') + ' 装饰栏 ' + deco.length
+    + ' 样全都在"可省"表里' + (notOptional.length ? '，漏了：' + notOptional.join('、') : ''));
+  if (notOptional.length) bad('可省', '装饰栏里这些没进可省表：' + notOptional.join('、'));
+
+  /* 香料和黄瓜也按用户说的算可省；苦精、薄荷、姜仍然必需 */
+  const optIds = ['clove', 'cinnamon_stick', 'star_anise', 'cardamom', 'black_pepper', 'cucumber', 'salt_water'];
+  const notInOpt = optIds.filter(id => !global.__OPT[id]);
+  const mustIds = ['angostura', 'orange_bitters', 'peychaud', 'mint', 'ginger_fresh'];
+  const wronglyOpt = mustIds.filter(id => global.__OPT[id]);
+  console.log('  ' + (notInOpt.length ? '❌' : '✅') + ' 香料、黄瓜、盐水都算可省');
+  console.log('  ' + (wronglyOpt.length ? '❌' : '✅') + ' 苦精三兄弟、薄荷、生姜仍然算必需'
+    + (wronglyOpt.length ? '（被误标：' + wronglyOpt.join('、') + '）' : ''));
+  if (notInOpt.length) bad('可省', '这些该算可省的没进表：' + notInOpt.join('、'));
+  if (wronglyOpt.length) bad('可省', '这些是骨架/主体，不该算可省：' + wronglyOpt.join('、'));
+
   B.have.reset();
   ['pisco', 'syrup', 'lime'].forEach(id => B.have.toggle(id));
   const i = R.findIndex(r => r.zh === '皮斯科酸');
