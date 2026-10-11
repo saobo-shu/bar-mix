@@ -256,30 +256,29 @@ details.panel:not([open]) { padding-bottom: 13px; }
 }
 .refgroup b { font-weight: 600; }
 .refgroup span { color: var(--muted); font-size: 11.5px; flex: none; }
-/* 卡片照材料库那套（同一套圆角、同一套底色），只是内容换成配方 */
-.refgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 7px; }
+/* 卡片照材料库那套（同一套圆角、同一套底色），但内容竖着一行一行铺满整张卡——
+   以前右边挤了一个窄列，"用上你的：哥…" 会被省略号吃掉，缺什么也断得七零八落 */
+.refgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 7px; align-items: start; }
 .refcard {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  display: flex; flex-direction: column; gap: 2px;
   text-align: left; padding: 9px 10px; border-radius: 11px;
   background: var(--card2); border: 1px solid var(--line);
-  font-size: 13px; line-height: 1.35; min-width: 0;
+  font-size: 13px; line-height: 1.45; min-width: 0;
 }
 .refcard.done { border-color: rgba(127, 176, 105, .5); }
 .refcard:active { transform: scale(.98); }
-.rc-main { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.rc-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.rc-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px; }
+.rc-head b { font-size: 13px; font-weight: 600; color: var(--text); }
 .rc-pick {
-  font-style: normal; font-size: 9.5px; padding: 1px 5px; margin-left: 5px;
+  font-style: normal; font-size: 9.5px; padding: 1px 5px;
   border-radius: 999px; border: 1px solid rgba(224, 163, 92, .5); color: var(--amber);
-  vertical-align: 1px;
 }
-.rc-en { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rc-tags { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; max-width: 52%; }
-.rc-miss { font-size: 10px; color: var(--amber); text-align: right; }
+.rc-en { font-style: normal; font-size: 10px; color: var(--muted); }
+.rc-used, .rc-miss, .rc-swap, .rc-opt { font-size: 10.5px; white-space: normal; overflow-wrap: anywhere; }
+.rc-used { color: var(--green); }
+.rc-miss { color: var(--amber); }
 .refcard.done .rc-miss { color: var(--green); }
-.rc-opt { font-size: 9.5px; color: var(--muted); text-align: right; }
-.rc-used { font-size: 9.5px; color: var(--green); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rc-swap { font-size: 9.5px; color: var(--muted); text-align: right; }
+.rc-swap, .rc-opt { color: var(--muted); }
 /* 手上没有酒时的"先买哪一类" */
 .buybox {
   margin: 0 0 11px; padding: 10px 12px; border-radius: 11px;

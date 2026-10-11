@@ -1582,18 +1582,14 @@
       : '';
     /* 排版照材料库那张卡片来（用户说别自己发明） */
     return '<button type="button" class="refcard' + (miss.length ? '' : ' done') + '" data-ref="' + x.i + '">'
-      + '<span class="rc-main">'
-        + '<span class="rc-name">' + esc(x.r.zh)
-          + (x.pick ? '<i class="rc-pick">推荐</i>' : '') + '</span>'
-        + '<span class="rc-en">' + esc(x.r.en || '') + '</span>'
-        + (usedText ? '<span class="rc-used">' + esc(usedText) + '</span>' : '')
-      + '</span>'
-      + '<span class="rc-tags">'
-        + '<span class="rc-miss">' + missText + '</span>'
-        + (x.opt.length ? '<span class="rc-opt">可选：' + x.opt.map(esc).join('、') + '</span>' : '')
-        + (x.swap.length ? '<span class="rc-swap">' + esc(x.swap.join('；')) + '</span>' : '')
-        + (x.fam.length ? '<span class="rc-swap">' + esc(x.fam.join('；')) + '</span>' : '')
-      + '</span>'
+      + '<span class="rc-head"><b>' + esc(x.r.zh) + '</b>'
+        + (x.pick ? '<i class="rc-pick">推荐</i>' : '')
+        + '<i class="rc-en">' + esc(x.r.en || '') + '</i></span>'
+      + (usedText ? '<span class="rc-used">' + esc(usedText) + '</span>' : '')
+      + '<span class="rc-miss">' + missText + '</span>'
+      + (x.swap.length ? '<span class="rc-swap">' + esc(x.swap.join('；')) + '</span>' : '')
+      + (x.fam.length ? '<span class="rc-swap">' + esc(x.fam.join('；')) + '</span>' : '')
+      + (x.opt.length ? '<span class="rc-opt">可选：' + x.opt.map(esc).join('、') + '</span>' : '')
       + '</button>';
   }
 
