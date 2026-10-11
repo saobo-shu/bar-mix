@@ -115,8 +115,6 @@
     garnish: '#7d8f4a',
     ice:     '#ffffff'
   };
-  var SHAPE_ORDER = ['circle', 'triangle', 'square', 'diamond', 'hex'];
-
   function hashStr(s) {
     var h = 2166136261;
     for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
@@ -143,30 +141,9 @@
     }
     return inside;
   }
-  function shapeEl(kind, x, y, s, fill) {
-    var h = s / 2, f = ' fill="' + fill + '"';
-    var X = x.toFixed(1), Y = y.toFixed(1), H = h.toFixed(1);
-    switch (kind) {
-      case 'triangle':
-        return '<polygon points="' + X + ',' + (y - h).toFixed(1) + ' ' + (x + h).toFixed(1) + ',' + (y + h).toFixed(1)
-          + ' ' + (x - h).toFixed(1) + ',' + (y + h).toFixed(1) + '"' + f + '/>';
-      case 'square':
-        return '<rect x="' + (x - h).toFixed(1) + '" y="' + (y - h).toFixed(1) + '" width="' + s.toFixed(1)
-          + '" height="' + s.toFixed(1) + '" rx="' + (s * 0.22).toFixed(1) + '"' + f + '/>';
-      case 'diamond':
-        return '<polygon points="' + X + ',' + (y - h).toFixed(1) + ' ' + (x + h).toFixed(1) + ',' + Y
-          + ' ' + X + ',' + (y + h).toFixed(1) + ' ' + (x - h).toFixed(1) + ',' + Y + '"' + f + '/>';
-      case 'hex':
-        var p = [];
-        for (var k = 0; k < 6; k++) {
-          var a = Math.PI / 6 + k * Math.PI / 3;
-          p.push((x + Math.cos(a) * h).toFixed(1) + ',' + (y + Math.sin(a) * h).toFixed(1));
-        }
-        return '<polygon points="' + p.join(' ') + '"' + f + '/>';
-      default:
-        return '<circle cx="' + X + '" cy="' + Y + '" r="' + h.toFixed(2) + '"' + f + '/>';
-    }
-  }
+  /* 说明：以前每种材料用不同形状（圆/三角/方/菱形/六边形）来区分"是哪一瓶"。
+     现在改成《萨沙的调酒哲学》那套点阵画法——统一圆点、颜色分材料、层高分比例，
+     所以形状那套连同 shapeEl 一起删了。 */
   /* 含乳脂的：碰到柠檬/青柠会结块，而且要避开"补酸"这类建议 */
   var DAIRY_FAT = {
     milk: 1, cream: 1, coconut_milk: 1, baileys: 1, yogurt: 1,
@@ -1866,77 +1843,76 @@
     var liquidFrac = clamp(a.liquid / g.cap, 0, 1);
     var y0 = art.bottom - liquidFrac * (art.bottom - art.top);
 
-    /* 把每种材料按体积换算成颗粒数，再撒进杯子里 */
+    /* 这杯是什么组成的：每样材料占的高度比例（从下往上，先倒的在下面） */
     var items = [];
     state.cup.forEach(function (amt, id) {
       var gg = BY_ID[id];
       if (!gg || id === 'ice') return;
       var ml = amt * (gg.mlu || 0);
-      /* 苦精、皮这类体积接近 0 的也要看得见，给一个下限 */
-      items.push({ g: gg, w: Math.max(ml, a.liquid * 0.015, 1) });
+      /* 苦精、柠檬皮这类体积接近 0 的也要看得见，给一个下限 */
+      items.push({ g: gg, w: Math.max(ml, a.liquid * 0.012, 1) });
+    });
+    var totalW = items.reduce(function (s, it) { return s + it.w; }, 0);
+    var acc = 0;
+    var bands = items.map(function (it) {
+      var b = { g: it.g, lo: acc / totalW, hi: (acc + it.w) / totalW };
+      acc += it.w;
+      return b;
     });
 
-    var rnd = mulberry32(hashStr(items.map(function (it) {
-      return it.g.id + ':' + it.w.toFixed(1);
-    }).join('|')));
-
-    var bag = [];
-    if (items.length) {
-      var totalW = items.reduce(function (s, it) { return s + it.w; }, 0);
-      var target = 170;
-      items.forEach(function (it) {
-        var n = Math.max(1, Math.round(target * it.w / totalW));
-        for (var k = 0; k < n; k++) bag.push(it.g);
-      });
-      for (var i = bag.length - 1; i > 0; i--) {
-        var j = Math.floor(rnd() * (i + 1)), t = bag[i]; bag[i] = bag[j]; bag[j] = t;
-      }
-    }
-
-    /* 颗粒间距按杯子大小自动算：小杯子（马天尼杯）用更细的间距，
-       不然那么小的区域里只够放十几颗，看不出组成。 */
+    /* 点阵间距按杯子大小自动算：小杯子（马天尼杯）用更细的间距 */
     var area = 0;
     for (var pi = 0, pj = art.inner.length - 1; pi < art.inner.length; pj = pi++) {
       area += art.inner[pj][0] * art.inner[pi][1] - art.inner[pi][0] * art.inner[pj][1];
     }
     area = Math.abs(area / 2);
-    var step = clamp(Math.sqrt(area / 150), 3.0, 5.6);
+    var step = clamp(Math.sqrt(area / 210), 2.6, 4.4);
+    var dotR = step * 0.36;
 
-    var dots = '', idx = 0;
-    for (var y = art.top; y <= art.bottom + 1; y += step) {
-      for (var x = 5; x <= 95; x += step) {
-        if (y < y0 || !insidePoly(art.inner, x, y)) continue;
-        if (!bag.length) continue;
-        var gg = bag[idx % bag.length]; idx++;
-        var jx = x + (rnd() - 0.5) * 2.4, jy = y + (rnd() - 0.5) * 2.4;
-        var kind = SHAPE_ORDER[hashStr(gg.id) % SHAPE_ORDER.length];
-        dots += shapeEl(kind, jx, jy, 3.6, CAT_STYLE[gg.cat] || CAT_STYLE.mixer);
+    /* 点阵：行归行、列归列，从下到上按比例一层一层填满整只杯子。
+
+       这是用户定的画法（参考《萨沙的调酒哲学》）：不要随机撒点那种"沙子感"，
+       要规整的点阵；每样材料占一层，层高就是它在酒里的比例。
+       代价是这张图不再显示"倒了多满"——只看组成比例，液面的数字在下面那行文字里。 */
+    var fillTop = art.top + 2;
+    var span = (art.bottom - 1) - fillTop;
+    var dots = '';
+    for (var y = art.bottom - 1; y >= fillTop; y -= step) {
+      for (var x = 6; x <= 94; x += step) {
+        if (!insidePoly(art.inner, x, y)) continue;
+        var t = span > 0 ? ((art.bottom - 1) - y) / span : 0;
+        var band = bands.length ? bands[bands.length - 1] : null;
+        for (var bi = 0; bi < bands.length; bi++) {
+          if (t <= bands[bi].hi + 1e-9) { band = bands[bi]; break; }
+        }
+        if (!band) continue;
+        dots += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + dotR.toFixed(2)
+          + '" fill="' + (CAT_STYLE[band.g.cat] || CAT_STYLE.mixer) + '"/>';
       }
     }
 
-    /* 冰块画成白色菱形，从液面一直铺到杯口 */
+    /* 冰：画在点阵后面（从点与点之间的缝里透出来），规规矩矩的正方形。
+       冰是沉在杯里的——满冰整杯塞到杯口，半杯冰只有杯底那一段。 */
     var ice = '';
     if (a.hasIce && a.liquid > 0) {
-      var zoneTop, zoneH, n;
-      if (lv.id === 'full') {
-        zoneTop = art.top + 5; zoneH = Math.max(0, y0 - zoneTop);
-        n = clamp(Math.round(zoneH / 15), 1, 5);
-      } else {                       /* 半杯冰：只有一两块，漂在液面上 */
-        zoneTop = Math.max(art.top + 6, y0 - 12); zoneH = 14; n = 2;
-      }
-      for (var k2 = 0; k2 < n; k2++) {
-        var cy = zoneTop + 9 + (n === 1 ? zoneH / 2 : k2 * (zoneH - 14) / (n - 1));
-        if (lv.id !== 'full') cy = zoneTop + 4 + k2 * 10;
-        var cx = 32 + (k2 % 2) * 34;
-        ice += '<polygon points="' + cx + ',' + (cy - 9) + ' ' + (cx + 9) + ',' + cy + ' '
-          + cx + ',' + (cy + 9) + ' ' + (cx - 9) + ',' + cy
-          + '" fill="#ffffff" stroke="#3b3229" stroke-width="0.9"/>';
+      var iceStep = step * 4, iceSize = iceStep - 4;
+      var half = step / 2;                 /* 错开半个点距：方格边落在点的缝里才看得见 */
+      var zoneTop = lv.id === 'half'
+        ? art.bottom - (art.bottom - art.top) * 0.46 : art.top + 2 + half;
+      var zoneBot = art.bottom - 1;
+      for (var iy = zoneTop; iy + iceSize <= zoneBot; iy += iceStep) {
+        for (var ix = 6 + half; ix + iceSize <= 94; ix += iceStep) {
+          if (!insidePoly(art.inner, ix + iceSize / 2, iy + iceSize / 2)) continue;
+          ice += '<rect x="' + ix.toFixed(1) + '" y="' + iy.toFixed(1) + '" width="' + iceSize.toFixed(1)
+            + '" height="' + iceSize.toFixed(1) + '" rx="1" fill="#ffffff" fill-opacity="0.5"'
+            + ' stroke="#3b3229" stroke-opacity="0.55" stroke-width="0.9"/>';
+        }
       }
     }
 
     document.getElementById('glassPreview').innerHTML =
       '<defs><clipPath id="gclip"><path d="' + polyPath(art.inner) + '"/></clipPath></defs>' +
-      '<g clip-path="url(#gclip)">' + dots + ice + '</g>' +
+      '<g clip-path="url(#gclip)">' + ice + dots + '</g>' +
       '<path class="g-line" d="' + art.outer + '"/>' +
       (art.rim ? '<path class="g-line" d="' + art.rim + '"/>' : '') +
       (art.stem ? '<path class="g-line" d="' + art.stem + '"/>' : '') +
