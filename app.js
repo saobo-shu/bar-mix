@@ -112,7 +112,8 @@
     teacoffee: '#a8845a',
     dairy:   '#e8ded0',
     bitter:  '#8d3b2a',
-    garnish: '#7d8f4a',
+    fresh:   '#5f8a4f',
+    garnish: '#9aa86a',
     ice:     '#ffffff'
   };
   function hashStr(s) {
@@ -1638,6 +1639,25 @@
 
   function renderHave() { renderHaveCats(); renderHaveList(); renderHaveResult(); }
 
+  /* 杯子那张图的图例：色点 + 类别名
+     六种基酒颜色太接近，合成一条「基酒」；其余各占一条。
+     颜色直接从 CAT_STYLE 取，改配色时图例跟着变，不会走样。 */
+  function renderGlassLegend() {
+    var box = document.getElementById('glassLegend');
+    if (!box) return;
+    var baseCats = { whisky: 1, gin: 1, rum: 1, vodka: 1, tequila: 1, brandy: 1, otherbase: 1 };
+    var items = [{ name: '基酒', color: CAT_STYLE.whisky }];
+    CATS.forEach(function (c) {
+      if (baseCats[c.id]) return;
+      items.push({ name: c.name, color: CAT_STYLE[c.id] || CAT_STYLE.mixer });
+    });
+    items.push({ name: '冰', color: '#ffffff', ice: 1 });
+    box.innerHTML = items.map(function (it) {
+      return '<span class="lg-item"><i class="' + (it.ice ? 'lg-ice' : 'lg-dot') + '" style="background:'
+        + it.color + '"></i>' + esc(it.name) + '</span>';
+    }).join('');
+  }
+
   /* ---------------------------------------------------------
      先买哪一类酒最划算
 
@@ -1785,7 +1805,7 @@
   function renderAll() {
     renderCats(); renderLib(); renderCup(); renderResult(); renderPresets();
     renderGlassPick(); renderTastePick(); renderIcePick(); renderSchemePick();
-    renderMethodPick(); renderGlass(); renderHave();
+    renderMethodPick(); renderGlass(); renderHave(); renderGlassLegend();
   }
 
   /* ---------------------------------------------------------

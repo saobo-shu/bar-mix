@@ -24,7 +24,11 @@ var CATS = [
   { id: 'teacoffee', name: '茶·咖啡' },
   { id: 'dairy',   name: '乳饮·其他' },
   { id: 'bitter',  name: '苦精·香料' },
-  { id: 'garnish', name: '点缀·口感' }
+  /* "鲜料"和"装饰"分开：蛋清、薄荷、黄瓜是要进配方的真材料；
+     柠檬皮、樱桃、树莓这些不放也能喝。以前合成一栏"点缀·口感"，
+     结果把蛋清也叫成装饰了（用户指出的）。 */
+  { id: 'fresh',   name: '蛋·香草' },
+  { id: 'garnish', name: '装饰' }
 ];
 
 /* f 的键顺序：sugar acid bitter booze fruit spice fizz body */
@@ -631,22 +635,22 @@ var INGREDIENTS = [
   { id:'orange_peel', cat:'garnish', name:'橙皮 / 橙片', unit:'片', mlu:0, def:1, step:1, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:0,booze:0,fruit:6,spice:6,fizz:0,body:0},
     note:'和威士忌最配的香气。古典的橙皮不要省。' },
-  { id:'mint', cat:'garnish', name:'薄荷叶（8 片）', unit:'片', mlu:0, def:8, step:2, abv:0, src:'rt',
+  { id:'mint', cat:'fresh', name:'薄荷叶（8 片）', unit:'片', mlu:0, def:8, step:2, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:1,booze:0,fruit:1,spice:7,fizz:7,body:0},
     note:'轻轻拍一下再放，不要捣碎，碎了会出草腥味。' },
   { id:'rosemary', cat:'garnish', name:'迷迭香', unit:'枝', mlu:0, def:1, step:1, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:1,booze:0,fruit:0,spice:8,fizz:0,body:0},
     note:'松针香气，配酸味和威士忌很好看也很好闻。' },
-  { id:'cucumber', cat:'garnish', name:'黄瓜片', unit:'片', mlu:0, def:3, step:1, abv:0, src:'rt',
+  { id:'cucumber', cat:'fresh', name:'黄瓜片', unit:'片', mlu:0, def:3, step:1, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:0,booze:0,fruit:1,spice:3,fizz:6,body:0},
     note:'清爽路线，配金酒或气泡水。' },
   { id:'cherry', cat:'garnish', name:'糖渍樱桃', unit:'颗', mlu:0, def:1, step:1, abv:0, src:'rt',
     f:{sugar:5,acid:1,bitter:0,booze:0,fruit:6,spice:0,fizz:0,body:0},
     note:'丢一颗进去，视觉和甜味都有了。' },
-  { id:'egg_white', cat:'garnish', name:'蛋清', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
+  { id:'egg_white', cat:'fresh', name:'蛋清', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:1,body:9},
     note:'先干摇 15 秒再加冰摇，泡沫才立得起来。鸡蛋就够用了。' },
-  { id:'egg_yolk', cat:'garnish', name:'蛋黄', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
+  { id:'egg_yolk', cat:'fresh', name:'蛋黄', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:0,body:10},
     note:'蛋清给泡沫，蛋黄给厚度和奶香（Flip 类酒）。用了蛋黄那杯不用再加奶；剩下的蛋清可以做蛋白霜。' },
   { id:'raspberry', cat:'garnish', name:'树莓（鲜果）', unit:'颗', mlu:0, def:3, step:1, abv:0, src:'web',
@@ -780,6 +784,7 @@ var STORE_DEFAULT = {
   liqueur: { lv: 'ok',  risk: 1, text: '未开封常温。开封后避光盖紧，3-6 个月；度数低于 20% 的要更快喝完。' },
   wine:    { lv: 'bad', risk: 2, text: '开瓶后必须冷藏，3-5 天内喝完（雪莉和波特能多放几天）。没冰箱就买最小瓶，开瓶当天叫上人喝完。' },
   bitter:  { lv: 'ok',  risk: 0, text: '常温阴凉处就行，苦精和干香料基本不会坏。' },
+  fresh:   { lv: 'bad', risk: 2, text: '现切现用：薄荷插水里能撑 3-5 天，黄瓜切开当天用完，蛋清蛋黄当天用完。' },
   sweet:   { lv: 'ok',  risk: 0, text: '常温干燥处，几乎不坏。' },
   mixer:   { lv: 'ok',  risk: 0, text: '未开封常温。开封后气会跑，当天喝口感最好。' },
   teacoffee: { lv: 'ok', risk: 0, text: '未开封常温。开封后当天喝完最好；冷萃咖啡要冷藏，2-3 天内喝完。' },
@@ -1017,7 +1022,7 @@ var TEMP_CYCLE = ['frozen', 'cold', 'room'];
 var TEMP_DEFAULT = {
   whisky: 'room', gin: 'room', rum: 'room', vodka: 'room', tequila: 'room', brandy: 'room',
   otherbase: 'room', liqueur: 'room', bitter: 'room', sweet: 'room', sour: 'room',
-  garnish: 'room', teacoffee: 'room',
+  garnish: 'room', fresh: 'room', teacoffee: 'room',
   wine: 'cold',
   mixer: 'cold',
   juice: 'cold',

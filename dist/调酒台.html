@@ -267,6 +267,15 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .tasterow .glasspick { margin-bottom: 0; }
 .taste-label { font-size: 11.5px; color: var(--muted); flex: none; }
 
+/* ---------------- 杯子那张图的图例 ---------------- */
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 7px 0 2px; }
+.lg-item { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--muted); }
+.lg-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+.lg-ice {
+  flex: none; width: 10px; height: 10px; border-radius: 2px;
+  background: #ffffff; border: 1px solid rgba(59, 50, 41, .55);
+}
+
 /* ---------------- ④ 手边有什么 → 现在能做什么 ---------------- */
 .havewrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 12px; }
 .havebar { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
@@ -620,7 +629,7 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
               同一瓶可乐，从冰箱拿还是从货架拿，能把杯子里的冰化出好几倍的水——这一步直接决定你这杯最后有多浓。
               摇和、搅拌的也一样：材料越凉，摇壶里的冰化得越少，加进去的水就越少。
               烈酒向的酒（马天尼、古典）尤其明显：酒吧会把基酒整瓶放冷冻室，同样搅二十秒，加进去的水少一半——结构分里也算这一条。
-              热水这类材料只在「热 / 常温」之间换；装饰（柠檬皮、薄荷叶）和按滴算的苦精不占体积，所以没有温度标签。</li>
+              热水这类材料只在「热 / 常温」之间换；不占体积的（柠檬皮、薄荷叶、黄瓜片）和按滴算的（苦精、盐水）都没有温度标签。</li>
             <li><b>「40%」＝ 酒精度。</b>点一下改成<b>你瓶子上印的数字</b>。同一款酒各国版本度数不一样
               （哥顿 37.5 / 40、添加利 47.3、美格 46 是产品名不是度数），算浓度和评分都按你填的算。</li>
             <li>填错、填乱码都没关系——留空或填 0 就恢复成默认度数。</li>
@@ -657,10 +666,10 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
         <summary>怎么读结果</summary>
         <div class="body">
           <ul>
-            <li><b>杯子里的那张图怎么看：</b>点阵里每一颗就是一种材料，<b>颜色是它的类别</b>
-              （深棕=基酒、砖红=利口酒、黄=酸、浅金=甜、橙=果汁、米=气泡饮料、暗红=苦精、绿=点缀）。
+            <li><b>杯子里的那张图怎么看：</b>点阵里每一颗就是一种材料，
               <b>从下往上一层就是一样材料，这层有多高，就是它占多少</b>——先倒的在下面。
-              白色方格是冰：它画在颗粒背后，满冰铺满整杯、半杯冰只有杯底那一段。</li>
+              颜色代表类别，看下面的图例；白色方格是冰（画在颗粒背后，满冰铺满整杯、半杯冰只有杯底那一段）。
+              <div class="legend" id="glassLegend"></div></li>
             <li><b>分数只是参考</b>。真正有用的是下面三块：风味图（这杯是什么味道）、「冰化开会怎么样」（会变多淡）、「怎么再调一步」（下一步加什么）。</li>
             <li>杯子里<b>只有一样酒</b>（比如纯饮一杯威士忌）时不评分，只描述味道——"这杯好不好"不是这个工具能回答的。</li>
             <li>杯子装不下只是提醒，不扣分：你手上那只杯子可能比标称的大，自己判断。</li>
@@ -945,7 +954,11 @@ var CATS = [
   { id: 'teacoffee', name: '茶·咖啡' },
   { id: 'dairy',   name: '乳饮·其他' },
   { id: 'bitter',  name: '苦精·香料' },
-  { id: 'garnish', name: '点缀·口感' }
+  /* "鲜料"和"装饰"分开：蛋清、薄荷、黄瓜是要进配方的真材料；
+     柠檬皮、樱桃、树莓这些不放也能喝。以前合成一栏"点缀·口感"，
+     结果把蛋清也叫成装饰了（用户指出的）。 */
+  { id: 'fresh',   name: '蛋·香草' },
+  { id: 'garnish', name: '装饰' }
 ];
 
 /* f 的键顺序：sugar acid bitter booze fruit spice fizz body */
@@ -1552,22 +1565,22 @@ var INGREDIENTS = [
   { id:'orange_peel', cat:'garnish', name:'橙皮 / 橙片', unit:'片', mlu:0, def:1, step:1, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:0,booze:0,fruit:6,spice:6,fizz:0,body:0},
     note:'和威士忌最配的香气。古典的橙皮不要省。' },
-  { id:'mint', cat:'garnish', name:'薄荷叶（8 片）', unit:'片', mlu:0, def:8, step:2, abv:0, src:'rt',
+  { id:'mint', cat:'fresh', name:'薄荷叶（8 片）', unit:'片', mlu:0, def:8, step:2, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:1,booze:0,fruit:1,spice:7,fizz:7,body:0},
     note:'轻轻拍一下再放，不要捣碎，碎了会出草腥味。' },
   { id:'rosemary', cat:'garnish', name:'迷迭香', unit:'枝', mlu:0, def:1, step:1, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:1,booze:0,fruit:0,spice:8,fizz:0,body:0},
     note:'松针香气，配酸味和威士忌很好看也很好闻。' },
-  { id:'cucumber', cat:'garnish', name:'黄瓜片', unit:'片', mlu:0, def:3, step:1, abv:0, src:'rt',
+  { id:'cucumber', cat:'fresh', name:'黄瓜片', unit:'片', mlu:0, def:3, step:1, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:0,booze:0,fruit:1,spice:3,fizz:6,body:0},
     note:'清爽路线，配金酒或气泡水。' },
   { id:'cherry', cat:'garnish', name:'糖渍樱桃', unit:'颗', mlu:0, def:1, step:1, abv:0, src:'rt',
     f:{sugar:5,acid:1,bitter:0,booze:0,fruit:6,spice:0,fizz:0,body:0},
     note:'丢一颗进去，视觉和甜味都有了。' },
-  { id:'egg_white', cat:'garnish', name:'蛋清', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
+  { id:'egg_white', cat:'fresh', name:'蛋清', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:1,body:9},
     note:'先干摇 15 秒再加冰摇，泡沫才立得起来。鸡蛋就够用了。' },
-  { id:'egg_yolk', cat:'garnish', name:'蛋黄', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
+  { id:'egg_yolk', cat:'fresh', name:'蛋黄', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:0,body:10},
     note:'蛋清给泡沫，蛋黄给厚度和奶香（Flip 类酒）。用了蛋黄那杯不用再加奶；剩下的蛋清可以做蛋白霜。' },
   { id:'raspberry', cat:'garnish', name:'树莓（鲜果）', unit:'颗', mlu:0, def:3, step:1, abv:0, src:'web',
@@ -1701,6 +1714,7 @@ var STORE_DEFAULT = {
   liqueur: { lv: 'ok',  risk: 1, text: '未开封常温。开封后避光盖紧，3-6 个月；度数低于 20% 的要更快喝完。' },
   wine:    { lv: 'bad', risk: 2, text: '开瓶后必须冷藏，3-5 天内喝完（雪莉和波特能多放几天）。没冰箱就买最小瓶，开瓶当天叫上人喝完。' },
   bitter:  { lv: 'ok',  risk: 0, text: '常温阴凉处就行，苦精和干香料基本不会坏。' },
+  fresh:   { lv: 'bad', risk: 2, text: '现切现用：薄荷插水里能撑 3-5 天，黄瓜切开当天用完，蛋清蛋黄当天用完。' },
   sweet:   { lv: 'ok',  risk: 0, text: '常温干燥处，几乎不坏。' },
   mixer:   { lv: 'ok',  risk: 0, text: '未开封常温。开封后气会跑，当天喝口感最好。' },
   teacoffee: { lv: 'ok', risk: 0, text: '未开封常温。开封后当天喝完最好；冷萃咖啡要冷藏，2-3 天内喝完。' },
@@ -1938,7 +1952,7 @@ var TEMP_CYCLE = ['frozen', 'cold', 'room'];
 var TEMP_DEFAULT = {
   whisky: 'room', gin: 'room', rum: 'room', vodka: 'room', tequila: 'room', brandy: 'room',
   otherbase: 'room', liqueur: 'room', bitter: 'room', sweet: 'room', sour: 'room',
-  garnish: 'room', teacoffee: 'room',
+  garnish: 'room', fresh: 'room', teacoffee: 'room',
   wine: 'cold',
   mixer: 'cold',
   juice: 'cold',
@@ -2219,7 +2233,8 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
     teacoffee: '#a8845a',
     dairy:   '#e8ded0',
     bitter:  '#8d3b2a',
-    garnish: '#7d8f4a',
+    fresh:   '#5f8a4f',
+    garnish: '#9aa86a',
     ice:     '#ffffff'
   };
   function hashStr(s) {
@@ -3745,6 +3760,25 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
 
   function renderHave() { renderHaveCats(); renderHaveList(); renderHaveResult(); }
 
+  /* 杯子那张图的图例：色点 + 类别名
+     六种基酒颜色太接近，合成一条「基酒」；其余各占一条。
+     颜色直接从 CAT_STYLE 取，改配色时图例跟着变，不会走样。 */
+  function renderGlassLegend() {
+    var box = document.getElementById('glassLegend');
+    if (!box) return;
+    var baseCats = { whisky: 1, gin: 1, rum: 1, vodka: 1, tequila: 1, brandy: 1, otherbase: 1 };
+    var items = [{ name: '基酒', color: CAT_STYLE.whisky }];
+    CATS.forEach(function (c) {
+      if (baseCats[c.id]) return;
+      items.push({ name: c.name, color: CAT_STYLE[c.id] || CAT_STYLE.mixer });
+    });
+    items.push({ name: '冰', color: '#ffffff', ice: 1 });
+    box.innerHTML = items.map(function (it) {
+      return '<span class="lg-item"><i class="' + (it.ice ? 'lg-ice' : 'lg-dot') + '" style="background:'
+        + it.color + '"></i>' + esc(it.name) + '</span>';
+    }).join('');
+  }
+
   /* ---------------------------------------------------------
      先买哪一类酒最划算
 
@@ -3892,7 +3926,7 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
   function renderAll() {
     renderCats(); renderLib(); renderCup(); renderResult(); renderPresets();
     renderGlassPick(); renderTastePick(); renderIcePick(); renderSchemePick();
-    renderMethodPick(); renderGlass(); renderHave();
+    renderMethodPick(); renderGlass(); renderHave(); renderGlassLegend();
   }
 
   /* ---------------------------------------------------------
