@@ -15,7 +15,8 @@ const dir = path.join(__dirname, '..');
 
 const ref = JSON.parse(fs.readFileSync(path.join(dir, 'tools', 'reference-recipes.json'), 'utf8'));
 const w = {};
-new Function('window', fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\nwindow.__I = INGREDIENTS;')(w);
+new Function('window', fs.readFileSync(path.join(dir, 'data.js'), 'utf8')
+  + '\nwindow.__I = INGREDIENTS; window.__OPT = OPTIONAL_ING;')(w);
 const I = w.__I;
 const byId = {};
 I.forEach(g => { byId[g.id] = g; });
@@ -223,13 +224,9 @@ const RULES = [
    装饰不在此列——莫吉托没薄荷就是做不了，那是真缺。 */
 const OPTIONAL = /(可选|随意|装饰用|非必需)/;
 
-/* 点缀和"口感"类的材料：有没有都能喝，不该算成"还缺一样"。
-   用户原话：威士忌酸可以喝带蛋清的，也可以喝不带蛋清的。
-   （薄荷、黄瓜不在里面——莫吉托没薄荷就是做不了。） */
-const OPTIONAL_IDS = {
-  egg_white: 1, egg_yolk: 1, lemon_peel: 1, orange_peel: 1, cherry: 1,
-  raspberry: 1, green_grape: 1, olive_brine: 1, rosemary: 1
-};
+/* "可省"清单在 data.js 的 OPTIONAL_ING 里（人工维护的那张表）——
+   引用同一份，免得两边各写一遍还对不上 */
+const OPTIONAL_IDS = w.__OPT || {};
 
 function needOf(raw) {
   const n = String(raw).trim().replace(/^[*·\s]+/, '');

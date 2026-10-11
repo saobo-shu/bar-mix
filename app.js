@@ -1276,7 +1276,9 @@
       var g = BY_ID[it[0]];
       if (!g) return '';
       if (g.cat === 'ice') return '冰';
-      return shortName(g) + ' ' + fmtAmt(g, it[1]);
+      /* "可省"的材料标出来——比如威士忌酸里的盐水，
+         不然用户会以为少了它就做不成（清单在 data.js 的 OPTIONAL_ING） */
+      return shortName(g) + ' ' + fmtAmt(g, it[1]) + (OPTIONAL_ING[g.id] ? '（可省）' : '');
     }).filter(Boolean).join(' · ');
   }
 
