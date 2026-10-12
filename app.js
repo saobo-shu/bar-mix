@@ -1376,11 +1376,13 @@
      --------------------------------------------------------- */
   function typeOf(id) { return DRINK_TYPE[id] || id; }      /* 没登记的：自己是自己一类 */
   /* 能替这条类型的全部类型（含自己）：威士忌七类互相能替，其余只认自己 */
+  var SWAP_CACHE = {};
   function swapTypesOf(t) {
+    if (SWAP_CACHE[t]) return SWAP_CACHE[t];
     var out = [t];
     var g = TYPE_SWAP[t];
-    if (!g) return out;
-    Object.keys(TYPE_SWAP).forEach(function (k) { if (TYPE_SWAP[k] === g) out.push(k); });
+    if (g) Object.keys(TYPE_SWAP).forEach(function (k) { if (TYPE_SWAP[k] === g) out.push(k); });
+    SWAP_CACHE[t] = out;
     return out;
   }
   /* 这条类型属于哪个"家族"（用来给买酒建议去重、写"你不在这类"） */
@@ -1410,8 +1412,8 @@
   }
 
   /* 这条需求，勾了的材料能不能满足；是"完全一样"还是"同组能替" */
-  function needStatus(need) {
-    return needStatusWith(need, Object.keys(state.have));
+  function needStatus(need, mine) {
+    return needStatusWith(need, mine || Object.keys(state.have));
   }
   function needStatusWith(need, mine) {
     var hits = [];
@@ -1470,26 +1472,26 @@
     } catch (e) {}
   }
 
-  function needOk(need) { return needStatus(need).ok; }
+  function needOk(need, mine) { return needStatus(need, mine).ok; }
 
   /* 硬缺口：真缺的东西（点缀和"可选"不算） */
-  function missingOf(r) {
+  function missingOf(r, mine) {
     return (r.needs || []).filter(function (nd) {
-      return !nd.need.optional && !needOk(nd.need);
+      return !nd.need.optional && !needOk(nd.need, mine);
     });
   }
   /* 用上了你几样（只数非"可选"的） */
-  function usedOf(r) {
+  function usedOf(r, mine) {
     return (r.needs || []).filter(function (nd) {
-      return !nd.need.optional && needOk(nd.need);
+      return !nd.need.optional && needOk(nd.need, mine);
     });
   }
   /* 替用提醒：同组不同类型 → "配方一般是 X，你的 Y 也能做，风味会不一样" */
-  function swapNotes(r) {
+  function swapNotes(r, mine) {
     var out = [];
     (r.needs || []).forEach(function (nd) {
       if (nd.need.optional) return;
-      var st = needStatus(nd.need);
+      var st = needStatus(nd.need, mine);
       if (!st.ok || st.exact || !st.wantType || !st.hits.length) return;
       out.push('配方一般是' + typeName(st.wantType) + '，你的'
         + BY_ID[st.hits[0]].name.replace(/（.*?）/g, '') + '也能做，风味会不一样');
@@ -1497,10 +1499,10 @@
     return out;
   }
   /* 缺的是酒、而你手上有同大类但不能替的那瓶 → 说明一句，免得你困惑 */
-  function familyNote(r) {
-    var mine = Object.keys(state.have);
+  function familyNote(r, mine) {
+    mine = mine || Object.keys(state.have);
     var out = [];
-    missingOf(r).forEach(function (nd) {
+    missingOf(r, mine).forEach(function (nd) {
       var n = nd.need, allow = [], cat = '';
       if (n.type) { allow = swapTypesOf(n.type); cat = catOfType(n.type); }
       else if (n.family) { allow = FAMILY_TYPES[n.family] || []; cat = FAMILY_CAT[n.family] || ''; }
@@ -1599,19 +1601,45 @@
       return;
     }
     var rows = [];
+    /* 勾了哪些只取一次，别在每次判断需求时都重建一遍数组（191 份配方 × 5 条需求） */
+    var mine = Object.keys(state.have);
     REF_RECIPES.forEach(function (r, i) {
-      var miss = missingOf(r);
+      /* 每条需求只判断一次：以前是 miss、used、替用提醒、大类提醒各算一遍，
+         191 份配方 × 5 条需求被反复判断三四次——这才是那 47ms 的来源。 */
+      var miss = [], used = [], opt = [], swap = [], fam = [];
+      (r.needs || []).forEach(function (nd) {
+        var st = needStatus(nd.need, mine);
+        if (nd.need.optional) {
+          if (!st.ok) opt.push(String(nd.n).replace(/[（(]可选[)）]/g, '').trim());
+          return;
+        }
+        if (st.ok) {
+          used.push(nd);
+          /* 同组不同类型 → 记一句"风味会不一样" */
+          if (!st.exact && st.wantType && st.hits.length) {
+            swap.push('配方一般是' + typeName(st.wantType) + '，你的'
+              + BY_ID[st.hits[0]].name.replace(/（.*?）/g, '') + '也能做，风味会不一样');
+          }
+          return;
+        }
+        miss.push(nd);
+        /* 缺的是酒、而你手上有同大类但不能替的那瓶 → 说明一句 */
+        var allow = [], cat = '';
+        if (nd.need.type) { allow = swapTypesOf(nd.need.type); cat = catOfType(nd.need.type); }
+        else if (nd.need.family) { allow = FAMILY_TYPES[nd.need.family] || []; cat = FAMILY_CAT[nd.need.family] || ''; }
+        if (isSpiritCat(cat)) {
+          var sameCat = mine.filter(function (id) {
+            return BY_ID[id] && BY_ID[id].cat === cat && allow.indexOf(typeOf(id)) < 0;
+          });
+          if (sameCat.length) fam.push(BY_ID[sameCat[0]].name.replace(/（.*?）/g, '') + '不在这一类');
+        }
+      });
       if (miss.length > 2) return;
       /* 核心：这杯必须用得上你勾的东西，否则勾了等于白勾（原来会推荐教父这种毫无关系的） */
-      var used = usedOf(r);
       if (!used.length) return;
-      /* 点缀和"口感"类缺了不算缺，只在卡片上写一句"可选：" */
-      var opt = r.needs.filter(function (nd) {
-        return nd.need.optional && !needOk(nd.need);
-      }).map(function (nd) { return String(nd.n).replace(/[（(]可选[)）]/g, '').trim(); });
       rows.push({
         r: r, i: i, miss: miss, opt: opt, used: used,
-        swap: swapNotes(r), fam: familyNote(r),
+        swap: swap, fam: fam,
         pick: !!r.pick, n: r.needs.length
       });
     });
@@ -1625,7 +1653,6 @@
     });
 
     /* 手上有没有"酒"（abv≥15 的算酒）——没有的话要专门指一条路 */
-    var mine = Object.keys(state.have);
     var noBooze = !mine.some(function (id) { return BY_ID[id] && BY_ID[id].abv >= 15; });
 
     var groups = [
@@ -1655,6 +1682,15 @@
   }
 
   function renderHave() { renderHaveCats(); renderHaveList(); renderHaveResult(); }
+  /* 连点材料时，结果列表等手停下来再算（90ms）——省掉中间那几次重算 */
+  var haveTimer = 0;
+  function scheduleHaveResult() {
+    if (haveTimer) return;
+    haveTimer = setTimeout(function () {
+      haveTimer = 0;
+      renderHaveResult();
+    }, 90);
+  }
 
   /* 杯子那张图的图例：色点 + 类别名
      六种基酒颜色太接近，合成一条「基酒」；其余各占一条。
@@ -2019,7 +2055,9 @@
       if (state.have[hid]) delete state.have[hid];
       else state.have[hid] = 1;
       saveHave();
-      renderHave();
+      /* 卡片立刻亮起来，结果列表稍后再算——连点好几样时不用每点一次都重算 191 份配方 */
+      renderHaveCats(); renderHaveList();
+      scheduleHaveResult();
       return;
     }
     /* 结果里"展开剩下的 N 款" */
