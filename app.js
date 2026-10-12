@@ -2633,12 +2633,22 @@
     }
     if (t.dataset.menuLoad !== undefined) { loadRefFromMenu(+t.dataset.menuLoad); return; }
     if (t.dataset.mood) {
-      if (tonightMood !== t.dataset.mood) tonightNonce = 0;   /* 换心情就回到"今天这一档"的默认抽签 */
+      if (tonightMood !== t.dataset.mood) {
+        tonightNonce = 0; tonightSeen = [];   /* 换心情就回到"今天这一档"的默认抽签 */
+      }
       tonightMood = t.dataset.mood;
       renderTonight();
       return;
     }
-    if (t.dataset.tonightAgain) { tonightNonce++; renderTonight(); return; }
+    if (t.dataset.tonightAgain) {
+      var againMood = moodById(tonightMood);
+      tonightSeen = tonightSeen.concat(tonightCurrent);   /* 刚端上来的这三杯，下一批不再出现 */
+      /* 池子快抽干了就重开一轮，免得越换越没得选 */
+      if (againMood && tonightSeen.length >= tonightPool(againMood).length - 2) tonightSeen = [];
+      tonightNonce++;
+      renderTonight();
+      return;
+    }
     if (t.dataset.tonightGo !== undefined) { loadRefFromMenu(+t.dataset.tonightGo); return; }
     if (t.dataset.menuLoadref !== undefined) {
       /* 照参考本是量装，不用"本站配比"那份 */
@@ -2924,6 +2934,8 @@
   ];
   var tonightMood = '';
   var tonightNonce = 0;          /* 点一次「换一批」再加一，同一天里也能再抽一注 */
+  var tonightSeen = [];          /* 这一档已经端给用户看过的（换一批时先排掉，别马上又给同一杯） */
+  var tonightCurrent = [];       /* 屏幕上现在这三杯 */
 
   function moodById(id) {
     for (var i = 0; i < MOODS.length; i++) if (MOODS[i].id === id) return MOODS[i];
@@ -2979,12 +2991,22 @@
 
   /* 这一档要拿出来哪三杯：从候选池里按"今天"的种子挑三个 */
   function tonightPicks(m) {
-    return tonightPicksWith(m, daySeed(m.id + '#' + tonightNonce));
+    return tonightPicksFresh(m, daySeed(m.id + '#' + tonightNonce));
   }
   function tonightPicksWith(m, seed) {
     var pool = tonightPool(m);
     if (!pool.length) return [];
     return seededShuffle(pool, seed).slice(0, 3);
+  }
+  /* 「换一批」时把刚看过的排掉；池子被抽得只剩不到三杯就整池重来 */
+  function tonightPicksFresh(m, seed) {
+    var pool = tonightPool(m);
+    if (!pool.length) return [];
+    var seen = {};
+    tonightSeen.forEach(function (i) { seen[i] = 1; });
+    var rest = pool.filter(function (i) { return !seen[i]; });
+    if (rest.length < 3) rest = pool;
+    return seededShuffle(rest, seed).slice(0, 3);
   }
 
   /* 这杯要买什么：有本站配比的按配比，否则按参考配方；勾过「手边有什么」的标"有了" */
@@ -3059,6 +3081,7 @@
       return;
     }
     var picks = tonightPicks(m);
+    tonightCurrent = picks;
     if (!picks.length) {
       out.innerHTML = '<p class="hint">这一档暂时没挑出合适的，换个心情试试。</p>';
       return;

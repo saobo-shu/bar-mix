@@ -1545,6 +1545,24 @@ console.log('\n--- 今晚喝什么 ---');
   console.log('  ' + (okAgain ? '✅' : '❌') + ' 「换一批」当场换出另一组，而且还在这一档里');
   if (!okAgain) bad('今晚喝什么', '「换一批」没换出新的（或换出了候选之外的酒）');
 
+  /* 换一批不能马上又端回刚看过的那几杯：连着抽三批，相邻两批不能有重复 */
+  B.page.set('tonight');
+  fire({ mood: 'any' });                      /* 先选心情，把上一段的 nonce/seen 重置 */
+  const batches = [];
+  const shotPicks = () => (els.tonightOut.innerHTML.match(/data-tonight-go="(\d+)"/g) || [])
+    .map(s => +s.replace(/\D/g, ''));
+  batches.push(shotPicks());
+  fire({ tonightAgain: '1' }); batches.push(shotPicks());
+  fire({ tonightAgain: '1' }); batches.push(shotPicks());
+  const repeated = [];
+  for (let k = 1; k < batches.length; k++) {
+    batches[k].forEach(i => { if (batches[k - 1].indexOf(i) >= 0) repeated.push(i); });
+  }
+  const okFresh = repeated.length === 0 && batches.every(b => b.length === 3);
+  console.log('  ' + (okFresh ? '✅' : '❌') + ' 「换一批」不会马上又端回刚看过的（'
+    + batches.map(b => b.length).join('/') + ' 杯，重复 ' + repeated.length + ' 个）');
+  if (!okFresh) bad('今晚喝什么', '「换一批」又端回了刚看过的酒');
+
   /* "清爽，别冒气"：给的三杯里一口汽水都不能有（有人明确不喝带气的） */
   const bubbly = [];
   B.tonight.picks('still').forEach(i => {
