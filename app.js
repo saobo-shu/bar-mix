@@ -15,9 +15,10 @@
     { k: 'booze',  name: '酒感', ref: 26 },
     { k: 'fruit',  name: '果香', ref: 28 },
     { k: 'spice',  name: '香料', ref: 32 },
-  /* 这一维量的是"入口那种刺舌的锐利感"，所以叫杀口感——图上它和甜/酸/苦
-     不是一类东西（那些是味道）。有"真碳酸"这件事是另一回事，见 hasFizzIng。 */
-  { k: 'fizz',   name: '杀口感', ref: 10 },
+  /* 这一维现在只认真碳酸：不冒气的材料（薄荷叶、黄瓜、冰红茶、中国版红牛…）一律 0，
+     所以图上的名字还是叫「气泡」最直白——数值就是"碳酸带来的刺激有多强"。
+     "杯里到底有没有气"这个事实判断看 hasFizzIng，跟这个数值分开。 */
+  { k: 'fizz',   name: '气泡', ref: 10 },
     { k: 'body',   name: '醇厚', ref: 24 }
   ];
 
@@ -1339,9 +1340,11 @@
 
   /* 参考数据里写的杯型 → 本库的杯子 */
   var REF_GLASS = [
-    [/马天尼杯|coupe|香槟杯|玛格丽特杯|尼克诺拉|红酒杯|葡萄酒杯/i, 'coupe'],
+    [/香槟杯|笛形|flute/i, 'flute'],
+    [/马天尼杯|coupe|玛格丽特杯|尼克诺拉|红酒杯|葡萄酒杯/i, 'coupe'],
+    [/^(酒杯)$/, 'coupe'],           /* 参考本写"酒杯"的（基尔）就是葡萄酒杯 */
     [/古典杯|rock|白兰地杯|铜杯|朱丽普/i, 'rocks'],
-    [/柯林杯|高球杯|莫吉托杯|酒杯/i, 'highball'],
+    [/柯林杯|高球杯|莫吉托杯/i, 'highball'],
     [/TIKI|飓风/i, 'hurricane'],
     [/利口酒杯|一口杯|子弹/i, 'shot'],
     [/马克杯|爱尔兰咖啡|陶杯/i, 'mug'],
@@ -1895,6 +1898,16 @@
 
   /* 每条参考配方算一遍浓度和风味（用来筛选），算完缓存 */
   var REF_STAT = {};
+
+  /* 「清爽」不是风味图上的一个维度，而是一个看法：不厚重 + 有酸或有香气（果香/香料）。
+     气泡单独看——有人明确不喜欢气泡，所以要能只看"清爽但不冒气"的。 */
+  function isFresh(st) {
+    /* 数定成"醇厚 ≤7、糖 ≤12、度数 ≤22"：再往上就是厚重或甜腻的酒
+       （僵尸、长岛冰茶那类），把它们叫清爽就是骗人。 */
+    return st.body <= 7 && st.sugar <= 12 && st.abv <= 22
+      && (st.acid >= 2 || st.fruit >= 4 || st.spice >= 4);
+  }
+
   function refStat(i) {
     if (REF_STAT[i]) return REF_STAT[i];
     var r = REF_RECIPES[i];
@@ -1923,6 +1936,8 @@
     });
     REF_STAT[i] = {
       abv: a.abv, sugar: a.fd.sugar, acid: a.fd.acid, fizz: a.fd.fizz, bitter: a.fd.bitter,
+      body: a.fd.body, fruit: a.fd.fruit, spice: a.fd.spice,
+      bubbly: a.hasFizzIng,        /* 杯里到底有没有带气的材料（跟气泡分是两回事） */
       fams: Object.keys(fams)
     };
     return REF_STAT[i];
@@ -1978,7 +1993,8 @@
       ['', '全部基酒'], ['gin', '金酒'], ['whisky', '威士忌'], ['rum', '朗姆'],
       ['vodka', '伏特加'], ['tequila', '龙舌兰'], ['brandy', '白兰地']
     ];
-    var tastes = [['', '全部味道'], ['sweet', '甜'], ['sour', '酸'], ['fizz', '清爽起泡'], ['bitter', '苦']];
+    var tastes = [['', '全部味道'], ['sweet', '甜'], ['sour', '酸'],
+      ['fresh', '清爽'], ['fizz', '带气泡'], ['bitter', '苦']];
     var strs = [['', '全部浓淡'], ['light', '清淡'], ['mid', '标准'], ['strong', '浓烈']];
     function row(list, cur, attr) {
       return list.map(function (x) {
@@ -2011,7 +2027,8 @@
       if (menuFam && st.fams.indexOf(menuFam) < 0) return;
       if (menuTaste === 'sweet' && st.sugar < 8) return;
       if (menuTaste === 'sour' && st.acid < 5) return;
-      if (menuTaste === 'fizz' && st.fizz < 4) return;
+      if (menuTaste === 'fresh' && !isFresh(st)) return;
+      if (menuTaste === 'fizz' && !st.bubbly) return;
       if (menuTaste === 'bitter' && st.bitter < 4) return;
       if (menuStr === 'light' && st.abv >= 10) return;
       if (menuStr === 'mid' && (st.abv < 10 || st.abv > 22)) return;
@@ -2999,10 +3016,14 @@
        不然按"材料少"排会跳出螺丝刀这种只有橙汁带一点酸的酒） */
     { id: 'sweet', label: '想喝甜的', hit: function (st) { return st.sugar >= 8; },
       val: function (st) { return st.sugar; }, desc: true },
-    { id: 'fizz', label: '清爽带气泡', hit: function (st) { return st.fizz >= 4; },
+    { id: 'fizz', label: '清爽带气泡', hit: function (st) { return st.bubbly; },
       val: function (st) { return st.fizz; }, desc: true },
     { id: 'sour', label: '想喝酸的', hit: function (st) { return st.acid >= 6; },
       val: function (st) { return st.acid; }, desc: true },
+    /* 有人明确不喝带气的，所以"清爽"和"带气泡"分开两档 */
+    /* "别冒气"就是杯里一样带气的材料都没有——不是"气泡分低就不算" */
+    { id: 'still', label: '清爽，别冒气', hit: function (st) { return isFresh(st) && !st.bubbly; },
+      val: function (st) { return st.body === 0 ? 0 : 1 / st.body; }, desc: true },
     { id: 'strong', label: '来点浓的', hit: function (st) { return st.abv > 22; },
       val: function (st) { return st.abv; }, desc: true },
     { id: 'light', label: '不想醉', hit: function (st) { return st.abv <= 12; },
@@ -3016,8 +3037,30 @@
     return null;
   }
 
-  /* 这一档要拿出哪三杯：先推荐款、再材料少的（好做） */
-  function tonightPicks(m) {
+  /* 每天换一批，但同一天里刷新多少次都一样：
+     用"日期 + 这一档"当种子，用户不会每天都看到同样三杯，也不会点一下就跳。 */
+  function daySeed(extra) {
+    var d = new Date();
+    var s = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() + '|' + extra;
+    var h = 2166136261;
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function seededShuffle(list, seed) {
+    var pool = list.slice();
+    var st = seed >>> 0;
+    for (var i = pool.length - 1; i > 0; i--) {
+      st = (st * 1664525 + 1013904223) >>> 0;
+      var j = st % (i + 1);
+      var t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+    }
+    return pool;
+  }
+
+  /* 这一档的候选（先推荐款、再按这档的强度、最后好做的在前）。
+     取前 POOL 个当"今天从这里面挑"，保证每天有得换、又不会挑到太离谱的。 */
+  var TONIGHT_POOL = 12;
+  function tonightPool(m) {
     var out = [];
     REF_RECIPES.forEach(function (r, i) {
       var st = refStat(i);
@@ -3030,21 +3073,17 @@
       if (a.v !== b.v) return m.desc ? b.v - a.v : a.v - b.v;    /* 再按这一档的强度 */
       return ra.needs.length - rb.needs.length;                  /* 最后好做的在前 */
     });
-    out = out.map(function (x) { return x.i; });
-    if (m.random) {
-      /* "没主意"就别每次都给同三杯：在推荐款里随机挑三个 */
-      var pool = out.filter(function (i) { return REF_RECIPES[i].pick; });
-      if (pool.length > 3) {
-        pool = pool.slice();
-        for (var k = pool.length - 1; k > 0; k--) {
-          var j = Math.floor(Math.random() * (k + 1));
-          var t = pool[k]; pool[k] = pool[j]; pool[j] = t;
-        }
-        pool = pool.slice(0, 3);
-      }
-      return pool;
-    }
-    return out.slice(0, 3);
+    var pickNames = out.filter(function (x) { return REF_RECIPES[x.i].pick; });
+    var pool = (m.random ? pickNames : out).map(function (x) { return x.i; });
+    var k = Math.max(6, Math.min(TONIGHT_POOL, pool.length));
+    return pool.slice(0, k);
+  }
+
+  /* 这一档要拿出来哪三杯：从候选池里按"今天"的种子挑三个 */
+  function tonightPicks(m) {
+    var pool = tonightPool(m);
+    if (!pool.length) return [];
+    return seededShuffle(pool, daySeed(m.id)).slice(0, 3);
   }
 
   /* 这杯要买什么：有本站配比的按配比，否则按参考配方；勾过「手边有什么」的标"有了" */
@@ -3130,6 +3169,15 @@
   window.BarMix = {
     state: state, analyze: analyze, advise: advise, BY_ID: BY_ID,
     dims: DIMS,                       /* 风味图的八个维度（调试/自检用） */
+    /* 「今晚喝什么」：给自检和调试用 */
+    tonight: {
+      moods: MOODS,
+      pool: function (id) { var m = moodById(id); return m ? tonightPool(m) : []; },
+      picks: function (id) { var m = moodById(id); return m ? tonightPicks(m) : []; },
+      render: renderTonight,
+      seed: daySeed,
+      fresh: isFresh
+    },
     tempIdOf: tempIdOf, tempOf: tempOf,
     hasTemp: hasTemp,
     /* ④ 手边有什么：给自检和调试用 */

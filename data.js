@@ -2,7 +2,7 @@
    调酒台 · 材料库
    f 里的数值 = 「按默认份量倒入时，对那一维风味的贡献强度」
    sugar 甜 / acid 酸 / bitter 苦 / booze 酒感
-   fruit 果香 / spice 香料 / fizz 杀口感（碳酸那种刺舌感）/ body 醇厚
+   fruit 果香 / spice 香料 / fizz 气泡（只认真碳酸）/ body 醇厚
    src: near 便利店 / rt 超市 / web 网购
    mlu = 每个单位等于多少毫升（0 表示不计入液量，比如皮、叶、冰）
    ========================================================= */
@@ -559,9 +559,9 @@ var INGREDIENTS = [
   { id:'coconut_milk', cat:'dairy', name:'椰浆', unit:'ml', mlu:1, def:30, step:5, abv:0, src:'rt',
     f:{sugar:4,acid:0,bitter:0,booze:0,fruit:3,spice:0,fizz:0,body:9},
     note:'很浓郁，容易腻，需要一点酸或盐来救。' },
-  { id:'redbull', cat:'mixer', name:'红牛', unit:'ml', mlu:1, def:90, step:5, abv:0, src:'near',
-    f:{sugar:7,acid:1,bitter:0,booze:0,fruit:0,spice:3,fizz:5,body:1},
-    note:'提神，但别空腹喝。' },
+  { id:'redbull', cat:'mixer', name:'红牛（金罐 · 不含气）', unit:'ml', mlu:1, def:90, step:5, abv:0, src:'near',
+    f:{sugar:7,acid:1,bitter:0,booze:0,fruit:0,spice:3,fizz:0,body:1},
+    note:'提神，但别空腹喝。注意版本：中国金罐（红牛维生素功能饮料）跟泰国版一样**不含气**；奥地利进口那款「红牛牌劲能饮料」是充气的。这里按金罐算，所以它不给气泡分——想要带气的那种就买进口罐，或者兑点苏打水。' },
   { id:'sparkling_wine', cat:'mixer', name:'气泡酒 / 香槟', unit:'ml', mlu:1, def:90, step:5, abv:12, src:'web',
     f:{sugar:2,acid:5,bitter:0.5,booze:1,fruit:5,spice:1,fizz:7,body:2},
     note:'便宜的气泡酒做调酒完全够用，别买贵的。开瓶后当天喝完。' },
@@ -938,6 +938,8 @@ var GLASSES = [
     note: '矮胖厚底，一般也是加满冰。想让它化得慢就换一整块大方冰，melt 能砍一半。' },
   { id: 'coupe', name: '马天尼杯 / 酸酒杯', cap: 180, liquidMax: 130, ice: 'chilled', melt: 0, lo: 12, hi: 42,
     note: '带脚的浅口杯。摇好滤进去，不加冰——马天尼、黛绮莉、酸都归它。' },
+  { id: 'flute', name: '香槟杯', cap: 220, liquidMax: 180, ice: 'chilled', melt: 0, lo: 5, hi: 20,
+    note: '细长笛形，专给气泡酒类：含羞草、贝利尼、皇家基尔、香槟鸡尾酒、法兰西 75。杯身细长就是为了让气泡少跑；不加冰。' },
   { id: 'hurricane', name: '飓风杯', cap: 500, liquidMax: 260, ice: 'inglass', melt: 60, lo: 3, hi: 12,
     note: '大肚高脚杯，热带长饮专用，装得下也喝得久。' },
   { id: 'shot', name: '一口杯', cap: 60, liquidMax: 55, ice: 'chilled', melt: 0, lo: 28, hi: 60,
@@ -1153,7 +1155,7 @@ var PICK_LINE = {
   '黑俄罗斯': '两瓶都不用管保存，住处里最省事的一杯',
   '白俄罗斯': '黑俄罗斯加一层奶油，甜点感的一杯',
   '马颈': '干姜水加一整条柠檬皮，比听起来好喝得多',
-  '白鸽': '龙舌兰兑西柚气泡水，最随手的墨西哥喝法',
+  '白鸽': '龙舌兰配西柚，最随手的墨西哥喝法',
   '薄荷朱丽普': '冰最多的一杯，适合一杯慢慢喝一晚上',
   '金菲士': '气泡版的柠檬金酒，清爽到像汽水',
   '边车': '干邑 + 橙 + 柠檬，酸甜里的老钱风',

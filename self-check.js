@@ -1208,8 +1208,26 @@ console.log('\n--- 酒单 ---');
     /* 筛选：只看清爽起泡 */
     B.menu.reset(); B.menu.setTaste('fizz');
     const fizzN = B.menu.list();
-    console.log('  ' + (fizzN > 0 && fizzN < all ? '✅' : '❌') + ' 按"清爽起泡"筛：' + fizzN + ' 款');
+    console.log('  ' + (fizzN > 0 && fizzN < all ? '✅' : '❌') + ' 按"带气泡"筛：' + fizzN + ' 款');
     if (!(fizzN > 0 && fizzN < all)) bad('酒单', '味道筛选没生效');
+
+    /* 清爽和气泡是两个口径：有人明确不喝带气的 */
+    B.menu.reset(); B.menu.setTaste('fresh');
+    const freshN = B.menu.list();
+    console.log('  ' + (freshN > 0 && freshN < all ? '✅' : '❌') + ' 按"清爽"筛：' + freshN + ' 款');
+    if (!(freshN > 0 && freshN < all)) bad('酒单', '"清爽"筛选没生效');
+
+    /* 香槟杯：参考本写"香槟杯"的那几款必须配到细长笛形 */
+    const fluteBad = [];
+    global.__REF.forEach(r => {
+      if (!/香槟杯/.test(r.glass || '')) return;
+      B.menu.open(global.__REF.indexOf(r));
+      const txt = strip(els.menuDetail.innerHTML);
+      if (txt.indexOf('香槟杯') < 0) fluteBad.push(r.zh || r.en);
+    });
+    console.log('  ' + (fluteBad.length ? '❌' : '✅') + ' 参考本写"香槟杯"的都装进香槟杯'
+      + (fluteBad.length ? '：' + fluteBad.slice(0, 3).join('、') : ''));
+    if (fluteBad.length) bad('酒单', '香槟类酒没配香槟杯：' + fluteBad.slice(0, 3).join('、'));
 
     /* 薄荷叶不该带气泡（data.js 里曾经写成 7，于是"薄荷朱丽普"和"绿蚱蜢"
        都被筛进"清爽起泡"，而真的加汽水的"莫斯科骡子"反倒进不去） */
@@ -1217,12 +1235,12 @@ console.log('\n--- 酒单 ---');
     console.log('  ' + (okMint ? '✅' : '❌') + ' 薄荷叶的气泡值是 0（它又不是汽水）');
     if (!okMint) bad('材料库', '薄荷叶带着气泡值，会把薄荷类的酒误判成"清爽起泡"');
 
-    /* 这条维度在雷达图上叫「杀口感」（入口那种刺舌的锐利感），
-       所以只有真碳酸的东西能给它分——黄瓜、冰红茶这些"清凉感"走香料/醇厚。 */
+    /* 这一维现在只认真碳酸，所以名字就叫「气泡」最直白：
+       数值 = 碳酸带来的刺激有多强。不冒气的材料（黄瓜、冰红茶那些"清凉感"）走香料/醇厚。 */
     const dimFizz = B.dims.filter(d => d.k === 'fizz')[0];
-    const okDimName = dimFizz && dimFizz.name === '杀口感';
-    console.log('  ' + (okDimName ? '✅' : '❌') + ' 雷达图这一维叫「杀口感」（不叫"气泡"）');
-    if (!okDimName) bad('材料库', 'fizz 这一维的名字不是"杀口感"');
+    const okDimName = dimFizz && dimFizz.name === '气泡';
+    console.log('  ' + (okDimName ? '✅' : '❌') + ' 雷达图这一维叫「气泡」（它现在只认真碳酸）');
+    if (!okDimName) bad('材料库', 'fizz 这一维的名字不是"气泡"');
 
     const STILL = ['mint', 'cucumber', 'iced_tea', 'vitale', 'hendricks', 'egg_white'];
     const stillFizzy = STILL.filter(id => B.BY_ID[id] && (B.BY_ID[id].f.fizz || 0) > 0)
@@ -1233,6 +1251,7 @@ console.log('\n--- 酒单 ---');
     if (stillFizzy.length) bad('材料库', '不冒气的材料带了杀口感：' + stillFizzy.join('、'));
 
     /* 筛出来"清爽起泡"的，杯里必须真的有带气的材料 */
+    B.menu.reset(); B.menu.setTaste('fizz');    /* 上面切到"清爽"了，这里切回来再取名单 */
     const fizzIdx = (els.menuList.innerHTML.match(/data-menu="(\d+)"/g) || [])
       .map(s => +s.replace(/\D/g, ''));
     const noBubble = [];
@@ -1241,9 +1260,9 @@ console.log('\n--- 酒单 ---');
       if (!B.analyze().hasFizzIng) noBubble.push(global.__REF[i].zh || global.__REF[i].en);
     });
     console.log('  ' + (noBubble.length ? '❌' : '✅')
-      + ' 筛出来的"清爽起泡"每杯都有真带气的材料（' + fizzN + ' 款）'
+      + ' 筛出来的"带气泡"每杯都有真带气的材料（' + fizzN + ' 款）'
       + (noBubble.length ? '，这几杯没有：' + noBubble.slice(0, 3).join('、') : ''));
-    if (noBubble.length) bad('酒单', '没有气泡材料的酒被筛进了"清爽起泡"：' + noBubble.slice(0, 3).join('、'));
+    if (noBubble.length) bad('酒单', '没有气泡材料的酒被筛进了"带气泡"：' + noBubble.slice(0, 3).join('、'));
 
     /* 参考本里的"薄荷利口酒"是利口酒，不是那几片新鲜薄荷叶 */
     const mintBad = [];
@@ -1485,6 +1504,66 @@ console.log('\n--- 酒单 ---');
   B.menu.reset();
 })();
 
+/* ---- 今晚喝什么：一次只问一个问题，点了出三杯 ---- */
+console.log('\n--- 今晚喝什么 ---');
+(function () {
+  const moods = B.tonight.moods;
+  const okCount = moods.length >= 5 && moods.length <= 7;
+  console.log('  ' + (okCount ? '✅' : '❌') + ' 心情按钮 ' + moods.length + ' 个（一屏放得下）');
+  if (!okCount) bad('今晚喝什么', '心情按钮数量不对：' + moods.length);
+
+  /* 每一档的候选池都得够大，不然"每天换一批"换的还是那几杯 */
+  const thin = [];
+  moods.forEach(m => {
+    const pool = B.tonight.pool(m.id);
+    if (pool.length < 6) thin.push(m.label + '(' + pool.length + ')');
+  });
+  console.log('  ' + (thin.length ? '❌' : '✅') + ' 每一档候选至少 6 杯，轮换得起来'
+    + (thin.length ? '：' + thin.join('、') : ''));
+  if (thin.length) bad('今晚喝什么', '候选太少轮换不起来：' + thin.join('、'));
+
+  /* 同一天里点几次都一样（不然用户会以为坏了） */
+  const p1 = B.tonight.picks('sour').join(','), p2 = B.tonight.picks('sour').join(',');
+  console.log('  ' + (p1 === p2 ? '✅' : '❌') + ' 同一天里结果稳定，不会刷一下就跳一批');
+  if (p1 !== p2) bad('今晚喝什么', '同一天里结果不稳定');
+
+  /* "清爽，别冒气"：给的三杯里一口汽水都不能有（有人明确不喝带气的） */
+  const bubbly = [];
+  B.tonight.picks('still').forEach(i => {
+    B.have.load(i);
+    if (B.analyze().hasFizzIng) bubbly.push(global.__REF[i].zh || global.__REF[i].en);
+  });
+  console.log('  ' + (bubbly.length ? '❌' : '✅') + ' "清爽，别冒气"给的三杯真的一口汽水都没有'
+    + (bubbly.length ? '：' + bubbly.join('、') : ''));
+  if (bubbly.length) bad('今晚喝什么', '别冒气那一档里出现了带气的酒：' + bubbly.join('、'));
+
+  /* 点一下心情 → 三张卡，每张都写了"要买什么/怎么倒" */
+  B.page.set('tonight');
+  fire({ mood: 'sour' });
+  const html = els.tonightOut.innerHTML;
+  const cards = (html.match(/class="tcard"/g) || []).length;
+  const okCards = cards === 3 && html.indexOf('要买什么') >= 0 && html.indexOf('怎么倒') >= 0;
+  console.log('  ' + (okCards ? '✅' : '❌') + ' 点心情 → 三张卡（写了要买什么、怎么倒）：' + cards + ' 张');
+  if (!okCards) bad('今晚喝什么', '点心情没出三张卡');
+
+  /* 卡片上的星星点了要进"我的收藏" */
+  const first = B.tonight.picks('sour')[0];
+  const firstNm = global.__REF[first].zh;
+  const before = B.menu.favs().length;
+  fire({ fav: String(first) });
+  const after = B.menu.favs();
+  const okFav = after.length === before + 1 && after.indexOf(firstNm) >= 0;
+  console.log('  ' + (okFav ? '✅' : '❌') + ' 卡片上的星星点了进「我的收藏」（' + firstNm + '）');
+  if (!okFav) bad('今晚喝什么', '卡片上的星星没收藏成功');
+  B.menu.fav(firstNm);   /* 收回，别影响后面的测试 */
+
+  /* 拿去细调：装进杯子并跳到调酒台 */
+  fire({ tonightGo: String(first) });
+  const okGo = B.page.current() === 'bar' && B.state.cup.size > 0;
+  console.log('  ' + (okGo ? '✅' : '❌') + ' 「拿去细调」装进杯子并跳到调酒台');
+  if (!okGo) bad('今晚喝什么', '「拿去细调」没装杯或没跳页');
+})();
+
 /* ---- 四个页面 + 侧边导航 ---- */
 console.log('\n--- 页面与导航 ---');
 (function () {
@@ -1565,7 +1644,7 @@ console.log('\n--- 主题切换 ---');
 })();
 
 /* ---- ③ 材料库的搜索（用户要求加） ---- */
-console.log('\n--- 材料库搜索 ---');
+  console.log('\n--- 材料库搜索 ---');
 (function () {
   const stripOne = s => String(s).replace(/\s+/g, ' ').trim();
   B.state.hideRisky = false;
