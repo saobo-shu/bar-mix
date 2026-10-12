@@ -100,18 +100,22 @@ global.document = {
 };
 try {
   eval(blocks.join('\n'));
-  const presetCards = (els.presets.innerHTML.match(/class="preset"/g) || []).length;
   const glassChips = (els.glassPick.innerHTML.match(/class="gchip/g) || []).length;
   const libChips = (els.lib.innerHTML.match(/class="chip/g) || []).length;
   const glassDrawn = els.glassPreview.innerHTML.length > 200;
   const haveRows = (els.haveList.innerHTML.match(/data-have=/g) || []).length;
-  const ok = presetCards > 0 && glassChips > 0 && libChips > 0 && glassDrawn && haveRows > 0;
-console.log('  跑起来：配方卡 ' + presetCards + ' 张、杯型 ' + glassChips + ' 个、材料 ' + libChips
+  /* 配方已经搬去酒单那一页（那一页是懒加载，开屏不画），所以这里查导航和四页齐不齐 */
+  const navItems = (html.match(/class="navitem/g) || []).length;
+  const pageCount = (html.match(/id="page-\w+"/g) || []).length;
+  const ok = glassChips > 0 && libChips > 0 && glassDrawn && haveRows > 0
+    && navItems === 4 && pageCount === 4;
+console.log('  跑起来：杯型 ' + glassChips + ' 个、材料 ' + libChips
     + ' 个、手边有什么 ' + haveRows + ' 样、杯子预览 ' + (glassDrawn ? '画出来了' : '没画出来')
-    + '　' + (ok ? '✓' : '⚠'));
+    + '、导航 ' + navItems + ' 项 / 页面 ' + pageCount + ' 个　' + (ok ? '✓' : '⚠'));
   if (!ok) process.exitCode = 1;
 } catch (e) {
   console.log('  ⚠ 内联脚本跑不起来：' + e.message);
+  console.log(String(e.stack || '').split('\n').slice(1, 5).join('\n'));
   process.exitCode = 1;
 } finally {
   global.setTimeout = realSetTimeout;
