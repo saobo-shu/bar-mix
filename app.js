@@ -903,26 +903,40 @@
   }
 
   function renderLib() {
+    var q = libQuery.trim().toLowerCase();
+    var searching = !!q;
     var list = INGREDIENTS.filter(function (g) {
+      if (searching) {
+        /* 搜索时跨分类找——找"柠檬"要能一次看到柠檬汁、柠檬皮、柠檬糖浆 */
+        return (g.name + ' ' + g.id).toLowerCase().indexOf(q) >= 0
+          && !(state.hideRisky && storeOf(g).risk >= 2);
+      }
       if (g.cat !== state.cat) return false;
       if (state.hideRisky && storeOf(g).risk >= 2) return false;
       return true;
     });
 
     document.getElementById('lib').innerHTML =
-      '<div class="libgroup">' + esc(catName(state.cat)) + '<span>' + list.length + ' 种</span></div>'
-      + list.map(function (g) { return libChip(g, 'data-add', state.cup.has(g.id)); }).join('');
+      '<div class="libgroup">' + esc(searching ? '搜到 ' + list.length + ' 样' : catName(state.cat))
+      + '<span>' + list.length + ' 种</span></div>'
+      + (list.length
+          ? list.map(function (g) {
+              /* 跨分类的结果里标出它属于哪一类，不然一堆不同栏的材料混在一起会懵 */
+              return libChip(g, 'data-add', state.cup.has(g.id), searching);
+            }).join('')
+          : '<p class="hint">没找到这个材料。</p>');
   }
 
   /* 材料库和"手边有什么"共用同一张卡片——两处样式必须一样，
      所以只有 data 属性和"选中"来源不同，其余都从这里出 */
-  function libChip(g, attr, on) {
+  function libChip(g, attr, on, showCat) {
     var st = storeOf(g);
     var tp = tempOf(g);
     return '<button type="button" class="chip' + (on ? ' on' : '') + '" ' + attr + '="' + g.id +
       '" title="' + esc(g.note + ' —— ' + st.text + ' —— 建议' + tp.name + '（' + tp.c + '℃）：' + tp.note) + '">' +
       '<span class="cn">' + esc(g.name) + '</span>' +
       '<span class="tags">' +
+        (showCat ? '<span class="src s-cat">' + esc(catName(g.cat)) + '</span>' : '') +
         '<span class="src s-' + g.src + '">' + SRC_NAME[g.src] + '</span>' +
         (hasTemp(g) ? '<span class="tagtemp t-' + tempIdOf(g) + '">' + esc(tp.name) + '</span>' : '') +
         '<span class="risk r' + st.risk + '">' + RISK_LABEL[st.risk] + '</span>' +
@@ -1313,6 +1327,7 @@
      ========================================================= */
   var HAVE_KEY = 'barmix.have.v1';
   var haveQuery = '';
+  var libQuery = '';          /* ③ 材料库的搜索词 */
   var haveOpen = {};          /* 哪一组展开了（默认每组只画前 8 条） */
   var HAVE_SHOW = 8;
 
@@ -1981,6 +1996,10 @@
 
     if (t.dataset.cat) {
       state.cat = t.dataset.cat;
+      /* 点分类标签 = 想按分类看，把搜索词清掉 */
+      libQuery = '';
+      var libBox = document.getElementById('libSearch');
+      if (libBox) libBox.value = '';
       renderCats(); renderLib();
       return;
     }
@@ -2160,6 +2179,19 @@
     if (clr) clr.addEventListener('click', function () { state.have = {}; saveHave(); renderHave(); });
   })();
 
+  /* ③ 材料库：搜索框 + 清空 */
+  (function () {
+    var box = document.getElementById('libSearch');
+    if (box) box.addEventListener('input', function () { libQuery = this.value; renderLib(); });
+    var clr = document.getElementById('libClear');
+    if (clr) clr.addEventListener('click', function () {
+      libQuery = '';
+      var b = document.getElementById('libSearch');
+      if (b) b.value = '';
+      renderLib();
+    });
+  })();
+
   document.getElementById('riskyBtn').addEventListener('click', function () {
     state.hideRisky = !state.hideRisky;
     this.setAttribute('aria-pressed', state.hideRisky ? 'true' : 'false');
@@ -2204,6 +2236,16 @@
       buy: buySuggest,
       load: loadRefRecipe,
       parse: parseAmount
+    },
+    /* ③ 材料库的搜索：给自检和调试用 */
+    lib: {
+      search: function (q) {
+        libQuery = q || '';
+        var b = document.getElementById('libSearch');
+        if (b) b.value = libQuery;
+        renderLib();
+      },
+      query: function () { return libQuery; }
     },
     scores: function () {
       var a = analyze(), sc = totalScore(a);

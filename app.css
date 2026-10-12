@@ -173,6 +173,7 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .s-near   { color: var(--blue); }
 .s-rt     { color: var(--orange); }
 .s-web    { color: var(--purple); }
+.s-cat    { color: var(--muted); }
 
 /* ---------------- 杯子 ---------------- */
 .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 11px; }

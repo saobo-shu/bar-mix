@@ -1159,6 +1159,54 @@ console.log('\n--- 图例搬进怎么用 ---');
 })();
 
 /* ---- 汇总 ---- */
+/* ---- ③ 材料库的搜索（用户要求加） ---- */
+console.log('\n--- 材料库搜索 ---');
+(function () {
+  const stripOne = s => String(s).replace(/\s+/g, ' ').trim();
+  B.state.hideRisky = false;
+  B.state.cat = 'whisky';
+  B.lib.search('');
+  const normal = (els.lib.innerHTML.match(/data-add="/g) || []).length;
+  const normalHead = stripOne(els.lib.innerHTML.match(/class="libgroup">([^<]*)</)[1]);
+
+  B.lib.search('柠檬');
+  const hits = (els.lib.innerHTML.match(/data-add="/g) || []).length;
+  const texts = els.lib.innerHTML;
+  const cats = new Set((texts.match(/class="src s-cat">([^<]*)</g) || [])
+    .map(x => x.replace(/.*>/, '').replace('<', '')));
+  const ok1 = hits >= 4 && cats.size >= 2
+    && texts.indexOf('鲜柠檬汁') >= 0 && texts.indexOf('柠檬皮') >= 0;
+  console.log('  ' + (ok1 ? '✅' : '❌') + ' 搜"柠檬"：跨 ' + cats.size + ' 个分类命中 ' + hits
+    + ' 样（' + Array.from(cats).join('、') + '）');
+  if (!ok1) bad('材料库', '搜索没有跨分类命中：' + hits + ' 样 / ' + cats.size + ' 类');
+
+  /* 搜出来的卡片要标出属于哪一类 */
+  const tagged = (texts.match(/class="src s-cat"/g) || []).length;
+  console.log('  ' + (tagged === hits ? '✅' : '❌') + ' 搜索结果每张卡都标了类别（' + tagged + '/' + hits + '）');
+  if (tagged !== hits) bad('材料库', '搜索结果没标类别');
+
+  /* 点分类标签 = 退出搜索 */
+  fire({ cat: 'gin' });
+  const back = B.lib.query() === '' && (els.lib.innerHTML.match(/data-add="/g) || []).length
+    === global.__I.filter(g => g.cat === 'gin').length;
+  console.log('  ' + (back ? '✅' : '❌') + ' 点分类标签会退出搜索，回到分类视图');
+  if (!back) bad('材料库', '点分类标签没有退出搜索');
+
+  /* 搜索框和清空按钮要真的画在页面上（按钮的点击在真实浏览器里试，这里只查有没有） */
+  const libHtml = fs.readFileSync(path.join(dir, 'dev.html'), 'utf8');
+  const hasBox = /id="libSearch"/.test(libHtml) && /id="libClear"/.test(libHtml);
+  console.log('  ' + (hasBox ? '✅' : '❌') + ' ③ 材料库里有搜索框和清空按钮');
+  if (!hasBox) bad('材料库', '材料库里没有搜索框或清空按钮');
+
+  /* 退出搜索后回到分类视图，数量照旧 */
+  B.lib.search('');
+  B.state.cat = 'whisky';
+  B.load([]);
+  const restored = (els.lib.innerHTML.match(/data-add="/g) || []).length === normal;
+  console.log('  ' + (restored ? '✅' : '❌') + ' 退出搜索回到「' + normalHead + '」，' + normal + ' 样照旧');
+  if (!restored) bad('材料库', '退出搜索后没有回到分类视图');
+})();
+
 /* ---- 操作说明：用户反馈"没人知道「常温」和「40%」能点" ---- */
 console.log('\n--- 操作说明（页面里有没有教怎么用）---');
 (function () {
