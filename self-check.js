@@ -1494,6 +1494,33 @@ console.log('\n--- 材料库搜索 ---');
     + ' 样（' + Array.from(cats).join('、') + '）');
   if (!ok1) bad('材料库', '搜索没有跨分类命中：' + hits + ' 样 / ' + cats.size + ' 类');
 
+  /* 容易混的那几对（利口酒为主），备注里必须点到对方的名字。
+     用户说过"利口酒不同牌子差别还挺大的"——那卡片上就得写清楚别拿它顶它。 */
+  const PAIRS = [
+    ['cointreau', '柑曼怡'], ['grand_marnier', '君度'],
+    ['campari', '阿佩罗'], ['aperol', '金巴利'],
+    ['cassis', '香博'], ['chambord', '黑加仑'],
+    ['cocoa_white', '黑可可'], ['cocoa_dark', '白可可'],
+    ['menthe_white', '绿薄荷'], ['menthe_green', '白薄荷'],
+    ['chartreuse', '黄查特'], ['chartreuse_jaune', '绿查特'],
+    ['fernet', '阿玛罗'], ['dry_curacao', '蓝橙'], ['curacao_blue', '干库拉索'],
+    ['lillet', '美国佬'], ['cherry_brandy', '黑樱桃'], ['maraschino', '樱桃白兰地'],
+    ['angostura', '橙味苦精'], ['orange_bitters', '安高天娜'],
+    ['apricot', '桃子'], ['peach', '果泥'],
+    ['kahlua', '黑先生'], ['mrblack', '甘露'],
+    ['benedictine', '查特'], ['vermouth', '干味美思'], ['dry_vermouth', '红味美思']
+  ];
+  const missPair = PAIRS.filter(function (pair) {
+    const g = B.BY_ID[pair[0]];
+    return !g || !g.note || g.note.indexOf(pair[1]) < 0;
+  }).map(function (pair) {
+    return B.BY_ID[pair[0]] ? B.BY_ID[pair[0]].name : pair[0];
+  });
+  console.log('  ' + (missPair.length ? '❌' : '✅') + ' 容易混的那几对，备注里都点了对方的名字（'
+    + PAIRS.length + ' 对）'
+    + (missPair.length ? '：' + missPair.slice(0, 3).join('、') : ''));
+  if (missPair.length) bad('材料库', '这些材料的备注没说清跟谁容易混：' + missPair.slice(0, 3).join('、'));
+
   /* 搜出来的卡片要标出属于哪一类 */
   const tagged = (texts.match(/class="src s-cat"/g) || []).length;
   console.log('  ' + (tagged === hits ? '✅' : '❌') + ' 搜索结果每张卡都标了类别（' + tagged + '/' + hits + '）');

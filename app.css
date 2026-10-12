@@ -270,7 +270,9 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .cat.on { background: var(--amber); border-color: var(--amber); color: var(--on-ink); font-weight: 600; }
 .cat-sep { flex: none; width: 1px; height: 20px; background: var(--line); align-self: center; margin: 0 3px; }
 
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; min-width: 0; }
+/* 材料名现在带品牌（"黑樱桃利口酒（Luxardo）"），卡片太窄会被挤成三行，
+   右边那列标签又必须留位置，所以基准宽度从 140 提到 168 */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 8px; min-width: 0; }
 .libgroup {
   grid-column: 1 / -1;
   display: flex; align-items: baseline; justify-content: space-between;
