@@ -1316,6 +1316,21 @@ console.log('\n--- 酒单 ---');
   console.log('  ' + (okCosmo ? '✅' : '❌') + ' 大都会：写成"参考本写了、这杯没放"（不再套用库里的通用理由）');
   if (!okCosmo) bad('酒单', '大都会的差别栏又套用了通用替换理由');
 
+  /* 预设跟参考本一模一样的（材料和量都对得上），不能再挂"本站配比"的牌子。
+     盘尼西林原来把拉弗格换成了黑方——参考本点名要的泥煤味，库里有正主就不该省。 */
+  const sameCase = (name, wantText, wantPick) => {
+    B.menu.open(global.__REF.findIndex(r => r.zh === name));
+    const txt = strip(els.menuDetail.innerHTML);
+    return txt.indexOf(wantText) >= 0 && (txt.indexOf('本站配比') >= 0) === wantPick;
+  };
+  const okSame = sameCase('盘尼西林', '拉弗格', false)
+    && sameCase('爱尔兰咖啡', '爱尔兰威士忌', false)
+    && sameCase('椰林飘香', '青柠', true)
+    && sameCase('大都会', '蔓越莓糖浆', true);
+  console.log('  ' + (okSame ? '✅' : '❌')
+    + ' 预设跟参考本一样的（青霉素 / 爱尔兰咖啡）不再挂"本站配比"；该用正主的用正主');
+  if (!okSame) bad('酒单', '预设和参考本的关系标错了（青霉素 / 爱尔兰咖啡 / 椰林飘香）');
+
   /* 删掉测试留下的东西 */
   B.menu.del(0);
   global.localStorage.removeItem('barmix.favs');

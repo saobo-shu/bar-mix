@@ -683,14 +683,14 @@ var PRESETS = [
     tip:'青柠一定要现挤。姜的辣和青柠的酸是互相放大的。' },
   { name:'热托蒂', family:'hot', glass:'mug', sub:'Hot Toddy · 不用冰，冬天必备', items:[['jw_black',45],['hot_water',90],['honey',15],['lemon',15],['clove',2],['cinnamon_stick',1]],
     tip:'水温别超过 80 度，太烫会把酒精的香气蒸没。先放蜂蜜再倒热水更好化开。' },
-  { name:'青霉素', family:'sour', glass:'rocks', sub:'Penicillin · 感冒时最想喝的一杯', items:[['jw_black',50],['lemon',20],['honey_syrup',20],['ginger_fresh',2]],
-    tip:'生姜在杯里压几下。有条件的话最后浮 10ml 重泥煤威士忌（拉弗格），那就是完整版。蜂蜜糖浆用 3:1 更接近原版。' },
+  { name:'青霉素', family:'sour', glass:'rocks', sub:'Penicillin · 感冒时最想喝的一杯', items:[['jw_black',45],['laphroaig',10],['lemon',20],['honey_syrup',20],['ginger_fresh',2]],
+    tip:'那 10ml 拉弗格不能省：这杯的灵魂就是最后浮上来的那层泥煤味，拿基底酒顶就不是青霉素了。生姜在杯里压几下。蜂蜜糖浆用 3:1 更接近原版。' },
   { name:'锈钉', family:'spirit', glass:'rocks', sub:'Rusty Nail · 两样东西就成立', items:[['jw_black',45],['drambuie',20]],
     tip:'蜂蜜香草利口酒 + 威士忌，几乎是作弊的简单。适合冬天。' },
   { name:'教父', family:'spirit', glass:'rocks', sub:'Godfather', items:[['jw_black',45],['disaronno',20]],
     tip:'杏仁香和威士忌的麦芽香会合在一起，慢慢喝。' },
-  { name:'爱尔兰咖啡', family:'hot', glass:'mug', sub:'Irish Coffee · 热着喝', items:[['jw_black',45],['coffee_hot',120],['demerara',10],['cream',20]],
-    tip:'奶油沿勺背浮在最上层，别搅。第一口穿过奶油喝到酒，是它的全部意义。' },
+  { name:'爱尔兰咖啡', family:'hot', glass:'mug', sub:'Irish Coffee · 热着喝', items:[['jameson',40],['coffee_hot',120],['demerara',15],['cream',30]],
+    tip:'就得用爱尔兰威士忌——苏格兰的泥煤味会跟咖啡打架。奶油沿勺背浮在最上层，别搅；第一口穿过奶油喝到酒，是它的全部意义。' },
   { name:'罗伯罗伊', family:'spirit', glass:'coupe', sub:'Rob Roy · 苏格兰版的曼哈顿', items:[['jw_black',60],['vermouth',20],['angostura',2],['cherry',1]],
     tip:'味美思开瓶就要尽快用完，没冰箱的话这一杯要趁新鲜。' },
   { name:'血与沙', family:'sour', glass:'coupe', sub:'Blood & Sand · 四样等量好记', items:[['jw_black',25],['cherry_brandy',20],['vermouth',20],['orange_juice',20]],
@@ -759,8 +759,8 @@ var PRESETS = [
     tip:'日本居酒屋的沙瓦就是这个结构：酒 + 乳酸菌饮料 + 气泡水。把烧酒换成金酒或伏特加也成立。' }
   ,{ name:'芒果朗姆', family:'sour', glass:'highball', sub:'Rum & Mango · 便利店热带风', items:[['rum',45],['mango_mix',90],['lime',10]],
     tip:'芒果混合汁很稠、很甜，所以那 10ml 青柠不能省——没有它整杯会腻。想更像热带，再加 15ml 椰浆。' }
-  ,{ name:'椰林飘香', family:'highball', glass:'hurricane', sub:'Piña Colada · 顺便看看它为什么容易失败', items:[['rum',45],['pineapple',90],['coconut_milk',30]],
-    tip:'这一杯我特意放进来当反面教材：菠萝汁里的菠萝蛋白酶会把椰浆的乳化结构拆开，倒下去那一刻就可能起絮分层，和 pH 无关。想稳定出品，用罐装/超高温灭菌的菠萝汁，或者把鲜菠萝汁煮开一分钟灭酶再放凉。' }
+  ,{ name:'椰林飘香', family:'highball', glass:'hurricane', sub:'Piña Colada · 顺便看看它为什么容易失败', items:[['rum',45],['pineapple',90],['coconut_milk',30],['lime',20]],
+    tip:'青柠不能省：朗姆 + 菠萝 + 椰浆之外，就靠它把甜压住，少了它是一杯甜果昔。这一杯我特意放进来当反面教材：菠萝汁里的菠萝蛋白酶会把椰浆的乳化结构拆开，倒下去那一刻就可能起絮分层，和 pH 无关。想稳定出品，用罐装/超高温灭菌的菠萝汁，或者把鲜菠萝汁煮开一分钟灭酶再放凉。' }
 ];
 
 /* =========================================================

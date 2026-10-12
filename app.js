@@ -1921,9 +1921,9 @@
 
   function menuCard(i) {
     var r = REF_RECIPES[i], st = refStat(i);
-    var p = presetIndexByName(REF_PRESET_MAP[recipeName(r)] || '');
-    var use = p >= 0
-      ? PRESETS[p].items.filter(function (it) { return BY_ID[it[0]]; })
+    var d = presetDiffOf(r);
+    var use = d
+      ? d.pre.items.filter(function (it) { return BY_ID[it[0]]; })
           .map(function (it) { return shortName(BY_ID[it[0]]); })
       : r.needs.filter(function (nd) { return !nd.need.optional; })
           .map(function (nd) { return needLabel(nd); });
@@ -1935,7 +1935,7 @@
       + '<span class="mc-line">' + esc(use.slice(0, 4).join(' · ')) + (use.length > 4 ? ' 等' : '') + '</span>'
       + '<span class="mc-meta">' + ({ shake: '摇和', stir: '搅拌', build: '兑和' }[methodFromRef(r.method)] || '兑和')
         + ' · ' + Math.round(st.abv) + '% · ' + r.needs.length + ' 样'
-        + (p >= 0 ? ' · <i class="mc-pick">本站配比</i>' : '')
+        + (d && d.hasDiff ? ' · <i class="mc-pick">本站配比</i>' : '')
         + (r.pick ? ' · <i class="mc-pick">推荐</i>' : '') + '</span>'
       + '</button>';
   }
@@ -2084,9 +2084,8 @@
     if (page) page.classList.add('hasdetail');
     var i = openRecipe, r = REF_RECIPES[i], st = refStat(i);
     /* 有我们调好的版本就用我们的：材料表、备注都换成那份 */
-    var pName = REF_PRESET_MAP[recipeName(r)] || '';
-    var p = presetIndexByName(pName);
-    var pre = p >= 0 ? PRESETS[p] : null;
+    var d = presetDiffOf(r);
+    var pre = d ? d.pre : null;
     var rows = pre
       ? pre.items.filter(function (it) { return BY_ID[it[0]] && BY_ID[it[0]].cat !== 'ice'; })
           .map(function (it) {
@@ -2110,7 +2109,7 @@
       + '<p class="hint">' + esc(pre ? (PRESET_METHOD[pre.name] ? methodName({ method: PRESET_METHOD[pre.name] }) : methodName(r)) : methodName(r))
         + ' · ' + esc(pre ? glassOf(pre.glass).name : glassOf(glassFromRef(r)).name)
         + ' · ' + Math.round(st.abv) + '% · ' + (pre ? pre.items.length : r.needs.length) + ' 样材料'
-        + (pre ? '　<b class="mc-pick">本站配比</b>' : '') + '</p>'
+        + (d && d.hasDiff ? '　<b class="mc-pick">本站配比</b>' : '') + '</p>'
       + '<ul class="menulist">' + rows + '</ul>'
       /* 参考数据里写了装饰（92 条有），一起显示出来——以前漏了这一栏 */
       + (r.garnish ? '<p class="hint">装饰：' + esc(r.garnish) + (r.ice ? '　冰：' + esc(r.ice) : '') + '</p>'
@@ -2140,9 +2139,7 @@
        要拿预设的材料跟参考本比一遍，按这杯实际放了什么写。否则会出现
        "蔓越莓糖浆 → 白糖浆"和这杯备注里"不用再加糖浆"同时显示这种自相矛盾。 */
   function swapBox(r) {
-    var pName = REF_PRESET_MAP[recipeName(r)] || '';
-    var pi = presetIndexByName(pName);
-    if (pi >= 0) return presetSwapBox(r, PRESETS[pi]);
+    if (presetDiffOf(r)) return presetSwapBox(r);
     var notes = [], notStocked = [], any = false;
     r.needs.forEach(function (nd) {
       if (!nd.need.approx) return;
@@ -2179,47 +2176,100 @@
       + '</details>';
   }
 
-  /* 有本站配比的这 33 款：拿预设的材料跟参考本比一遍，按事实写差别。
-     凡是 <b> 里出现的材料名，都必须是这份预设真有的东西——自检会盯着这一条。 */
-  function presetSwapBox(r, pre) {
+  /* 参考本里"45ml"这种能直接读成数字的写法；"up / 加满 / 3 把勺"读不出来就返回 null */
+  function refMl(txt) {
+    var m = String(txt || '').replace(/[（(].*?[）)]/g, '')
+      .match(/^\s*(\d+(?:\.\d+)?)\s*(ml|毫升|cl|oz)\s*$/i);
+    if (!m) return null;
+    var n = parseFloat(m[1]);
+    if (/cl/i.test(m[2])) return n * 10;
+    if (/oz/i.test(m[2])) return n * 30;
+    return n;
+  }
+  /* "生姜片"跟库里的"生姜"、"水妈妈椰浆"跟"椰浆"——只是叫法不同，不算换东西 */
+  function justSpelling(nd) {
+    var a = String(nd.n).replace(/[（(].*?[）)]/g, '').trim();
+    var b = needLabel(nd).replace(/[（(].*?[）)]/g, '').trim();
+    if (!a || !b) return false;
+    /* 一个名字是另一个的开头（生姜片 / 生姜、红糖 / 红糖糖浆），或者头两个字一样 */
+    return a.indexOf(b) === 0 || b.indexOf(a) === 0 || a.slice(0, 2) === b.slice(0, 2);
+  }
+
+  /* 有本站配比的这 33 款：拿预设的材料和参考本比一遍，看这杯到底差在哪。
+     菜单卡片角标、详情角标、差别栏三处都要用，算一次就缓存住。
+     凡是写出来的材料名，都必须是这份预设真有的东西——自检会盯着这一条。 */
+  var PRESET_DIFF_CACHE = {};
+  function presetDiffOf(r) {
+    var key = recipeName(r);
+    if (key in PRESET_DIFF_CACHE) return PRESET_DIFF_CACHE[key];
+    var pi = presetIndexByName(REF_PRESET_MAP[key] || '');
+    if (pi < 0) return (PRESET_DIFF_CACHE[key] = null);
+    var pre = PRESETS[pi];
     var items = pre.items.filter(function (it) {
       return BY_ID[it[0]] && BY_ID[it[0]].cat !== 'ice';
     });
     var ids = items.map(function (it) { return it[0]; });
-    var swapped = [], loose = [], missing = [], matched = {};
+    var swapped = [], loose = [], missing = [], matched = {}, hitCount = {}, stat = [];
     r.needs.forEach(function (nd) {
       var st = needStatusWith(nd.need, ids);
+      stat.push(st);
       if (!st.ok) { missing.push(nd); return; }
-      st.hits.forEach(function (id) { matched[id] = 1; });
+      st.hits.forEach(function (id) {
+        matched[id] = 1; hitCount[id] = (hitCount[id] || 0) + 1;
+      });
       var lab = needLabel(nd);
       if (!st.exact) {
         /* 参考本要的是泥煤威士忌 / 爱尔兰威士忌这种，杯里是同一大类的另一瓶 */
         loose.push(nd.n + (nd.a ? ' ' + nd.a : '') + '｜'
           + st.hits.map(function (id) { return shortName(BY_ID[id]); }).join(' / '));
-      } else if (nd.need.approx && SWAP_NOTE[nd.n] && lab !== nd.n) {
+      } else if (nd.need.approx && SWAP_NOTE[nd.n] && lab !== nd.n && !justSpelling(nd)) {
         /* 换过、而且换来的东西真在这杯里——这条理由才站得住 */
         swapped.push(nd);
       }
     });
     var added = items.filter(function (it) { return !matched[it[0]]; });
+    /* 材料都一样时还得看量：量也一样，就不能再挂"本站配比"的牌子 */
+    var amountDiff = false;
+    r.needs.forEach(function (nd, k) {
+      var st = stat[k];
+      if (!st.ok || st.hits.length !== 1) return;
+      var id = st.hits[0];
+      if (hitCount[id] !== 1 || BY_ID[id].unit !== 'ml') return;
+      var want = refMl(nd.a);
+      if (want === null) return;
+      var mine = items.filter(function (it) { return it[0] === id; })[0];
+      if (mine && Math.abs(mine[1] - want) >= 0.5) amountDiff = true;
+    });
+    return (PRESET_DIFF_CACHE[key] = {
+      pre: pre, swapped: swapped, loose: loose, missing: missing, added: added,
+      amountDiff: amountDiff,
+      hasDiff: !!(swapped.length || loose.length || missing.length || added.length || amountDiff)
+    });
+  }
 
+  function presetSwapBox(r) {
+    var d = presetDiffOf(r);
+    /* 跟参考本一模一样（材料、用量都照它）：那就别把同样的内容再抄一遍 */
+    if (!d.hasDiff) {
+      return '<p class="hint origbox-plain">这份和参考配方本一致：材料、用量都照它（名字按本库的叫法写）。</p>';
+    }
     var lines = '';
-    swapped.forEach(function (nd) {
+    d.swapped.forEach(function (nd) {
       lines += '<li>' + esc(nd.n) + ' → <b>' + esc(needLabel(nd)) + '</b>：'
         + esc(SWAP_NOTE[nd.n]) + '</li>';
     });
-    loose.forEach(function (s) {
+    d.loose.forEach(function (s) {
       var parts = s.split('｜');
       lines += '<li>参考本写的是 ' + esc(parts[0]) + '，这杯用的是同类，'
         + '也就是材料表里那瓶（' + esc(parts[1]) + '）。</li>';
     });
-    if (missing.length) {
-      lines += '<li>参考本写了、这杯没放：' + missing.map(function (nd) {
+    if (d.missing.length) {
+      lines += '<li>参考本写了、这杯没放：' + d.missing.map(function (nd) {
         return esc(nd.n) + (nd.a ? ' ' + esc(String(nd.a)) : '');
       }).join('、') + '</li>';
     }
-    if (added.length) {
-      lines += '<li>这杯另外加了：' + added.map(function (it) {
+    if (d.added.length) {
+      lines += '<li>这杯另外加了：' + d.added.map(function (it) {
         var g = BY_ID[it[0]];
         return '<b>' + esc(shortName(g)) + ' ' + esc(fmtAmt(g, it[1])) + '</b>';
       }).join('、') + '</li>';
@@ -2231,7 +2281,8 @@
       + '<p class="hint">' + orig + '</p>'
       + (lines
           ? '<p class="hint">这杯和参考本的差别：</p><ul class="menulist swapnote">' + lines + '</ul>'
-          : '<p class="hint">材料跟参考本对得上，只是用量不一样（这里写的是参考本的量）。</p>')
+            + (d.amountDiff ? '<p class="hint">量也不一样：上面是本站的量，这里是参考本的量。</p>' : '')
+          : '<p class="hint">材料跟参考本一样，量不一样（上面是本站的，这里是参考本的量）。</p>')
       + '</details>';
   }
 
