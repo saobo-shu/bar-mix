@@ -56,7 +56,7 @@ const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
             + ' global.__TEMPS = TEMPS; global.__TD = TEMP_DEFAULT; global.__TF = TEMP; global.__TC = TEMP_CYCLE;'
             + ' global.__METHODS = METHODS; global.__REF = REF_RECIPES; global.__CATS = CATS;'
             + ' global.__OPT = OPTIONAL_ING; global.__HOUSE = HOUSE_PRESETS;'
-            + ' global.__MAP = REF_PRESET_MAP; global.__SWAP = SWAP_NOTE;';
+            + ' global.__MAP = REF_PRESET_MAP; global.__SWAP = SWAP_NOTE; global.__ORIGIN = ORIGIN;';
 eval(src);
 
 const B = global.BarMix;
@@ -1315,6 +1315,31 @@ console.log('\n--- 酒单 ---');
     && cosmo.indexOf('用白糖浆 + 蔓越莓汁替') < 0;
   console.log('  ' + (okCosmo ? '✅' : '❌') + ' 大都会：写成"参考本写了、这杯没放"（不再套用库里的通用理由）');
   if (!okCosmo) bad('酒单', '大都会的差别栏又套用了通用替换理由');
+
+  /* 来历：推荐的那 51 款必须都写上了（都是查证过的），
+     没查证的不许硬编——显示"暂缺"就行。 */
+  const noOrigin = [];
+  global.__REF.forEach(r => {
+    if (!r.pick) return;
+    const nm = r.zh || r.en;
+    B.menu.open(global.__REF.indexOf(r));
+    const txt = strip(els.menuDetail.innerHTML);
+    if (!global.__ORIGIN[nm] || txt.indexOf('来历：' + global.__ORIGIN[nm].slice(0, 8)) < 0) noOrigin.push(nm);
+  });
+  const extraOrigin = Object.keys(global.__ORIGIN)
+    .filter(nm => !global.__REF.some(r => r.pick && (r.zh || r.en) === nm));
+  console.log('  ' + (noOrigin.length || extraOrigin.length ? '❌' : '✅')
+    + ' 51 款推荐都写了来历（' + Object.keys(global.__ORIGIN).length + ' 条）'
+    + (noOrigin.length ? '，漏了：' + noOrigin.slice(0, 3).join('、') : '')
+    + (extraOrigin.length ? '，多写了非推荐款：' + extraOrigin.slice(0, 3).join('、') : ''));
+  if (noOrigin.length || extraOrigin.length) {
+    bad('酒单', '推荐款的来历不全：缺 ' + noOrigin.length + ' 条 / 多写 ' + extraOrigin.length + ' 条');
+  }
+  /* 没查证过的必须老实说"暂缺"，不能留旧的占位话术 */
+  B.menu.open(global.__REF.findIndex(r => r.zh === '长岛冰茶'));
+  const staleIdea = strip(els.menuDetail.innerHTML).indexOf('正在补') >= 0;
+  console.log('  ' + (staleIdea ? '❌' : '✅') + ' 没查证过的来历写成"暂缺"，不再写"正在补…"这种空话');
+  if (staleIdea) bad('酒单', '来历还留着"正在补"的占位话术');
 
   /* 预设跟参考本一模一样的（材料和量都对得上），不能再挂"本站配比"的牌子。
      盘尼西林原来把拉弗格换成了黑方——参考本点名要的泥煤味，库里有正主就不该省。 */

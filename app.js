@@ -2129,7 +2129,7 @@
       + swapBox(r)
       + ((pre && pre.tip) ? '<p class="hint">' + esc(pre.tip) + '</p>'
           : (r.note ? '<p class="hint">' + esc(r.note) + '</p>' : ''))
-      + '<p class="hint">来历：' + (r.pick ? '正在补——只写推荐的 51 款，其余不编。' : '参考数据里没写，暂缺。') + '</p>'
+      + originLine(r)
       + '<div class="mineacts">'
       + '<button type="button" class="ghost on" data-menu-load="' + i + '">装进杯子</button>'
       /* 跟参考本不一样的（16 款）：多给一个"照书上来"的按钮。
@@ -2145,6 +2145,16 @@
   function methodName(r) {
     return ({ shake: '摇和', stir: '搅拌', build: '兑和' }[methodFromRef(r.method)] || '兑和')
       + (methodFromRef(r.method) === 'shake' ? '后滤出' : (methodFromRef(r.method) === 'stir' ? '后滤出' : ''));
+  }
+
+  /* 来历：只在 data.js 的 ORIGIN 里查证过推荐的 51 款。
+     没查证过的就照实说"暂缺 / 查不到"——用户的要求是"不确定就说不确定"。 */
+  function originLine(r) {
+    var t = ORIGIN[recipeName(r)];
+    if (t) return '<p class="hint">来历：' + esc(t) + '</p>';
+    return '<p class="hint">来历：' + (r.pick
+      ? '查不到能核实的出处，不编。'
+      : '暂缺（只查证了推荐的 51 款）。') + '</p>';
   }
 
   /* 原方 + 替换说明
