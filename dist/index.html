@@ -5680,8 +5680,10 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
   /* 怎么倒：一句话，够用就行（细节去调酒台看） */
   function tonightHow(r) {
     var m = methodFromRef(r.method);
-    var glass = glassOf(glassFromRef(r)).name;
-    var ice = /无冰/.test(r.ice || '') ? '' : '（杯里先放冰）';
+    var gl = glassOf(glassFromRef(r));
+    var glass = gl.name;
+    /* 只有"冰留在杯里"那种杯型才提加冰；马天尼杯/香槟杯是冰镇后滤进去的 */
+    var ice = gl.ice === 'inglass' ? '（杯里先放冰）' : '';
     if (m === 'shake') return '材料加冰摇 15 秒，滤进' + glass + ice;
     if (m === 'stir') return '材料加冰搅 20 秒，滤进' + glass + ice;
     if (r.method === 'blended' || r.method === 'blend') return '连冰一起打成冰沙，倒进' + glass;
@@ -5700,6 +5702,9 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
     var miss = need.length
       ? '要买：' + need.map(function (x) { return esc(x.name); }).join('、')
       : '材料你都有 ✓';
+    /* 什么都没勾的时候，"要买什么"那行已经把东西列全了，不用再重复一遍 */
+    var missLine = items.some(function (x) { return x.have; })
+      ? '<p class="tc-miss">' + miss + '</p>' : '';
     return '<article class="tcard">'
       + '<div class="tc-head"><b>' + esc(nm) + '</b><i>' + esc(r.en || '') + '</i>'
         + '<span class="tc-star' + (isFav(nm) ? ' on' : '') + '" data-fav="' + i + '" role="button" tabindex="0"'
@@ -5707,7 +5712,7 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
       + (PICK_LINE[nm] ? '<p class="hint pickline">' + esc(PICK_LINE[nm]) + '</p>' : '')
       + '<p class="tc-line"><b>要买什么</b>：' + line + '</p>'
       + '<p class="tc-line"><b>怎么倒</b>：' + esc(tonightHow(r)) + '</p>'
-      + '<p class="tc-miss">' + miss + '</p>'
+      + missLine
       + '<div class="tc-acts"><button type="button" class="ghost on" data-tonight-go="' + i
         + '">拿去细调</button></div>'
       + '</article>';
