@@ -1275,6 +1275,47 @@ console.log('\n--- 酒单 ---');
   console.log('  ' + (noNote.length ? '⚠ ' + noNote.length + ' 项换了东西但没写理由：'
     + noNote.slice(0, 5).join('、') : '✅ 换了东西的都写了理由'));
 
+  /* 有本站配比的 33 款：详情里"差别"那栏写到的材料，必须是这份预设真有的东西。
+     以前这里直接套用库里的通用替换理由，会出现"蔓越莓糖浆 → 白糖浆"和这句备注
+     "蔓越莓汁本身够甜，不用再加糖浆"同时显示——自己跟自己打架。 */
+  const badSwap = [];
+  /* "干金酒"这种类型 / 家族名也算对得上——杯子里的哥顿本来就是干金酒 */
+  const labelFits = (txt, ownIds, own) => {
+    if (own.some(o => o.indexOf(txt) >= 0 || txt.indexOf(o.replace(/（.*?）/, '')) >= 0)) return true;
+    const types = ownIds.map(id => DRINK_TYPE[id] || id);
+    return Object.keys(FAMILY_NAME).some(f => FAMILY_NAME[f] === txt
+        && (FAMILY_TYPES[f] || []).some(t => types.indexOf(t) >= 0))
+      || Object.keys(TYPE_NAME).some(t => TYPE_NAME[t] === txt && types.indexOf(t) >= 0);
+  };
+  global.__REF.forEach((r, i) => {
+    const nm = r.zh || r.en;
+    const pi = global.__PRESETS.findIndex(p => p.name === global.__MAP[nm]);
+    if (pi < 0) return;
+    const ownIds = global.__PRESETS[pi].items.map(it => it[0]);
+    const own = ownIds.map(id => (B.BY_ID[id] ? B.BY_ID[id].name : id));
+    B.menu.open(i);
+    const m = els.menuDetail.innerHTML.match(/<ul class="menulist swapnote">([\s\S]*?)<\/ul>/);
+    if (!m) return;
+    (m[1].match(/<b>[\s\S]*?<\/b>/g) || []).forEach(t => {
+      const txt = t.replace(/<\/?b>/g, '')
+        .replace(/[\d.]+\s*(ml|g|片|个|滴|根|把勺|块)?/g, '').trim();
+      if (txt && !labelFits(txt, ownIds, own)) {
+        badSwap.push(nm + '：' + txt + '（这杯只有 ' + own.join('、') + '）');
+      }
+    });
+  });
+  console.log('  ' + (badSwap.length ? '❌' : '✅') + ' 有本站配比的：差别栏提到的材料都真在这杯里'
+    + (badSwap.length ? '（' + badSwap.length + ' 处对不上）' : ''));
+  if (badSwap.length) bad('酒单', '差别栏提到了这杯没有的材料：' + badSwap.slice(0, 3).join('；'));
+
+  /* 大都会这杯专门盯着：参考本里的蔓越莓糖浆本站没用，就不能再说"用白糖浆替" */
+  B.menu.open(global.__REF.findIndex(r => r.zh === '大都会'));
+  const cosmo = strip(els.menuDetail.innerHTML);
+  const okCosmo = cosmo.indexOf('蔓越莓糖浆') >= 0 && cosmo.indexOf('这杯没放') >= 0
+    && cosmo.indexOf('用白糖浆 + 蔓越莓汁替') < 0;
+  console.log('  ' + (okCosmo ? '✅' : '❌') + ' 大都会：写成"参考本写了、这杯没放"（不再套用库里的通用理由）');
+  if (!okCosmo) bad('酒单', '大都会的差别栏又套用了通用替换理由');
+
   /* 删掉测试留下的东西 */
   B.menu.del(0);
   global.localStorage.removeItem('barmix.favs');

@@ -2133,12 +2133,17 @@
   /* 原方 + 替换说明
 
      用户说得很清楚："用户有权知道原本的配方是什么样子"。
-     所以只要这杯里有我换过的东西，就在详情里把参考配方本的原文列出来，
-     并且一条条说明为什么换（理由在 data.js 的 SWAP_NOTE 里）。 */
+     分两种情况写：
+     · 没有本站配比的（158 款）：材料表写的就是"库里怎么替"，这里列参考原文 + 换的理由
+       （理由在 data.js 的 SWAP_NOTE 里）。
+     · 有本站配比的（33 款）：材料表是我们调好的那一份，这时候不能再念库里那套通用理由，
+       要拿预设的材料跟参考本比一遍，按这杯实际放了什么写。否则会出现
+       "蔓越莓糖浆 → 白糖浆"和这杯备注里"不用再加糖浆"同时显示这种自相矛盾。 */
   function swapBox(r) {
+    var pName = REF_PRESET_MAP[recipeName(r)] || '';
+    var pi = presetIndexByName(pName);
+    if (pi >= 0) return presetSwapBox(r, PRESETS[pi]);
     var notes = [], notStocked = [], any = false;
-    /* 有本站配比的（33 款）：就算材料没换，量也是我们调的，原方照样值得一看 */
-    var hasPre = presetIndexByName(REF_PRESET_MAP[recipeName(r)] || '') >= 0;
     r.needs.forEach(function (nd) {
       if (!nd.need.approx) return;
       any = true;
@@ -2155,8 +2160,8 @@
       var why = SWAP_NOTE[nd.n];
       if (why) notes.push('<li>' + esc(nd.n) + ' → <b>' + esc(needLabel(nd)) + '</b>：' + esc(why) + '</li>');
     });
-    /* 第三种情况：没换材料、也不是本站配比——那材料表本身就是参考原文 */
-    if (!any && !hasPre) {
+    /* 没换材料、也不是本站配比——那材料表本身就是参考原文 */
+    if (!any) {
       return '<p class="hint origbox-plain">这份和参考配方本一致：材料、用量、做法都照它，没改动。</p>';
     }
     var orig = r.needs.map(function (nd) {
@@ -2170,8 +2175,63 @@
           : '')
       + (notes.length ? '<p class="hint"><b>我改过的地方：</b></p><ul class="menulist swapnote">'
         + notes.join('') + '</ul>'
-        : (hasPre ? '<p class="hint">材料没换，但<b>用量是本站配比</b>（上面那份）；原方这里也能看到，想照原方做就按它的量来。</p>'
-          : '<p class="hint">只是名字写法不同，没有换东西。</p>'))
+        : '<p class="hint">只是名字写法不同，没有换东西。</p>')
+      + '</details>';
+  }
+
+  /* 有本站配比的这 33 款：拿预设的材料跟参考本比一遍，按事实写差别。
+     凡是 <b> 里出现的材料名，都必须是这份预设真有的东西——自检会盯着这一条。 */
+  function presetSwapBox(r, pre) {
+    var items = pre.items.filter(function (it) {
+      return BY_ID[it[0]] && BY_ID[it[0]].cat !== 'ice';
+    });
+    var ids = items.map(function (it) { return it[0]; });
+    var swapped = [], loose = [], missing = [], matched = {};
+    r.needs.forEach(function (nd) {
+      var st = needStatusWith(nd.need, ids);
+      if (!st.ok) { missing.push(nd); return; }
+      st.hits.forEach(function (id) { matched[id] = 1; });
+      var lab = needLabel(nd);
+      if (!st.exact) {
+        /* 参考本要的是泥煤威士忌 / 爱尔兰威士忌这种，杯里是同一大类的另一瓶 */
+        loose.push(nd.n + (nd.a ? ' ' + nd.a : '') + '｜'
+          + st.hits.map(function (id) { return shortName(BY_ID[id]); }).join(' / '));
+      } else if (nd.need.approx && SWAP_NOTE[nd.n] && lab !== nd.n) {
+        /* 换过、而且换来的东西真在这杯里——这条理由才站得住 */
+        swapped.push(nd);
+      }
+    });
+    var added = items.filter(function (it) { return !matched[it[0]]; });
+
+    var lines = '';
+    swapped.forEach(function (nd) {
+      lines += '<li>' + esc(nd.n) + ' → <b>' + esc(needLabel(nd)) + '</b>：'
+        + esc(SWAP_NOTE[nd.n]) + '</li>';
+    });
+    loose.forEach(function (s) {
+      var parts = s.split('｜');
+      lines += '<li>参考本写的是 ' + esc(parts[0]) + '，这杯用的是同类，'
+        + '也就是材料表里那瓶（' + esc(parts[1]) + '）。</li>';
+    });
+    if (missing.length) {
+      lines += '<li>参考本写了、这杯没放：' + missing.map(function (nd) {
+        return esc(nd.n) + (nd.a ? ' ' + esc(String(nd.a)) : '');
+      }).join('、') + '</li>';
+    }
+    if (added.length) {
+      lines += '<li>这杯另外加了：' + added.map(function (it) {
+        var g = BY_ID[it[0]];
+        return '<b>' + esc(shortName(g)) + ' ' + esc(fmtAmt(g, it[1])) + '</b>';
+      }).join('、') + '</li>';
+    }
+    var orig = r.needs.map(function (nd) {
+      return esc(nd.n) + (nd.a ? ' ' + esc(String(nd.a)) : '');
+    }).join(' · ');
+    return '<details class="origbox"><summary>原方长什么样（参考配方本原文）</summary>'
+      + '<p class="hint">' + orig + '</p>'
+      + (lines
+          ? '<p class="hint">这杯和参考本的差别：</p><ul class="menulist swapnote">' + lines + '</ul>'
+          : '<p class="hint">材料跟参考本对得上，只是用量不一样（这里写的是参考本的量）。</p>')
       + '</details>';
   }
 
