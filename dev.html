@@ -11,6 +11,18 @@
 <meta name="apple-mobile-web-app-title" content="调酒台">
 <link rel="stylesheet" href="app.css">
 
+<!-- 主题：先按上次选的（没选过就看系统偏好），再画页面——
+     放在这里是为了避免"先黑一下再变白"的闪屏 -->
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem('barmix.theme');
+    if (!t && window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) t = 'light';
+    if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch (e) {}
+})();
+</script>
+
 <!-- 百度统计：只看访问量（多少人来了、从哪来、什么设备）。
      你调了什么酒、选了哪些材料都不会被上报——那些只在你自己浏览器里算。
      本地双击打开的 html 文件不上报（file:// 直接跳过），所以统计到的是"网站"的访问，
@@ -78,6 +90,7 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
       <span class="lbl" id="scoreLbl">等待加料</span>
     </div>
   </div>
+  <button type="button" class="ghost themebtn" id="themeBtn" aria-pressed="false" title="切换浅色 / 深色">浅色</button>
 </header>
 
 <main>
@@ -155,6 +168,7 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
             <li>杯子里<b>只有一样酒</b>（比如纯饮一杯威士忌）时不评分，只描述味道——"这杯好不好"不是这个工具能回答的。</li>
             <li>杯子装不下只是提醒，不扣分：你手上那只杯子可能比标称的大，自己判断。</li>
             <li>手机上可以「添加到主屏幕」，打开是全屏、没地址栏，断网也能用。</li>
+            <li>右上角的「<b>浅色 / 深色</b>」换主题，选过就记住了（第一次打开会跟系统的深浅色设置走）。</li>
           </ul>
         </div>
       </details>

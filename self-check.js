@@ -14,7 +14,22 @@ global.document = {
   },
   /* 把 click 处理器存下来，测试里可以真的模拟一次点击 */
   _handlers: {},
-  addEventListener(type, fn) { this._handlers[type] = fn; }
+  addEventListener(type, fn) { this._handlers[type] = fn; },
+  /* 主题要在 <html> 上挂属性，这里给个最小的替身 */
+  documentElement: {
+    _a: {},
+    getAttribute(n) { return this._a[n] === undefined ? null : this._a[n]; },
+    setAttribute(n, v) { this._a[n] = String(v); },
+    removeAttribute(n) { delete this._a[n]; }
+  },
+  querySelector() { return null; }
+};
+/* 主题和"手边有什么"的选择都存在本地，测试里给个内存版 */
+global.localStorage = {
+  _d: {},
+  getItem(k) { return this._d[k] === undefined ? null : this._d[k]; },
+  setItem(k, v) { this._d[k] = String(v); },
+  removeItem(k) { delete this._d[k]; }
 };
 
 const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
@@ -1159,6 +1174,54 @@ console.log('\n--- 图例搬进怎么用 ---');
 })();
 
 /* ---- 汇总 ---- */
+/* ---- 浅色 / 深色主题 ---- */
+console.log('\n--- 主题切换 ---');
+(function () {
+  const css = fs.readFileSync(path.join(dir, 'app.css'), 'utf8');
+  const darkBlock = css.match(/:root\s*\{([\s\S]*?)\}/)[1];
+  const lightBlock = (css.match(/:root\[data-theme="light"\]\s*\{([\s\S]*?)\}/) || [])[1] || '';
+  const varsOf = (block) => {
+    const out = {};
+    (block.match(/--[\w-]+:\s*[^;]+;/g) || []).forEach(x => {
+      const i = x.indexOf(':');
+      out[x.slice(2, i).trim()] = x.slice(i + 1, -1).trim();
+    });
+    return out;
+  };
+  const dark = varsOf(darkBlock), light = varsOf(lightBlock);
+
+  /* 关键不变量：深色里定义的每一个"颜色"变量，浅色必须也覆盖一遍，
+     不然浅色主题下就会缺色（比如文字还是浅色的，白底上直接看不见） */
+  const isColor = v => /^#|^rgb|^hsl/.test(v);
+  const colorVars = Object.keys(dark).filter(k => isColor(dark[k]));
+  const missed = colorVars.filter(k => !light[k]);
+  console.log('  ' + (missed.length ? '❌' : '✅') + ' 深色里 ' + colorVars.length
+    + ' 个颜色变量，浅色都覆盖了' + (missed.length ? '，漏了：' + missed.join('、') : ''));
+  if (missed.length) bad('主题', '浅色主题没覆盖这些颜色变量：' + missed.join('、'));
+
+  /* 切换：挂属性、存本地、按钮上写"点了会变成什么" */
+  const t0 = B.theme.set('dark');
+  const t1 = B.theme.set('light');
+  const attr = global.document.documentElement.getAttribute('data-theme');
+  const saved = global.localStorage.getItem('barmix.theme');
+  const btn = els.themeBtn ? els.themeBtn.textContent : '';
+  const ok = t0 === 'dark' && t1 === 'light' && attr === 'light' && saved === 'light' && btn === '深色';
+  console.log('  ' + (ok ? '✅' : '❌') + ' 切到浅色：data-theme=' + attr
+    + '、本地存了「' + saved + '」、按钮写着「' + btn + '」');
+  if (!ok) bad('主题', '主题切换没有正确落盘：' + [t0, t1, attr, saved, btn].join(' / '));
+  const back = B.theme.set('dark') === 'dark'
+    && global.document.documentElement.getAttribute('data-theme') === null;
+  console.log('  ' + (back ? '✅' : '❌') + ' 切回深色：属性被摘掉，回到默认');
+  if (!back) bad('主题', '切回深色没有摘掉 data-theme');
+
+  /* 按钮和提前设置的脚本都要在页面上 */
+  const html = fs.readFileSync(path.join(dir, 'dev.html'), 'utf8');
+  const wired = /id="themeBtn"/.test(html) && /barmix\.theme/.test(html)
+    && /prefers-color-scheme/.test(html);
+  console.log('  ' + (wired ? '✅' : '❌') + ' 页面上有切换按钮，且在画页面之前就设好主题（不会闪一下白）');
+  if (!wired) bad('主题', '页面里缺切换按钮或提前设置主题的脚本');
+})();
+
 /* ---- ③ 材料库的搜索（用户要求加） ---- */
 console.log('\n--- 材料库搜索 ---');
 (function () {

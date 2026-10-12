@@ -9,6 +9,18 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="调酒台">
+<!-- 主题：先按上次选的（没选过就看系统偏好），再画页面——
+     放在这里是为了避免"先黑一下再变白"的闪屏 -->
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem('barmix.theme');
+    if (!t && window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) t = 'light';
+    if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch (e) {}
+})();
+</script>
+
 <!-- 百度统计：只看访问量（多少人来了、从哪来、什么设备）。
      你调了什么酒、选了哪些材料都不会被上报——那些只在你自己浏览器里算。
      本地双击打开的 html 文件不上报（file:// 直接跳过），所以统计到的是"网站"的访问，
@@ -33,7 +45,10 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
 <meta property="og:description" content="挑材料倒进杯子，实时看风味图、评分和调节建议。">
 <style>
 /* =========================================================
-   调酒台 · 样式（深色暖调，手机优先）
+   调酒台 · 样式（手机优先）
+
+   两套主题共用同一份布局：深色是默认值，浅色在下面覆盖一遍颜色。
+   所以这里不许再出现"写死的颜色"——都走变量，浅色才能只换变量。
    ========================================================= */
 :root {
   --bg: #12100f;
@@ -49,6 +64,58 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
   --orange: #d9834e;
   --purple: #a58bd0;
   --red: #d96c5c;
+  --prose: #ddd3c9;                              /* 正文 */
+  --prose-2: #d3c7b8;                            /* 次要正文 */
+  --tint: rgba(255, 255, 255, .035);             /* 淡淡的底 */
+  --tint-strong: rgba(255, 255, 255, .07);
+  --btn: #302927;                                /* − / + / ✕ 的底 */
+  --topbar: rgba(18, 16, 15, .88);
+  --liquid: rgba(243, 235, 227, .32);            /* 构成带上的"酒液" */
+  --plate-shadow: 0 3px 12px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(0, 0, 0, .10);
+  --on-ink: #1c1409;                             /* 琥珀底上的深字 */
+  --ice-blue: #8ab4f8;
+  --ice-teal: #6fbfb0;
+  --danger-bg: rgba(217, 108, 92, .16);
+  --danger-text: #f3d9d4;
+  --glow-a: rgba(224, 163, 92, .16);
+  --glow-b: rgba(201, 111, 58, .12);
+}
+
+/* =========================================================
+   浅色主题
+
+   只覆盖颜色变量就够了。玻璃图纸那张"杯垫"故意保持米色——
+   颗粒颜色是照米色定的，换白底反而不清楚。
+   ========================================================= */
+:root[data-theme="light"] {
+  --bg: #f7f4ef;
+  --card: #ffffff;
+  --card2: #f1ece5;
+  --line: rgba(60, 45, 30, .14);
+  --text: #2b2320;
+  --muted: #7d7066;
+  --amber: #b4741f;
+  --amber-d: #96560f;
+  --green: #4f7a3a;
+  --blue: #2f6c9e;
+  --orange: #c25f24;
+  --purple: #7a5ea8;
+  --red: #b23a2a;
+  --prose: #4a423c;
+  --prose-2: #5a5148;
+  --tint: rgba(43, 35, 32, .04);
+  --tint-strong: rgba(43, 35, 32, .07);
+  --btn: #eae3da;
+  --topbar: rgba(255, 255, 255, .9);
+  --liquid: rgba(43, 35, 32, .20);
+  --plate-shadow: 0 2px 8px rgba(0, 0, 0, .12), inset 0 0 0 1px rgba(0, 0, 0, .08);
+  --on-ink: #2b2320;
+  --ice-blue: #3f6fb0;
+  --ice-teal: #2f8a7d;
+  --danger-bg: rgba(178, 58, 42, .12);
+  --danger-text: #8c2f22;
+  --glow-a: rgba(224, 163, 92, .12);
+  --glow-b: rgba(201, 111, 58, .08);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -57,8 +124,8 @@ html, body { margin: 0; padding: 0; }
 
 body {
   background:
-    radial-gradient(900px 420px at 82% -8%, rgba(224, 163, 92, .16), transparent 62%),
-    radial-gradient(700px 380px at -10% 8%, rgba(201, 111, 58, .12), transparent 60%),
+    radial-gradient(900px 420px at 82% -8%, var(--glow-a), transparent 62%),
+    radial-gradient(700px 380px at -10% 8%, var(--glow-b), transparent 60%),
     var(--bg);
   color: var(--text);
   font: 15px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", "Segoe UI", sans-serif;
@@ -73,9 +140,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
   margin: 10px 12px 0;
   padding: 10px 12px;
   border-radius: 10px;
-  background: rgba(217, 108, 92, .16);
+  background: var(--danger-bg);
   border: 1px solid var(--red);
-  color: #f3d9d4;
+  color: var(--danger-text);
   font-size: 13px;
   line-height: 1.6;
 }
@@ -85,7 +152,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; gap: 12px;
   padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px) * 0);
-  background: rgba(18, 16, 15, .88);
+  background: var(--topbar);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--line);
@@ -105,6 +172,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .chipScore { text-align: right; line-height: 1.15; }
 .chipScore .num { font-size: 22px; font-weight: 700; color: var(--amber); font-variant-numeric: tabular-nums; }
 .chipScore .lbl { display: block; font-size: 10.5px; color: var(--muted); }
+.themebtn { margin-left: auto; flex: none; font-size: 11.5px; padding: 4px 10px; }
 
 /* ---------------- 布局 ---------------- */
 main {
@@ -158,7 +226,7 @@ details.panel:not([open]) { padding-bottom: 13px; }
   flex: none; padding: 6px 12px; border-radius: 999px; font-size: 13px;
   background: var(--card2); border: 1px solid var(--line); color: var(--muted);
 }
-.cat.on { background: var(--amber); border-color: var(--amber); color: #1c1409; font-weight: 600; }
+.cat.on { background: var(--amber); border-color: var(--amber); color: var(--on-ink); font-weight: 600; }
 .cat-sep { flex: none; width: 1px; height: 20px; background: var(--line); align-self: center; margin: 0 3px; }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; min-width: 0; }
@@ -194,10 +262,10 @@ details.panel:not([open]) { padding-bottom: 13px; }
   font-size: 9.5px; padding: 1.5px 5px; border-radius: 999px;
   white-space: nowrap; border: 1px solid currentColor; line-height: 1.4;
 }
-.tempchip { cursor: pointer; user-select: none; background: rgba(255, 255, 255, .07); }
-.tempchip:active { background: rgba(255, 255, 255, .18); }
-.t-frozen { color: #8ab4f8; }
-.t-cold   { color: #6fbfb0; }
+.tempchip { cursor: pointer; user-select: none; background: var(--tint-strong); }
+.tempchip:active { background: var(--tint-strong); }
+.t-frozen { color: var(--ice-blue); }
+.t-cold   { color: var(--ice-teal); }
 .t-room   { color: var(--muted); }
 .t-hot    { color: var(--orange); }
 .libfoot { margin: 10px 0 0; line-height: 1.6; }
@@ -219,12 +287,12 @@ details.panel:not([open]) { padding-bottom: 13px; }
   padding: 5px 10px; border-radius: 999px; font-size: 12px;
   background: var(--card2); border: 1px solid var(--line); color: var(--muted);
 }
-.gchip.on { background: var(--amber); border-color: var(--amber); color: #1c1409; font-weight: 600; }
+.gchip.on { background: var(--amber); border-color: var(--amber); color: var(--on-ink); font-weight: 600; }
 .glassrow { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-bottom: 11px; }
 .plate {
   flex: none; width: 116px; padding: 8px 8px 4px;
   background: #efe7d8; border-radius: 10px;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(0, 0, 0, .10);
+  box-shadow: var(--plate-shadow);
 }
 .glasssvg { width: 100%; height: auto; display: block; }
 .g-line { fill: none; stroke: #3b3229; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -237,14 +305,14 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .mixbar { margin: 0 0 11px; }
 .mb-track {
   display: flex; width: 100%; height: 18px; border-radius: 5px; overflow: hidden;
-  background: rgba(255, 255, 255, .05);
+  background: var(--tint-strong);
 }
 .mb-seg { height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .mb-seg > b {
-  font-size: 10.5px; font-weight: 600; color: #12100f;
+  font-size: 10.5px; font-weight: 600; color: var(--on-ink);
   font-variant-numeric: tabular-nums; line-height: 1;
 }
-.mb-liquid { background: rgba(243, 235, 227, .32); }
+.mb-liquid { background: var(--liquid); }
 .mb-prep   { background: var(--blue); }
 .mb-melt   { background: var(--amber); }
 .mb-legend {
@@ -254,7 +322,7 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .mb-key { display: inline-flex; align-items: center; gap: 5px; }
 .mb-key > b { margin-left: 2px; color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 .mb-dot { flex: none; width: 9px; height: 9px; border-radius: 2px; }
-.mb-dot.mb-liquid { background: rgba(243, 235, 227, .32); }
+.mb-dot.mb-liquid { background: var(--liquid); }
 .mb-dot.mb-prep   { background: var(--blue); }
 .mb-dot.mb-melt   { background: var(--amber); }
 .mb-total { color: var(--text); }
@@ -329,9 +397,9 @@ details.panel:not([open]) { padding-bottom: 13px; }
   background: rgba(224, 163, 92, .10); border: 1px solid rgba(224, 163, 92, .35);
 }
 .buy-title { font-size: 13px; font-weight: 600; color: var(--amber); }
-.buy-lead { margin: 5px 0 6px; font-size: 12px; line-height: 1.6; color: #ddd3c9; }
+.buy-lead { margin: 5px 0 6px; font-size: 12px; line-height: 1.6; color: var(--prose); }
 .buybox ul { margin: 0; padding-left: 18px; }
-.buybox li { font-size: 12.5px; line-height: 1.75; color: #ddd3c9; }
+.buybox li { font-size: 12.5px; line-height: 1.75; color: var(--prose); }
 .buybox li b { color: var(--amber); font-weight: 600; }
 .refmore { width: 100%; margin: 7px 0 4px; }
 .haveempty { margin: 0; line-height: 1.7; }
@@ -343,7 +411,7 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .rn-head { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
 .rn-head b { font-size: 13.5px; font-weight: 600; color: var(--amber); }
 .rn-head span { font-size: 11.5px; color: var(--muted); }
-.rn-tip { margin: 4px 0 0; font-size: 12.5px; line-height: 1.7; color: #ddd3c9; }
+.rn-tip { margin: 4px 0 0; font-size: 12.5px; line-height: 1.7; color: var(--prose); }
 .rn-miss { margin: 5px 0 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
 .rn-miss b { color: var(--amber); font-weight: 600; }
 
@@ -361,7 +429,7 @@ details.panel:not([open]) { padding-bottom: 13px; }
   padding: 5px 10px; border-radius: 999px; font-size: 12px;
   background: var(--card2); border: 1px solid var(--line); color: var(--muted);
 }
-.schip.on { background: var(--amber); border-color: var(--amber); color: #1c1409; font-weight: 600; }
+.schip.on { background: var(--amber); border-color: var(--amber); color: var(--on-ink); font-weight: 600; }
 .stat { background: var(--card2); border-radius: 11px; padding: 8px 10px; border: 1px solid var(--line); }
 .st-l { display: block; font-size: 11px; color: var(--muted); }
 .st-v { display: block; font-size: 17px; font-weight: 600; color: var(--amber); font-variant-numeric: tabular-nums; }
@@ -396,12 +464,12 @@ details.panel:not([open]) { padding-bottom: 13px; }
   color: var(--amber); font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
-.abvbtn:active { background: var(--amber); color: #1c1409; }
+.abvbtn:active { background: var(--amber); color: var(--on-ink); }
 .rnd {
   width: 30px; height: 30px; border-radius: 9px; line-height: 1;
-  background: #302927; border: 1px solid var(--line); font-size: 15px; color: var(--text);
+  background: var(--btn); border: 1px solid var(--line); font-size: 15px; color: var(--text);
 }
-.rnd:active { background: var(--amber); color: #1c1409; }
+.rnd:active { background: var(--amber); color: var(--on-ink); }
 .rnd.del { color: var(--muted); font-size: 12px; }
 .ci-amt { min-width: 62px; text-align: center; font-size: 12.5px; color: var(--amber); font-variant-numeric: tabular-nums; }
 
@@ -436,7 +504,7 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .sb-cap { font-size: 10.5px; color: var(--muted); padding-left: 52px; line-height: 1.4; }
 .sbar { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--muted); }
 .sb-l { width: 44px; flex: none; }
-.sb-track { flex: 1; height: 6px; border-radius: 999px; background: rgba(255, 255, 255, .07); overflow: hidden; }
+.sb-track { flex: 1; height: 6px; border-radius: 999px; background: var(--tint-strong); overflow: hidden; }
 .sb-track i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--amber-d), var(--amber)); }
 .sb-v { width: 24px; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
 
@@ -445,13 +513,13 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .adv {
   font-size: 12.5px; line-height: 1.55; padding: 9px 11px 9px 12px;
   border-radius: 10px; border-left: 3px solid var(--amber);
-  background: rgba(255, 255, 255, .035); color: #e2d8ce;
+  background: var(--tint); color: var(--prose);
 }
 .adv.warn { border-left-color: var(--red); }
 .adv.ok { border-left-color: var(--green); }
 
 .storebox { margin-top: 12px; }
-.dilute { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(255, 255, 255, .035); border-left: 3px solid var(--amber); }
+.dilute { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--tint); border-left: 3px solid var(--amber); }
 .dilute:empty { display: none; }
 .dil-title { font-size: 12.5px; color: var(--text); margin-bottom: 4px; }
 .dil-title b { font-weight: 600; }
@@ -464,13 +532,13 @@ details.panel:not([open]) { padding-bottom: 13px; }
   display: inline-block; margin-left: 8px; font-size: 11px; color: var(--amber);
   font-variant-numeric: tabular-nums;
 }
-.dil-msg { margin: 0; font-size: 12px; line-height: 1.6; color: #ddd3c9; }
+.dil-msg { margin: 0; font-size: 12px; line-height: 1.6; color: var(--prose); }
 .storebox:empty { display: none; }
 .store-title { font-size: 11.5px; color: var(--muted); margin-bottom: 6px; }
 .storebox ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .sto {
-  font-size: 12px; line-height: 1.55; color: #ded4ca;
-  padding-left: 10px; border-left: 2px solid var(--amber); background: rgba(255, 255, 255, .03);
+  font-size: 12px; line-height: 1.55; color: var(--prose);
+  padding-left: 10px; border-left: 2px solid var(--amber); background: var(--tint);
   border-radius: 0 8px 8px 0; padding: 7px 10px;
 }
 .sto.r2 { border-left-color: var(--red); }
@@ -485,7 +553,7 @@ details.panel:not([open]) { padding-bottom: 13px; }
   display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
 }
 .pgroup-n { color: var(--muted); font-size: 11px; letter-spacing: 0; text-align: right; }
-.p-comp { font-size: 11.5px; color: #d3c7b8; line-height: 1.5; }
+.p-comp { font-size: 11.5px; color: var(--prose-2); line-height: 1.5; }
 .preset {
   text-align: left; padding: 11px 12px; border-radius: 12px;
   background: var(--card2); border: 1px solid var(--line); display: grid; gap: 3px;
@@ -502,7 +570,7 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .guide summary::-webkit-details-marker { display: none; }
 .guide summary::before { content: '▸ '; color: var(--amber); }
 .guide details[open] summary::before { content: '▾ '; }
-.guide .body { font-size: 12.5px; color: #ddd3c9; margin-top: 8px; line-height: 1.7; }
+.guide .body { font-size: 12.5px; color: var(--prose); margin-top: 8px; line-height: 1.7; }
 .guide .body b { color: var(--amber); font-weight: 600; }
 .guide .body ul { margin: 6px 0; padding-left: 18px; }
 .guide .body li { margin: 3px 0; }
@@ -598,6 +666,7 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
       <span class="lbl" id="scoreLbl">等待加料</span>
     </div>
   </div>
+  <button type="button" class="ghost themebtn" id="themeBtn" aria-pressed="false" title="切换浅色 / 深色">浅色</button>
 </header>
 
 <main>
@@ -675,6 +744,7 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
             <li>杯子里<b>只有一样酒</b>（比如纯饮一杯威士忌）时不评分，只描述味道——"这杯好不好"不是这个工具能回答的。</li>
             <li>杯子装不下只是提醒，不扣分：你手上那只杯子可能比标称的大，自己判断。</li>
             <li>手机上可以「添加到主屏幕」，打开是全屏、没地址栏，断网也能用。</li>
+            <li>右上角的「<b>浅色 / 深色</b>」换主题，选过就记住了（第一次打开会跟系统的深浅色设置走）。</li>
           </ul>
         </div>
       </details>
@@ -4340,6 +4410,45 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
     if (clr) clr.addEventListener('click', function () { state.have = {}; saveHave(); renderHave(); });
   })();
 
+  /* ---------------------------------------------------------
+     主题：深色 / 浅色
+
+     只做一件事——在 <html> 上挂 data-theme="light"，
+     颜色全在 CSS 变量里（见 app.css 的两套值）。
+     选择存在本地，下次打开还是它。
+     --------------------------------------------------------- */
+  var THEME_KEY = 'barmix.theme';
+  function currentTheme() {
+    var root = document.documentElement;
+    return root && root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+  function applyTheme(t, save) {
+    var root = document.documentElement;
+    if (root) {
+      if (t === 'light') root.setAttribute('data-theme', 'light');
+      else root.removeAttribute('data-theme');
+    }
+    var btn = document.getElementById('themeBtn');
+    if (btn) {
+      /* 按钮上写的是"点了会变成什么" */
+      btn.textContent = t === 'light' ? '深色' : '浅色';
+      btn.setAttribute('aria-pressed', t === 'light' ? 'true' : 'false');
+    }
+    var meta = document.querySelector ? document.querySelector('meta[name="theme-color"]') : null;
+    if (meta) meta.setAttribute('content', t === 'light' ? '#f7f4ef' : '#12100f');
+    if (save) {
+      try { localStorage.setItem(THEME_KEY, t); } catch (e) { /* 无痕模式存不了，不影响用 */ }
+    }
+  }
+
+  (function () {
+    var btn = document.getElementById('themeBtn');
+    applyTheme(currentTheme(), false);
+    if (btn) btn.addEventListener('click', function () {
+      applyTheme(currentTheme() === 'light' ? 'dark' : 'light', true);
+    });
+  })();
+
   /* ③ 材料库：搜索框 + 清空 */
   (function () {
     var box = document.getElementById('libSearch');
@@ -4407,6 +4516,11 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
         renderLib();
       },
       query: function () { return libQuery; }
+    },
+    /* 主题：给自检和调试用 */
+    theme: {
+      current: currentTheme,
+      set: function (t) { applyTheme(t, true); return currentTheme(); }
     },
     scores: function () {
       var a = analyze(), sc = totalScore(a);

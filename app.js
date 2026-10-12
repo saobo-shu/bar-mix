@@ -2179,6 +2179,45 @@
     if (clr) clr.addEventListener('click', function () { state.have = {}; saveHave(); renderHave(); });
   })();
 
+  /* ---------------------------------------------------------
+     主题：深色 / 浅色
+
+     只做一件事——在 <html> 上挂 data-theme="light"，
+     颜色全在 CSS 变量里（见 app.css 的两套值）。
+     选择存在本地，下次打开还是它。
+     --------------------------------------------------------- */
+  var THEME_KEY = 'barmix.theme';
+  function currentTheme() {
+    var root = document.documentElement;
+    return root && root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+  function applyTheme(t, save) {
+    var root = document.documentElement;
+    if (root) {
+      if (t === 'light') root.setAttribute('data-theme', 'light');
+      else root.removeAttribute('data-theme');
+    }
+    var btn = document.getElementById('themeBtn');
+    if (btn) {
+      /* 按钮上写的是"点了会变成什么" */
+      btn.textContent = t === 'light' ? '深色' : '浅色';
+      btn.setAttribute('aria-pressed', t === 'light' ? 'true' : 'false');
+    }
+    var meta = document.querySelector ? document.querySelector('meta[name="theme-color"]') : null;
+    if (meta) meta.setAttribute('content', t === 'light' ? '#f7f4ef' : '#12100f');
+    if (save) {
+      try { localStorage.setItem(THEME_KEY, t); } catch (e) { /* 无痕模式存不了，不影响用 */ }
+    }
+  }
+
+  (function () {
+    var btn = document.getElementById('themeBtn');
+    applyTheme(currentTheme(), false);
+    if (btn) btn.addEventListener('click', function () {
+      applyTheme(currentTheme() === 'light' ? 'dark' : 'light', true);
+    });
+  })();
+
   /* ③ 材料库：搜索框 + 清空 */
   (function () {
     var box = document.getElementById('libSearch');
@@ -2246,6 +2285,11 @@
         renderLib();
       },
       query: function () { return libQuery; }
+    },
+    /* 主题：给自检和调试用 */
+    theme: {
+      current: currentTheme,
+      set: function (t) { applyTheme(t, true); return currentTheme(); }
     },
     scores: function () {
       var a = analyze(), sc = totalScore(a);
