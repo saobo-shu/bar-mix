@@ -4346,7 +4346,8 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
   function renderMenuFilters() {
     var box = document.getElementById('menuFilters');
     if (!box) return;
-    if (menuTab === 'mine') { box.innerHTML = ''; return; }
+    /* 住处特调和我的特调不走这套筛选（一个是 11 款小集合，一个是自己的配方） */
+    if (menuTab === 'mine' || menuTab === 'house') { box.innerHTML = ''; return; }
     var fams = [
       ['', '全部基酒'], ['gin', '金酒'], ['whisky', '威士忌'], ['rum', '朗姆'],
       ['vodka', '伏特加'], ['tequila', '龙舌兰'], ['brandy', '白兰地']
