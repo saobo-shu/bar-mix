@@ -1855,6 +1855,287 @@
     if (anchor && anchor.scrollIntoView) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  /* =========================================================
+     酒单：经典 191 / 我的收藏 / 我的特调
+
+     三个栏目共用一套卡片，只有数据来源不同：
+       · 经典 —— ref-recipes.js 里的 191 款
+       · 我的收藏 —— 你在酒单或"今晚喝什么"点过 ★ 的（存本地）
+       · 我的特调 —— 你在调酒台保存过的整杯（存本地）
+     ========================================================= */
+  var FAV_KEY = 'barmix.favs', MINE_KEY = 'barmix.mine';
+  var favs = storeGet(FAV_KEY), myRecipes = storeGet(MINE_KEY);
+  var menuTab = 'classic', menuFam = '', menuTaste = '', menuStr = '', menuQuery = '';
+  var MENU_PAGE = 12, menuShow = MENU_PAGE;
+  var openRecipe = -1;                 /* 详情面板里正在看的那一杯 */
+
+  function storeGet(key) {
+    try { var s = localStorage.getItem(key); return s ? JSON.parse(s) : []; } catch (e) { return []; }
+  }
+  function storeSet(key, v) {
+    try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* 无痕模式存不了 */ }
+  }
+  function isFav(name) { return favs.indexOf(name) >= 0; }
+  function toggleFav(name) {
+    var i = favs.indexOf(name);
+    if (i < 0) favs.push(name); else favs.splice(i, 1);
+    storeSet(FAV_KEY, favs);
+    renderMenu();
+    return i < 0;
+  }
+
+  /* 每条参考配方算一遍浓度和风味（用来筛选），算完缓存 */
+  var REF_STAT = {};
+  function refStat(i) {
+    if (REF_STAT[i]) return REF_STAT[i];
+    var r = REF_RECIPES[i];
+    var keep = { cup: state.cup, glass: state.glass, ice: state.iceLevel, method: state.method };
+    var cup = new Map();
+    r.needs.forEach(function (nd) {
+      if (nd.need.optional) return;
+      var id = resolveNeedId(nd.need);
+      if (!id || !BY_ID[id]) return;
+      var g = BY_ID[id];
+      cup.set(id, Math.round((parseAmount(nd.a, g) || g.def) * 10) / 10);
+    });
+    state.cup = cup;
+    state.glass = glassFromRef(r);
+    state.iceLevel = glassOf(state.glass).ice === 'inglass'
+      ? (/无冰/.test(r.ice || '') ? 'none' : 'full') : 'none';
+    state.method = methodFromRef(r.method);
+    var a = analyze();
+    state.cup = keep.cup; state.glass = keep.glass;
+    state.iceLevel = keep.ice; state.method = keep.method;
+    var fams = {};
+    r.needs.forEach(function (nd) {
+      var cat = nd.need.type ? catOfType(nd.need.type)
+        : (nd.need.family ? FAMILY_CAT[nd.need.family] : '');
+      if (cat) fams[cat] = 1;
+    });
+    REF_STAT[i] = {
+      abv: a.abv, sugar: a.fd.sugar, acid: a.fd.acid, fizz: a.fd.fizz, bitter: a.fd.bitter,
+      fams: Object.keys(fams)
+    };
+    return REF_STAT[i];
+  }
+
+  /* 酒单的一杯：只写名字、用到什么、怎么做——点开才看细节 */
+  function menuCard(i) {
+    var r = REF_RECIPES[i], st = refStat(i);
+    var use = r.needs.filter(function (nd) { return !nd.need.optional; })
+      .map(function (nd) { return needLabel(nd); });
+    var on = isFav(r.zh);
+    return '<button type="button" class="menucard" data-menu="' + i + '">'
+      + '<span class="mc-top"><b>' + esc(r.zh) + '</b><i>' + esc(r.en || '') + '</i>'
+        + '<span class="mc-star' + (on ? ' on' : '') + '" data-fav="' + i + '" role="button" tabindex="0"'
+        + ' title="' + (on ? '取消收藏' : '收藏') + '">' + (on ? '★' : '☆') + '</span></span>'
+      + '<span class="mc-line">' + esc(use.slice(0, 4).join(' · ')) + (use.length > 4 ? ' 等' : '') + '</span>'
+      + '<span class="mc-meta">' + ({ shake: '摇和', stir: '搅拌', build: '兑和' }[methodFromRef(r.method)] || '兑和')
+        + ' · ' + Math.round(st.abv) + '% · ' + r.needs.length + ' 样'
+        + (r.pick ? ' · <i class="mc-pick">推荐</i>' : '') + '</span>'
+      + '</button>';
+  }
+
+  function renderMenuTabs() {
+    var box = document.getElementById('menuTabs');
+    if (!box) return;
+    var tabs = [
+      { id: 'classic', name: '经典 191', n: REF_RECIPES.length },
+      { id: 'favs', name: '我的收藏', n: favs.length },
+      { id: 'mine', name: '我的特调', n: myRecipes.length }
+    ];
+    box.innerHTML = tabs.map(function (t) {
+      return '<button type="button" class="gchip' + (t.id === menuTab ? ' on' : '')
+        + '" data-menu-tab="' + t.id + '">' + t.name + '　' + t.n + '</button>';
+    }).join('');
+  }
+
+  function renderMenuFilters() {
+    var box = document.getElementById('menuFilters');
+    if (!box) return;
+    if (menuTab === 'mine') { box.innerHTML = ''; return; }
+    var fams = [
+      ['', '全部基酒'], ['gin', '金酒'], ['whisky', '威士忌'], ['rum', '朗姆'],
+      ['vodka', '伏特加'], ['tequila', '龙舌兰'], ['brandy', '白兰地']
+    ];
+    var tastes = [['', '全部味道'], ['sweet', '甜'], ['sour', '酸'], ['fizz', '清爽起泡'], ['bitter', '苦']];
+    var strs = [['', '全部浓淡'], ['light', '清淡'], ['mid', '标准'], ['strong', '浓烈']];
+    function row(list, cur, attr) {
+      return list.map(function (x) {
+        return '<button type="button" class="ghost' + (x[0] === cur ? ' on' : '') + '" '
+          + attr + '="' + x[0] + '">' + x[1] + '</button>';
+      }).join('');
+    }
+    box.innerHTML = '<span class="mf-row">' + row(fams, menuFam, 'data-menu-fam') + '</span>'
+      + '<span class="mf-row">' + row(tastes, menuTaste, 'data-menu-taste') + '</span>'
+      + '<span class="mf-row">' + row(strs, menuStr, 'data-menu-str') + '</span>';
+  }
+
+  function menuList() {
+    var q = menuQuery.trim().toLowerCase();
+    var out = [];
+    if (menuTab === 'mine') {
+      out = myRecipes.map(function (m, i) { return { mine: i, m: m }; });
+      if (q) out = out.filter(function (x) { return x.m.name.toLowerCase().indexOf(q) >= 0; });
+      return out;
+    }
+    REF_RECIPES.forEach(function (r, i) {
+      if (menuTab === 'favs' && !isFav(r.zh)) return;
+      if (q) {
+        var hay = (r.zh + ' ' + (r.en || '') + ' ' + r.needs.map(function (nd) { return nd.n; }).join(' ')).toLowerCase();
+        if (hay.indexOf(q) < 0) return;
+      }
+      var st = refStat(i);
+      if (menuFam && st.fams.indexOf(menuFam) < 0) return;
+      if (menuTaste === 'sweet' && st.sugar < 8) return;
+      if (menuTaste === 'sour' && st.acid < 5) return;
+      if (menuTaste === 'fizz' && st.fizz < 5) return;
+      if (menuTaste === 'bitter' && st.bitter < 4) return;
+      if (menuStr === 'light' && st.abv >= 10) return;
+      if (menuStr === 'mid' && (st.abv < 10 || st.abv > 22)) return;
+      if (menuStr === 'strong' && st.abv <= 22) return;
+      out.push({ i: i, r: r, st: st });
+    });
+    /* 推荐排前面，然后材料少的在前（好做） */
+    out.sort(function (a, b) {
+      if (!!b.r.pick !== !!a.r.pick) return b.r.pick ? 1 : -1;
+      return a.r.needs.length - b.r.needs.length;
+    });
+    return out;
+  }
+
+  function renderMenuList() {
+    var box = document.getElementById('menuList');
+    var cnt = document.getElementById('menuCount');
+    var more = document.getElementById('menuMore');
+    if (!box) return;
+    var list = menuList();
+    if (cnt) {
+      cnt.textContent = menuTab === 'mine'
+        ? (myRecipes.length ? '你保存了 ' + myRecipes.length + ' 杯' : '')
+        : '共 ' + list.length + ' 款' + (menuTab === 'favs' ? '（收藏）' : '');
+    }
+    if (menuTab === 'mine') {
+      box.className = 'grid';
+      box.innerHTML = list.length ? list.map(function (x) {
+        var m = x.m;
+        var names = m.items.map(function (it) {
+          var g = BY_ID[it[0]];
+          return g ? shortName(g) + ' ' + fmtAmt(g, it[1]) : '';
+        }).filter(Boolean).join(' · ');
+        return '<div class="minecard">'
+          + '<div class="mc-top"><b>' + esc(m.name) + '</b></div>'
+          + '<span class="mc-line">' + esc(names) + '</span>'
+          + '<div class="mineacts">'
+          + '<button type="button" class="ghost" data-mine-load="' + x.mine + '">装进杯子</button>'
+          + '<button type="button" class="ghost" data-mine-del="' + x.mine + '">删除</button>'
+          + '</div></div>';
+      }).join('') : '<p class="hint">还没有保存过配方。在「调酒台」调好一杯，点右上角<b>「保存这杯」</b>，它就出现在这里。</p>';
+    } else {
+      box.className = 'menugrid';
+      box.innerHTML = list.length ? list.slice(0, menuShow).map(function (x) { return menuCard(x.i); }).join('')
+        : '<p class="hint">' + (menuTab === 'favs' && !favs.length
+            ? '还没有收藏。在酒单里点卡片右上角的 <b>☆</b> 收藏，或在「今晚喝什么」里点收藏。'
+            : '没有符合条件的酒，换个筛选试试。') + '</p>';
+    }
+    if (more) {
+      var left = menuTab === 'mine' ? 0 : list.length - menuShow;
+      more.hidden = left <= 0;
+      more.textContent = left > 0 ? '再看 ' + Math.min(left, MENU_PAGE) + ' 款（还有 ' + left + ' 款）' : '';
+    }
+  }
+
+  /* 详情：材料表 + 做法 + 备注，以及"装进杯子 / 收藏" */
+  function renderMenuDetail() {
+    var box = document.getElementById('menuDetail');
+    if (!box) return;
+    var page = document.getElementById('page-menu');
+    if (openRecipe < 0 || !REF_RECIPES[openRecipe]) {
+      box.hidden = true; box.innerHTML = '';
+      if (page) page.classList.remove('hasdetail');   /* 没打开详情时别空着一整列 */
+      return;
+    }
+    if (page) page.classList.add('hasdetail');
+    var i = openRecipe, r = REF_RECIPES[i], st = refStat(i);
+    var rows = r.needs.map(function (nd) {
+      return '<li><span>' + esc(nd.n) + (nd.need.optional ? ' <i class="opt">可省</i>' : '') + '</span>'
+        + '<b>' + esc(String(nd.a || '')) + '</b></li>';
+    }).join('');
+    box.hidden = false;
+    box.innerHTML = '<div class="panel-head"><h2>' + esc(r.zh) + '　'
+      + '<span class="hint">' + esc(r.en || '') + '</span></h2>'
+      + '<button type="button" class="ghost" data-menu-close="1">关闭</button></div>'
+      + '<p class="hint">' + esc(methodName(r)) + ' · ' + esc(r.glass || '杯子未注明')
+        + ' · ' + Math.round(st.abv) + '% · ' + r.needs.length + ' 样材料</p>'
+      + '<ul class="menulist">' + rows + '</ul>'
+      + (r.note ? '<p class="hint">' + esc(r.note) + '</p>' : '')
+      + '<p class="hint">来历：' + (r.pick ? '正在补——只写推荐的 51 款，其余不编。' : '参考数据里没写，暂缺。') + '</p>'
+      + '<div class="mineacts">'
+      + '<button type="button" class="ghost on" data-menu-load="' + i + '">装进杯子</button>'
+      + '<button type="button" class="ghost" data-menu-favbtn="' + i + '">'
+        + (isFav(r.zh) ? '★ 已收藏' : '☆ 收藏') + '</button>'
+      + '</div>';
+  }
+  function methodName(r) {
+    return ({ shake: '摇和', stir: '搅拌', build: '兑和' }[methodFromRef(r.method)] || '兑和')
+      + (methodFromRef(r.method) === 'shake' ? '后滤出' : (methodFromRef(r.method) === 'stir' ? '后滤出' : ''));
+  }
+
+  function renderMenu() {
+    renderMenuTabs(); renderMenuFilters(); renderMenuList(); renderMenuDetail();
+  }
+
+  /* 把酒单里的配方装进杯子，并跳到调酒台 */
+  function loadRefFromMenu(i) {
+    loadRefRecipe(i);
+    setPage('bar', true);
+    var anchor = document.getElementById('resultAnchor');
+    if (anchor && anchor.scrollIntoView) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* 「我的特调」：把这杯重新装进杯子 */
+  function loadMyRecipe(i) {
+    var m = myRecipes[i];
+    if (!m) return;
+    state.cup.clear();
+    (m.items || []).forEach(function (it) {
+      if (BY_ID[it[0]]) state.cup.set(it[0], it[1]);
+    });
+    if (m.glass) state.glass = m.glass;
+    if (m.ice) state.iceLevel = m.ice;
+    if (m.method) state.method = m.method;
+    if (m.taste) state.taste = m.taste;
+    forgetRecipe();
+    state.recipeName = m.name; state.recipeSub = '我的特调';
+    renderCup(); renderResult(); renderLib(); renderGlassPick(); renderIcePick();
+    renderMethodPick(); renderTastePick();
+    setPage('bar', true);
+    var anchor = document.getElementById('resultAnchor');
+    if (anchor && anchor.scrollIntoView) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* 调酒台右上角：把当前这杯存进「我的特调」 */
+  function saveCurrent() {
+    if (!state.cup.size) { alert('杯子还是空的——先往里放点东西，再存。'); return; }
+    var guess = state.recipeName || ('我的特调 ' + (myRecipes.length + 1));
+    var name = window.prompt('给这杯起个名字：', guess);
+    if (name === null) return;
+    name = String(name).trim() || guess;
+    myRecipes.push({
+      name: name,
+      items: Array.from(state.cup),
+      glass: state.glass, ice: state.iceLevel, method: state.method, taste: state.taste
+    });
+    storeSet(MINE_KEY, myRecipes);
+    var btn = document.getElementById('saveBtn');
+    if (btn) {
+      var old = btn.textContent;
+      btn.textContent = '已保存 ✓';
+      setTimeout(function () { btn.textContent = old; }, 1600);
+    }
+    renderMenu();
+  }
+
   function renderAll() {
     renderCats(); renderLib(); renderCup(); renderResult(); renderPresets();
     renderGlassPick(); renderTastePick(); renderIcePick(); renderSchemePick();
@@ -2027,8 +2308,47 @@
        现在把带自定义属性的元素也算进来。
        温度标签是 <span>（它嵌在"点一下展开"的那一行里，用 span 才不会互相打架），
        所以 [data-temp] 也必须在这个选择器里，否则点温度会变成展开说明。 */
-    var t = e.target.closest ? e.target.closest('button, [data-expand], [data-temp]') : null;
+    var t = e.target.closest ? e.target.closest('button, [data-expand], [data-temp], [data-fav]') : null;
     if (!t) return;
+
+    /* 侧栏导航 */
+    if (t.dataset.page) { setPage(t.dataset.page, true); return; }
+    /* 酒单：切栏目 / 筛选 / 翻更多 / 开关详情 / 收藏 */
+    if (t.dataset.menuTab) { menuTab = t.dataset.menuTab; menuShow = MENU_PAGE; renderMenu(); return; }
+    if (t.dataset.menuFam !== undefined) { menuFam = t.dataset.menuFam; menuShow = MENU_PAGE; renderMenu(); return; }
+    if (t.dataset.menuTaste !== undefined) { menuTaste = t.dataset.menuTaste; menuShow = MENU_PAGE; renderMenu(); return; }
+    if (t.dataset.menuStr !== undefined) { menuStr = t.dataset.menuStr; menuShow = MENU_PAGE; renderMenu(); return; }
+    if (t.dataset.menuMore) { menuShow += MENU_PAGE; renderMenuList(); return; }
+    if (t.dataset.menuClose) { openRecipe = -1; renderMenuDetail(); return; }
+    if (t.dataset.menu !== undefined && t.dataset.menu !== null && t.dataset.menu !== '') {
+      openRecipe = +t.dataset.menu; renderMenuDetail();
+      var d = document.getElementById('menuDetail');
+      if (d && d.scrollIntoView) d.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (t.dataset.fav !== undefined && t.dataset.fav !== null && t.dataset.fav !== '') {
+      /* 星星在卡片里，别让它顺带打开详情 */
+      var fr = REF_RECIPES[+t.dataset.fav];
+      if (fr) toggleFav(fr.zh);
+      return;
+    }
+    if (t.dataset.menuLoad !== undefined) { loadRefFromMenu(+t.dataset.menuLoad); return; }
+    if (t.dataset.menuFavbtn !== undefined) {
+      var fr2 = REF_RECIPES[+t.dataset.menuFavbtn];
+      if (fr2) toggleFav(fr2.zh);
+      renderMenuDetail();
+      return;
+    }
+    if (t.dataset.mineLoad !== undefined) {
+      loadMyRecipe(+t.dataset.mineLoad);
+      return;
+    }
+    if (t.dataset.mineDel !== undefined) {
+      myRecipes.splice(+t.dataset.mineDel, 1);
+      storeSet(MINE_KEY, myRecipes);
+      renderMenu();
+      return;
+    }
 
     if (t.dataset.cat) {
       state.cat = t.dataset.cat;
@@ -2226,6 +2546,7 @@
      --------------------------------------------------------- */
   var PAGE_KEY = 'barmix.page';
   var PAGES = ['tonight', 'bar', 'menu', 'tips'];
+  var menuRendered = false;
   var PAGE_SUB = {
     tonight: '挑一个心情，来三杯',
     bar: '挑材料 → 实时风味图 → 评分与调整建议',
@@ -2241,6 +2562,8 @@
   }
   function setPage(p, save) {
     if (PAGES.indexOf(p) < 0) p = 'bar';
+    /* 酒单第一次露面时才画（191 张卡片，没必要开屏就建） */
+    if (p === 'menu' && !menuRendered) { renderMenu(); menuRendered = true; }
     PAGES.forEach(function (id) {
       var el = document.getElementById('page-' + id);
       if (el) el.classList.toggle('on', id === p);
@@ -2321,6 +2644,23 @@
     });
   })();
 
+  /* 酒单：搜索框、清空、翻更多、保存这杯 */
+  (function () {
+    var box = document.getElementById('menuSearch');
+    if (box) box.addEventListener('input', function () { menuQuery = this.value; menuShow = MENU_PAGE; renderMenuList(); });
+    var clr = document.getElementById('menuClear');
+    if (clr) clr.addEventListener('click', function () {
+      menuQuery = ''; menuShow = MENU_PAGE;
+      var b = document.getElementById('menuSearch');
+      if (b) b.value = '';
+      renderMenuList();
+    });
+    var more = document.getElementById('menuMore');
+    if (more) more.addEventListener('click', function () { menuShow += MENU_PAGE; renderMenuList(); });
+    var save = document.getElementById('saveBtn');
+    if (save) save.addEventListener('click', saveCurrent);
+  })();
+
   /* ③ 材料库：搜索框 + 清空 */
   (function () {
     var box = document.getElementById('libSearch');
@@ -2398,6 +2738,25 @@
     page: {
       current: currentPage,
       set: function (p) { setPage(p, true); return currentPage(); }
+    },
+    /* 酒单：给自检和调试用 */
+    menu: {
+      render: renderMenu,
+      list: function () { return menuList().length; },
+      setTab: function (t) { menuTab = t; menuShow = MENU_PAGE; renderMenu(); },
+      setFam: function (f) { menuFam = f; menuShow = MENU_PAGE; renderMenu(); },
+      setTaste: function (t) { menuTaste = t; menuShow = MENU_PAGE; renderMenu(); },
+      setStr: function (s) { menuStr = s; menuShow = MENU_PAGE; renderMenu(); },
+      reset: function () {
+        menuTab = 'classic'; menuFam = ''; menuTaste = ''; menuStr = '';
+        openRecipe = -1; renderMenu();
+      },
+      open: function (i) { openRecipe = i; renderMenuDetail(); },
+      fav: function (name) { return toggleFav(name); },
+      favs: function () { return favs.slice(); },
+      save: saveCurrent,
+      mine: function () { return myRecipes.map(function (m) { return m.name; }); },
+      del: function (i) { myRecipes.splice(i, 1); storeSet(MINE_KEY, myRecipes); renderMenu(); }
     },
     scores: function () {
       var a = analyze(), sc = totalScore(a);

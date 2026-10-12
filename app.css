@@ -173,6 +173,38 @@ main {
 }
 .moodbtn.on { background: var(--amber); border-color: var(--amber); color: var(--on-ink); font-weight: 600; }
 
+/* 酒单的卡片 */
+.menucard {
+  display: flex; flex-direction: column; gap: 2px; text-align: left;
+  padding: 9px 10px; border-radius: 11px; min-width: 0;
+  background: var(--card2); border: 1px solid var(--line);
+}
+.menucard:active { transform: scale(.99); }
+.mc-top { display: flex; align-items: baseline; gap: 6px; }
+.mc-top b { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.mc-top i { font-style: normal; font-size: 10px; color: var(--muted); flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-star { flex: none; font-size: 14px; color: var(--muted); cursor: pointer; padding: 0 2px; line-height: 1; }
+.mc-star.on { color: var(--amber); }
+.mc-line { font-size: 11.5px; color: var(--prose); line-height: 1.5; }
+.mc-meta { font-size: 10.5px; color: var(--muted); }
+.mc-pick { font-style: normal; color: var(--amber); }
+.menulist { margin: 8px 0; padding: 0; list-style: none; }
+.menulist li { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 4px 0; border-bottom: 1px dashed var(--line); }
+.menulist li b { color: var(--amber); font-weight: 600; font-variant-numeric: tabular-nums; }
+.menulist .opt { font-style: normal; font-size: 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 5px; }
+.minecard { display: flex; flex-direction: column; gap: 5px; padding: 10px 11px; border-radius: 11px; background: var(--card2); border: 1px solid var(--line); }
+.mineacts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.menu-card-wrap { display: grid; gap: 12px; }
+.menucount { margin: 0 0 8px; }
+.menumore { margin-top: 9px; }
+.mf-row { display: inline-flex; gap: 5px; flex-wrap: wrap; margin-right: 10px; }
+.mf-row .ghost { font-size: 11.5px; padding: 3px 9px; }
+@media (min-width: 980px) {
+  #page-menu.hasdetail { grid-template-columns: minmax(0, 1fr) 330px; align-items: start; }
+  #page-menu .menudetail { position: sticky; top: 76px; max-height: 76vh; overflow-y: auto; }
+}
+
 /* 手机上：两栏容器不参与布局，各面板直接排在 .cols 里，用 order 排成 ①②③④ */
 .cols { display: grid; gap: 12px; }
 .col-a, .col-b { display: contents; }

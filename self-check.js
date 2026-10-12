@@ -1191,6 +1191,77 @@ console.log('\n--- 图例搬进怎么用 ---');
 })();
 
 /* ---- 汇总 ---- */
+/* ---- 酒单：经典 191 / 我的收藏 / 我的特调 ---- */
+console.log('\n--- 酒单 ---');
+(function () {
+  const strip = s => String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  B.menu.reset();
+  const all = B.menu.list();
+  console.log('  ' + (all === global.__REF.length ? '✅' : '❌') + ' 经典一栏列出 ' + all + ' 款（参考数据 '
+    + global.__REF.length + ' 款）');
+  if (all !== global.__REF.length) bad('酒单', '经典一栏的数量不对：' + all);
+
+  /* 筛选：只看金酒 */
+  B.menu.setFam('gin');
+  const ginN = B.menu.list();
+  const ginHtml = els.menuList.innerHTML;
+  const okGin = ginN > 0 && ginN < all && ginHtml.indexOf('金酒') >= 0;
+  console.log('  ' + (okGin ? '✅' : '❌') + ' 按"金酒"筛：' + all + ' → ' + ginN + ' 款');
+  if (!okGin) bad('酒单', '基酒筛选没生效');
+  /* 筛选：只看清爽起泡 */
+  B.menu.reset(); B.menu.setTaste('fizz');
+  const fizzN = B.menu.list();
+  console.log('  ' + (fizzN > 0 && fizzN < all ? '✅' : '❌') + ' 按"清爽起泡"筛：' + fizzN + ' 款');
+  if (!(fizzN > 0 && fizzN < all)) bad('酒单', '味道筛选没生效');
+  B.menu.reset();
+
+  /* 收藏：点星 → 进"我的收藏" */
+  B.menu.fav('黑俄罗斯');
+  B.menu.setTab('favs');
+  const favsN = B.menu.list();
+  const favHtml = els.menuList.innerHTML;
+  const okFav = favsN === 1 && favHtml.indexOf('黑俄罗斯') >= 0;
+  console.log('  ' + (okFav ? '✅' : '❌') + ' 收藏一杯：我的收藏出现 ' + favsN
+    + ' 款，本地也存下了（' + JSON.stringify(global.localStorage.getItem('barmix.favs')) + '）');
+  if (!okFav) bad('酒单', '收藏没有进"我的收藏"');
+  B.menu.fav('黑俄罗斯');
+  console.log('  ' + (B.menu.favs().length === 0 ? '✅' : '❌') + ' 再点一次取消收藏');
+  if (B.menu.favs().length) bad('酒单', '取消收藏没生效');
+
+  /* 我的特调：调酒台保存一杯 → 出现在酒单 */
+  B.load([['gin', 45], ['tonic', 120], ['lime', 10]]);
+  global.window.prompt = function () { return '我的第一杯'; };
+  B.menu.save();
+  B.menu.setTab('mine');
+  const mineHtml = els.menuList.innerHTML;
+  const okMine = B.menu.mine().length === 1 && B.menu.mine()[0] === '我的第一杯'
+    && mineHtml.indexOf('我的第一杯') >= 0 && mineHtml.indexOf('装进杯子') >= 0;
+  console.log('  ' + (okMine ? '✅' : '❌') + ' 调酒台「保存这杯」→ 我的特调里有「' + B.menu.mine()[0] + '」');
+  if (!okMine) bad('酒单', '保存的配方没有出现在"我的特调"');
+  /* 空杯子不让存 */
+  global.window.alert = function () {};
+  B.load([]);
+  B.menu.save();
+  console.log('  ' + (B.menu.mine().length === 1 ? '✅' : '❌') + ' 空杯子点保存：拦住，不存空配方');
+  if (B.menu.mine().length !== 1) bad('酒单', '空杯子也能存进"我的特调"');
+
+  /* 详情面板 */
+  B.menu.reset();
+  const idx = global.__REF.findIndex(r => r.zh === '尼格罗尼');
+  B.menu.open(idx);
+  const detail = strip(els.menuDetail.innerHTML);
+  const okDetail = detail.indexOf('尼格罗尼') >= 0 && detail.indexOf('30ml') >= 0
+    && detail.indexOf('装进杯子') >= 0 && detail.indexOf('来历') >= 0;
+  console.log('  ' + (okDetail ? '✅' : '❌') + ' 详情面板：材料带用量、有装杯按钮、有来历那栏');
+  if (!okDetail) bad('酒单', '详情面板内容不全：' + detail.slice(0, 60));
+
+  /* 删掉测试留下的东西 */
+  B.menu.del(0);
+  global.localStorage.removeItem('barmix.favs');
+  global.localStorage.removeItem('barmix.mine');
+  B.menu.reset();
+})();
+
 /* ---- 四个页面 + 侧边导航 ---- */
 console.log('\n--- 页面与导航 ---');
 (function () {
