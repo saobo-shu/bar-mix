@@ -2632,7 +2632,13 @@
       return;
     }
     if (t.dataset.menuLoad !== undefined) { loadRefFromMenu(+t.dataset.menuLoad); return; }
-    if (t.dataset.mood) { tonightMood = t.dataset.mood; renderTonight(); return; }
+    if (t.dataset.mood) {
+      if (tonightMood !== t.dataset.mood) tonightNonce = 0;   /* 换心情就回到"今天这一档"的默认抽签 */
+      tonightMood = t.dataset.mood;
+      renderTonight();
+      return;
+    }
+    if (t.dataset.tonightAgain) { tonightNonce++; renderTonight(); return; }
     if (t.dataset.tonightGo !== undefined) { loadRefFromMenu(+t.dataset.tonightGo); return; }
     if (t.dataset.menuLoadref !== undefined) {
       /* 照参考本是量装，不用"本站配比"那份 */
@@ -2917,6 +2923,7 @@
     { id: 'any', label: '没主意，随便来三杯', hit: function () { return true; }, random: true }
   ];
   var tonightMood = '';
+  var tonightNonce = 0;          /* 点一次「换一批」再加一，同一天里也能再抽一注 */
 
   function moodById(id) {
     for (var i = 0; i < MOODS.length; i++) if (MOODS[i].id === id) return MOODS[i];
@@ -2924,10 +2931,15 @@
   }
 
   /* 每天换一批，但同一天里刷新多少次都一样：
-     用"日期 + 这一档"当种子，用户不会每天都看到同样三杯，也不会点一下就跳。 */
-  function daySeed(extra) {
-    var d = new Date();
-    var s = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() + '|' + extra;
+     用"日期 + 这一档"当种子，用户不会每天都看到同样三杯，也不会点一下就跳。
+     nonce 是「换一批」按钮加上去的；dateStr 只给自检塞假日期用。 */
+  function daySeed(extra, dateStr) {
+    var s;
+    if (dateStr) s = dateStr + '|' + extra;
+    else {
+      var d = new Date();
+      s = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() + '|' + extra;
+    }
     var h = 2166136261;
     for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
     return h >>> 0;
@@ -2967,9 +2979,12 @@
 
   /* 这一档要拿出来哪三杯：从候选池里按"今天"的种子挑三个 */
   function tonightPicks(m) {
+    return tonightPicksWith(m, daySeed(m.id + '#' + tonightNonce));
+  }
+  function tonightPicksWith(m, seed) {
     var pool = tonightPool(m);
     if (!pool.length) return [];
-    return seededShuffle(pool, daySeed(m.id)).slice(0, 3);
+    return seededShuffle(pool, seed).slice(0, 3);
   }
 
   /* 这杯要买什么：有本站配比的按配比，否则按参考配方；勾过「手边有什么」的标"有了" */
@@ -3049,7 +3064,8 @@
       return;
     }
     out.innerHTML = '<div class="tcards">' + picks.map(tonightCard).join('') + '</div>'
-      + '<p class="hint tonightfoot">就这三杯。想要更多选择、想看风味和评分，去「酒单」或「调酒台」。</p>';
+      + '<div class="tonightfoot"><button type="button" class="ghost" data-tonight-again="1">换一批</button>'
+      + '<span class="hint">这三杯是今天这一档的抽签结果，明天自动换；不满意就再抽一次。</span></div>';
   }
 
   (function () {
@@ -3175,6 +3191,13 @@
       moods: MOODS,
       pool: function (id) { var m = moodById(id); return m ? tonightPool(m) : []; },
       picks: function (id) { var m = moodById(id); return m ? tonightPicks(m) : []; },
+      /* 自检用：塞一个指定的种子/日期，看换一天、换一批会不会变 */
+      picksWith: function (id, seed) { var m = moodById(id); return m ? tonightPicksWith(m, seed) : []; },
+      picksOnDate: function (id, dateStr) {
+        var m = moodById(id);
+        return m ? tonightPicksWith(m, daySeed(m.id + '#' + tonightNonce, dateStr)) : [];
+      },
+      nonce: function () { return tonightNonce; },
       render: renderTonight,
       seed: daySeed,
       fresh: isFresh

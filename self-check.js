@@ -1527,6 +1527,24 @@ console.log('\n--- 今晚喝什么 ---');
   console.log('  ' + (p1 === p2 ? '✅' : '❌') + ' 同一天里结果稳定，不会刷一下就跳一批');
   if (p1 !== p2) bad('今晚喝什么', '同一天里结果不稳定');
 
+  /* 换一天要换一批（种子必须真的用上日期） */
+  const d1 = B.tonight.picksOnDate('any', '2026-10-13').join(',');
+  const d2 = B.tonight.picksOnDate('any', '2026-10-14').join(',');
+  const d3 = B.tonight.picksOnDate('any', '2026-10-15').join(',');
+  const rotated = d1 !== d2 || d2 !== d3;
+  console.log('  ' + (rotated ? '✅' : '❌') + ' 换一天换一批（13/14/15 号不是同一组）');
+  if (!rotated) bad('今晚喝什么', '种子没用上日期，每天都是同一批');
+
+  /* 点「换一批」：当场换出另一组，而且还在这一档的候选里 */
+  const beforeAgain = B.tonight.picks('any').join(',');
+  fire({ tonightAgain: '1' });
+  const afterAgain = B.tonight.picks('any').join(',');
+  const poolAny = B.tonight.pool('any').map(String);
+  const stillInPool = B.tonight.picks('any').every(i => poolAny.indexOf(String(i)) >= 0);
+  const okAgain = beforeAgain !== afterAgain && stillInPool && B.tonight.nonce() > 0;
+  console.log('  ' + (okAgain ? '✅' : '❌') + ' 「换一批」当场换出另一组，而且还在这一档里');
+  if (!okAgain) bad('今晚喝什么', '「换一批」没换出新的（或换出了候选之外的酒）');
+
   /* "清爽，别冒气"：给的三杯里一口汽水都不能有（有人明确不喝带气的） */
   const bubbly = [];
   B.tonight.picks('still').forEach(i => {
