@@ -1296,26 +1296,21 @@
     }).filter(Boolean).join(' · ');
   }
 
-  function renderPresets() {
-    var rows = PRESETS.map(function (p, i) {
-      return { p: p, i: i };
-    });
-
-    function card(x) {
-      return '<button type="button" class="preset" data-preset="' + x.i + '">' +
-        '<span class="p-name">' + esc(x.p.name) + '</span>' +
-        '<span class="p-sub">' + esc(x.p.sub) + '</span>' +
-        '<span class="p-comp">' + esc(compLine(x.p)) + '</span>' +
-        '</button>';
-    }
-
-    document.getElementById('presets').innerHTML =
-      PRESET_FAMILIES.map(function (fam) {
-        var list = rows.filter(function (x) { return x.p.family === fam.id; });
-        if (!list.length) return '';
-        return '<div class="pgroup">' + esc(fam.name) + '<span class="pgroup-n">'
-          + list.length + ' 个　' + esc(fam.note) + '</span></div>' + list.map(card).join('');
-      }).join('');
+  /* 预设卡片。原来挂在调酒台的「经典配方」面板上，
+     现在面板搬去了酒单的「住处特调」栏，这里只负责把卡片画出来。 */
+  function presetCardHtml(i) {
+    var p = PRESETS[i];
+    if (!p) return '';
+    return '<button type="button" class="preset" data-preset="' + i + '">' +
+      '<span class="p-name">' + esc(p.name) + '</span>' +
+      '<span class="p-sub">' + esc(p.sub) + '</span>' +
+      '<span class="p-comp">' + esc(compLine(p)) + '</span>' +
+      '</button>';
+  }
+  /* 按名字找预设的下标（酒单要用我们的调法时） */
+  function presetIndexByName(name) {
+    for (var i = 0; i < PRESETS.length; i++) if (PRESETS[i].name === name) return i;
+    return -1;
   }
 
   /* =========================================================
@@ -1922,8 +1917,12 @@
   /* 酒单的一杯：只写名字、用到什么、怎么做——点开才看细节 */
   function menuCard(i) {
     var r = REF_RECIPES[i], st = refStat(i);
-    var use = r.needs.filter(function (nd) { return !nd.need.optional; })
-      .map(function (nd) { return needLabel(nd); });
+    var p = presetIndexByName(REF_PRESET_MAP[r.zh] || '');
+    var use = p >= 0
+      ? PRESETS[p].items.filter(function (it) { return BY_ID[it[0]]; })
+          .map(function (it) { return shortName(BY_ID[it[0]]); })
+      : r.needs.filter(function (nd) { return !nd.need.optional; })
+          .map(function (nd) { return needLabel(nd); });
     var on = isFav(r.zh);
     return '<button type="button" class="menucard" data-menu="' + i + '">'
       + '<span class="mc-top"><b>' + esc(r.zh) + '</b><i>' + esc(r.en || '') + '</i>'
@@ -1932,6 +1931,7 @@
       + '<span class="mc-line">' + esc(use.slice(0, 4).join(' · ')) + (use.length > 4 ? ' 等' : '') + '</span>'
       + '<span class="mc-meta">' + ({ shake: '摇和', stir: '搅拌', build: '兑和' }[methodFromRef(r.method)] || '兑和')
         + ' · ' + Math.round(st.abv) + '% · ' + r.needs.length + ' 样'
+        + (p >= 0 ? ' · <i class="mc-pick">我们调过</i>' : '')
         + (r.pick ? ' · <i class="mc-pick">推荐</i>' : '') + '</span>'
       + '</button>';
   }
@@ -1941,6 +1941,7 @@
     if (!box) return;
     var tabs = [
       { id: 'classic', name: '经典 191', n: REF_RECIPES.length },
+      { id: 'house', name: '住处特调', n: HOUSE_PRESETS.length },
       { id: 'favs', name: '我的收藏', n: favs.length },
       { id: 'mine', name: '我的特调', n: myRecipes.length }
     ];
@@ -1974,6 +1975,8 @@
   function menuList() {
     var q = menuQuery.trim().toLowerCase();
     var out = [];
+    /* "住处特调"栏用的是预设数据，不走这里 */
+    if (menuTab === 'house') return out;
     if (menuTab === 'mine') {
       out = myRecipes.map(function (m, i) { return { mine: i, m: m }; });
       if (q) out = out.filter(function (x) { return x.m.name.toLowerCase().indexOf(q) >= 0; });
@@ -2014,6 +2017,24 @@
       cnt.textContent = menuTab === 'mine'
         ? (myRecipes.length ? '你保存了 ' + myRecipes.length + ' 杯' : '')
         : '共 ' + list.length + ' 款' + (menuTab === 'favs' ? '（收藏）' : '');
+    }
+    /* 住处特调：只有我们这儿有的 11 款（便利店路线为主），用预设卡片的样子画 */
+    if (menuTab === 'house') {
+      var q2 = menuQuery.trim().toLowerCase();
+      var hits = [];
+      HOUSE_PRESETS.forEach(function (name) {
+        var i = presetIndexByName(name);
+        if (i < 0) return;
+        if (q2 && (name + ' ' + compLine(PRESETS[i])).toLowerCase().indexOf(q2) < 0) return;
+        hits.push(i);
+      });
+      box.className = 'presets';
+      box.innerHTML = hits.length
+        ? hits.map(presetCardHtml).join('')
+        : '<p class="hint">没找到。换个词试试。</p>';
+      if (cnt) cnt.textContent = '共 ' + hits.length + ' 款　这些是便利店/住处能做的；经典 191 款在「经典」那一栏';
+      if (more) more.hidden = true;
+      return;
     }
     if (menuTab === 'mine') {
       box.className = 'grid';
@@ -2057,18 +2078,33 @@
     }
     if (page) page.classList.add('hasdetail');
     var i = openRecipe, r = REF_RECIPES[i], st = refStat(i);
-    var rows = r.needs.map(function (nd) {
-      return '<li><span>' + esc(nd.n) + (nd.need.optional ? ' <i class="opt">可省</i>' : '') + '</span>'
-        + '<b>' + esc(String(nd.a || '')) + '</b></li>';
-    }).join('');
+    /* 有我们调好的版本就用我们的：材料表、备注都换成那份 */
+    var pName = REF_PRESET_MAP[r.zh] || '';
+    var p = presetIndexByName(pName);
+    var pre = p >= 0 ? PRESETS[p] : null;
+    var rows = pre
+      ? pre.items.filter(function (it) { return BY_ID[it[0]] && BY_ID[it[0]].cat !== 'ice'; })
+          .map(function (it) {
+            var g = BY_ID[it[0]];
+            return '<li><span>' + esc(shortName(g))
+              + (OPTIONAL_ING[g.id] ? ' <i class="opt">可省</i>' : '') + '</span>'
+              + '<b>' + esc(fmtAmt(g, it[1])) + '</b></li>';
+          }).join('')
+      : r.needs.map(function (nd) {
+          return '<li><span>' + esc(nd.n) + (nd.need.optional ? ' <i class="opt">可省</i>' : '') + '</span>'
+            + '<b>' + esc(String(nd.a || '')) + '</b></li>';
+        }).join('');
     box.hidden = false;
     box.innerHTML = '<div class="panel-head"><h2>' + esc(r.zh) + '　'
       + '<span class="hint">' + esc(r.en || '') + '</span></h2>'
       + '<button type="button" class="ghost" data-menu-close="1">关闭</button></div>'
-      + '<p class="hint">' + esc(methodName(r)) + ' · ' + esc(r.glass || '杯子未注明')
-        + ' · ' + Math.round(st.abv) + '% · ' + r.needs.length + ' 样材料</p>'
+      + '<p class="hint">' + esc(pre ? (PRESET_METHOD[pre.name] ? methodName({ method: PRESET_METHOD[pre.name] }) : methodName(r)) : methodName(r))
+        + ' · ' + esc(pre ? glassOf(pre.glass).name : (r.glass || '杯子未注明'))
+        + ' · ' + Math.round(st.abv) + '% · ' + (pre ? pre.items.length : r.needs.length) + ' 样材料'
+        + (pre ? '　<b class="mc-pick">量是我们调过的</b>' : '') + '</p>'
       + '<ul class="menulist">' + rows + '</ul>'
-      + (r.note ? '<p class="hint">' + esc(r.note) + '</p>' : '')
+      + ((pre && pre.tip) ? '<p class="hint">' + esc(pre.tip) + '</p>'
+          : (r.note ? '<p class="hint">' + esc(r.note) + '</p>' : ''))
       + '<p class="hint">来历：' + (r.pick ? '正在补——只写推荐的 51 款，其余不编。' : '参考数据里没写，暂缺。') + '</p>'
       + '<div class="mineacts">'
       + '<button type="button" class="ghost on" data-menu-load="' + i + '">装进杯子</button>'
@@ -2087,10 +2123,30 @@
 
   /* 把酒单里的配方装进杯子，并跳到调酒台 */
   function loadRefFromMenu(i) {
-    loadRefRecipe(i);
+    var r = REF_RECIPES[i];
+    /* 有我们调好的版本就装那一份（量、杯型、冰量、做法、口味、备注一起） */
+    var p = r ? presetIndexByName(REF_PRESET_MAP[r.zh] || '') : -1;
+    if (p >= 0) presetLoad(p);
+    else loadRefRecipe(i);
     setPage('bar', true);
     var anchor = document.getElementById('resultAnchor');
     if (anchor && anchor.scrollIntoView) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  /* 和用户点预设卡片走同一条路（BarMix.preset 就是它） */
+  function presetLoad(i) {
+    var p = PRESETS[i];
+    if (!p) return;
+    state.cup.clear();
+    p.items.forEach(function (it) { state.cup.set(it[0], it[1]); });
+    if (p.glass) state.glass = p.glass;
+    state.iceLevel = glassOf(state.glass).ice === 'inglass' ? 'full' : 'none';
+    state.method = PRESET_METHOD[p.name] || 'build';
+    state.taste = tasteForAbv(analyze().abv);
+    state.refMiss = [];
+    state.recipeName = p.name; state.recipeSub = p.sub; state.recipeTip = p.tip || '';
+    state.swapOpen = false;
+    renderCup(); renderResult(); renderLib(); renderGlassPick(); renderIcePick();
+    renderMethodPick(); renderTastePick();
   }
 
   /* 「我的特调」：把这杯重新装进杯子 */
@@ -2137,7 +2193,7 @@
   }
 
   function renderAll() {
-    renderCats(); renderLib(); renderCup(); renderResult(); renderPresets();
+    renderCats(); renderLib(); renderCup(); renderResult();
     renderGlassPick(); renderTastePick(); renderIcePick(); renderSchemePick();
     renderMethodPick(); renderGlass(); renderHave(); renderGlassLegend();
   }
@@ -2480,6 +2536,7 @@
       state.swapOpen = false;
       renderCup(); renderResult(); renderLib(); renderGlassPick(); renderIcePick();
       renderMethodPick(); renderTastePick();
+      setPage('bar', true);
       document.getElementById('resultAnchor').scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
@@ -2774,17 +2831,8 @@
     /* 跟界面上点一张经典配方卡片走同一条路：杯型、冰量、做法一起设定。
        自检和审计都该用它，不然测出来的不是用户真正看到的那杯。 */
     preset: function (i) {
-      var p = PRESETS[i];
-      if (!p) return null;
-      state.cup.clear();
-      p.items.forEach(function (it) { state.cup.set(it[0], it[1]); });
-      if (p.glass) state.glass = p.glass;
-      state.iceLevel = glassOf(state.glass).ice === 'inglass' ? 'full' : 'none';
-      state.method = PRESET_METHOD[p.name] || 'build';
-      state.taste = tasteForAbv(analyze().abv);
-      state.refMiss = [];
-      state.recipeName = p.name; state.recipeSub = p.sub; state.recipeTip = p.tip || '';
-      renderCup(); renderResult(); renderLib();
+      if (!PRESETS[i]) return null;
+      presetLoad(i);                 /* 和界面上点卡片走同一条路 */
       return this.scores();
     },
     /* 温度 / 化水这条线的调试点：在控制台就能看到每一步怎么算的 */

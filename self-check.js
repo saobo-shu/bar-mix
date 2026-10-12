@@ -55,7 +55,8 @@ const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
             'global.__PRESETS = PRESETS; global.__I = INGREDIENTS; global.__PH = PH; global.__SCHEMES = SCORING_SCHEMES; global.__G = GLASSES; global.__PM = PRESET_METHOD;'
             + ' global.__TEMPS = TEMPS; global.__TD = TEMP_DEFAULT; global.__TF = TEMP; global.__TC = TEMP_CYCLE;'
             + ' global.__METHODS = METHODS; global.__REF = REF_RECIPES; global.__CATS = CATS;'
-            + ' global.__OPT = OPTIONAL_ING;';
+            + ' global.__OPT = OPTIONAL_ING; global.__HOUSE = HOUSE_PRESETS;'
+            + ' global.__MAP = REF_PRESET_MAP;';
 eval(src);
 
 const B = global.BarMix;
@@ -871,8 +872,9 @@ console.log('  提示：' + (swapCur ? swapCur[1] : '(无)'));
 B.state.swapOpen = false;
 B.load([]);
 
-/* 回归检查：每个面板都必须在启动时渲染出内容，防空面板 */
-const panels = { cats: '分类', lib: '材料库', presets: '经典配方', stats: '参数', subScores: '子评分' };
+/* 回归检查：每个面板都必须在启动时渲染出内容，防空面板。
+   （"经典配方"面板已经从调酒台搬去酒单的「住处特调」栏，这里不再有它） */
+const panels = { cats: '分类', lib: '材料库', stats: '参数', subScores: '子评分' };
 let empty = [];
 Object.keys(panels).forEach(function (k) {
   if (!els[k] || !String(els[k].innerHTML).trim()) empty.push(panels[k]);
@@ -880,25 +882,16 @@ Object.keys(panels).forEach(function (k) {
 console.log('\n--- 面板渲染检查 ---');
 console.log(empty.length ? '❌ 空白面板：' + empty.join('、') : '✅ 所有面板都渲染出了内容');
 
-const html = els['presets'].innerHTML;
-const cardRe = /<span class="p-name">([^<]*)<\/span><span class="p-sub">([^<]*)<\/span><span class="p-comp">([^<]*)<\/span>/g;
-let m, n = 0;
-const seenGroups = [];
-/* 分组标题里现在还有 "N 个" 的说明，所以只取到下一个 '<' 之前 */
-const parts = html.split('<div class="pgroup">');
-parts.forEach(function (chunk, idx) {
-  if (idx === 0) return;
-  const name = chunk.slice(0, chunk.indexOf('<'));
-  seenGroups.push(name);
-  console.log('\n===== ' + name + ' =====');
-  let c;
-  while ((c = cardRe.exec(chunk))) {
-    n++;
-    console.log('  ' + c[1] + '  →  ' + c[3]);
-  }
-  cardRe.lastIndex = 0;
-});
-console.log('\n共渲染 ' + n + ' 张配方卡，' + seenGroups.length + ' 个分组');
+/* 「住处特调」栏的 11 张卡片（原来挂在调酒台的那块） */
+B.menu.setTab('house');
+const houseHtml = els.menuList.innerHTML;
+const houseCards = [...houseHtml.matchAll(/<span class="p-name">([^<]*)<\/span><span class="p-sub">([^<]*)<\/span><span class="p-comp">([^<]*)<\/span>/g)];
+console.log('\n===== 住处特调（酒单里） =====');
+houseCards.forEach(c => console.log('  ' + c[1] + '  →  ' + c[3]));
+const okHouse = houseCards.length === global.__HOUSE.length;
+console.log((okHouse ? '✅' : '❌') + ' 共 ' + houseCards.length + ' 张（预期 ' + global.__HOUSE.length + '）');
+if (!okHouse) bad('酒单', '住处特调栏的卡片数不对：' + houseCards.length);
+B.menu.reset();
 
 /* ---- ④ 手边有什么：反向查配方 ---- */
 console.log('\n--- 手边有什么 → 现在能做什么 ---');
@@ -1163,9 +1156,12 @@ console.log('\n--- 备注挪到杯子下面 ---');
   B.preset(i);
   const tip = global.__PRESETS[i].tip;
   const note = strip(els.recipeNote.innerHTML);
-  const cardHtml = els.presets.innerHTML;
+  /* 卡片上不再重复这段备注——现在卡片在酒单的「住处特调」栏里 */
+  B.menu.setTab('house');
+  const cardHtml = els.menuList.innerHTML;
   const ok1 = note.indexOf('威士忌酸') >= 0 && tip && note.indexOf(tip.slice(0, 12)) >= 0;
   const ok2 = cardHtml.indexOf('p-tip') < 0;
+  B.menu.reset();
   console.log('  ' + (ok1 ? '✅' : '❌') + ' 点卡片后，备注显示在杯子下面：' + note.slice(0, 30) + '…');
   console.log('  ' + (ok2 ? '✅' : '❌') + ' 配方卡片上不再重复这段备注');
   if (!ok1) bad('版式', '备注没有显示到杯子下面');
