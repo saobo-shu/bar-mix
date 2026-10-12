@@ -1915,17 +1915,21 @@
   }
 
   /* 酒单的一杯：只写名字、用到什么、怎么做——点开才看细节 */
+  /* 参考数据里有两条没有中文名（B&B、XYZ），退回用英文名——不然卡片是空标题，
+     而且收藏会互相顶掉（两条都叫空字符串） */
+  function recipeName(r) { return (r && (r.zh || r.en)) || '（未命名）'; }
+
   function menuCard(i) {
     var r = REF_RECIPES[i], st = refStat(i);
-    var p = presetIndexByName(REF_PRESET_MAP[r.zh] || '');
+    var p = presetIndexByName(REF_PRESET_MAP[recipeName(r)] || '');
     var use = p >= 0
       ? PRESETS[p].items.filter(function (it) { return BY_ID[it[0]]; })
           .map(function (it) { return shortName(BY_ID[it[0]]); })
       : r.needs.filter(function (nd) { return !nd.need.optional; })
           .map(function (nd) { return needLabel(nd); });
-    var on = isFav(r.zh);
+    var on = isFav(recipeName(r));
     return '<button type="button" class="menucard" data-menu="' + i + '">'
-      + '<span class="mc-top"><b>' + esc(r.zh) + '</b><i>' + esc(r.en || '') + '</i>'
+      + '<span class="mc-top"><b>' + esc(recipeName(r)) + '</b><i>' + esc(r.zh ? (r.en || '') : '') + '</i>'
         + '<span class="mc-star' + (on ? ' on' : '') + '" data-fav="' + i + '" role="button" tabindex="0"'
         + ' title="' + (on ? '取消收藏' : '收藏') + '">' + (on ? '★' : '☆') + '</span></span>'
       + '<span class="mc-line">' + esc(use.slice(0, 4).join(' · ')) + (use.length > 4 ? ' 等' : '') + '</span>'
@@ -1984,7 +1988,7 @@
       return out;
     }
     REF_RECIPES.forEach(function (r, i) {
-      if (menuTab === 'favs' && !isFav(r.zh)) return;
+      if (menuTab === 'favs' && !isFav(recipeName(r))) return;
       if (q) {
         var hay = (r.zh + ' ' + (r.en || '') + ' ' + r.needs.map(function (nd) { return nd.n; }).join(' ')).toLowerCase();
         if (hay.indexOf(q) < 0) return;
@@ -2080,7 +2084,7 @@
     if (page) page.classList.add('hasdetail');
     var i = openRecipe, r = REF_RECIPES[i], st = refStat(i);
     /* 有我们调好的版本就用我们的：材料表、备注都换成那份 */
-    var pName = REF_PRESET_MAP[r.zh] || '';
+    var pName = REF_PRESET_MAP[recipeName(r)] || '';
     var p = presetIndexByName(pName);
     var pre = p >= 0 ? PRESETS[p] : null;
     var rows = pre
@@ -2096,7 +2100,7 @@
             + '<b>' + esc(String(nd.a || '')) + '</b></li>';
         }).join('');
     box.hidden = false;
-    box.innerHTML = '<div class="panel-head"><h2>' + esc(r.zh) + '　'
+    box.innerHTML = '<div class="panel-head"><h2>' + esc(recipeName(r)) + '　'
       + '<span class="hint">' + esc(r.en || '') + '</span></h2>'
       + '<button type="button" class="ghost" data-menu-close="1">关闭</button></div>'
       + '<p class="hint">' + esc(pre ? (PRESET_METHOD[pre.name] ? methodName({ method: PRESET_METHOD[pre.name] }) : methodName(r)) : methodName(r))
@@ -2104,13 +2108,16 @@
         + ' · ' + Math.round(st.abv) + '% · ' + (pre ? pre.items.length : r.needs.length) + ' 样材料'
         + (pre ? '　<b class="mc-pick">量是我们调过的</b>' : '') + '</p>'
       + '<ul class="menulist">' + rows + '</ul>'
+      /* 参考数据里写了装饰（92 条有），一起显示出来——以前漏了这一栏 */
+      + (r.garnish ? '<p class="hint">装饰：' + esc(r.garnish) + (r.ice ? '　冰：' + esc(r.ice) : '') + '</p>'
+          : (r.ice ? '<p class="hint">冰：' + esc(r.ice) + '</p>' : ''))
       + ((pre && pre.tip) ? '<p class="hint">' + esc(pre.tip) + '</p>'
           : (r.note ? '<p class="hint">' + esc(r.note) + '</p>' : ''))
       + '<p class="hint">来历：' + (r.pick ? '正在补——只写推荐的 51 款，其余不编。' : '参考数据里没写，暂缺。') + '</p>'
       + '<div class="mineacts">'
       + '<button type="button" class="ghost on" data-menu-load="' + i + '">装进杯子</button>'
       + '<button type="button" class="ghost" data-menu-favbtn="' + i + '">'
-        + (isFav(r.zh) ? '★ 已收藏' : '☆ 收藏') + '</button>'
+        + (isFav(recipeName(r)) ? '★ 已收藏' : '☆ 收藏') + '</button>'
       + '</div>';
   }
   function methodName(r) {
