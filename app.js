@@ -2111,6 +2111,7 @@
       /* 参考数据里写了装饰（92 条有），一起显示出来——以前漏了这一栏 */
       + (r.garnish ? '<p class="hint">装饰：' + esc(r.garnish) + (r.ice ? '　冰：' + esc(r.ice) : '') + '</p>'
           : (r.ice ? '<p class="hint">冰：' + esc(r.ice) + '</p>' : ''))
+      + swapBox(r)
       + ((pre && pre.tip) ? '<p class="hint">' + esc(pre.tip) + '</p>'
           : (r.note ? '<p class="hint">' + esc(r.note) + '</p>' : ''))
       + '<p class="hint">来历：' + (r.pick ? '正在补——只写推荐的 51 款，其余不编。' : '参考数据里没写，暂缺。') + '</p>'
@@ -2123,6 +2124,30 @@
   function methodName(r) {
     return ({ shake: '摇和', stir: '搅拌', build: '兑和' }[methodFromRef(r.method)] || '兑和')
       + (methodFromRef(r.method) === 'shake' ? '后滤出' : (methodFromRef(r.method) === 'stir' ? '后滤出' : ''));
+  }
+
+  /* 原方 + 替换说明
+
+     用户说得很清楚："用户有权知道原本的配方是什么样子"。
+     所以只要这杯里有我换过的东西，就在详情里把参考配方本的原文列出来，
+     并且一条条说明为什么换（理由在 data.js 的 SWAP_NOTE 里）。 */
+  function swapBox(r) {
+    var notes = [], any = false;
+    r.needs.forEach(function (nd) {
+      if (!nd.need.approx) return;
+      any = true;
+      var why = SWAP_NOTE[nd.n];
+      if (why) notes.push('<li>' + esc(nd.n) + ' → <b>' + esc(needLabel(nd)) + '</b>：' + esc(why) + '</li>');
+    });
+    if (!any) return '';
+    var orig = r.needs.map(function (nd) {
+      return esc(nd.n) + (nd.a ? ' ' + esc(String(nd.a)) : '');
+    }).join(' · ');
+    return '<details class="origbox"><summary>原方长什么样（参考配方本原文）</summary>'
+      + '<p class="hint">' + orig + '</p>'
+      + (notes.length ? '<p class="hint"><b>我改过的地方：</b></p><ul class="menulist swapnote">'
+        + notes.join('') + '</ul>' : '<p class="hint">只是名字写法不同，没有换东西。</p>')
+      + '</details>';
   }
 
   function renderMenu() {

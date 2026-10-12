@@ -189,6 +189,18 @@ main {
 .mc-line { font-size: 11.5px; color: var(--prose); line-height: 1.5; }
 .mc-meta { font-size: 10.5px; color: var(--muted); }
 .mc-pick { font-style: normal; color: var(--amber); }
+.origbox { margin: 8px 0 0; }
+.origbox > summary { cursor: pointer; font-size: 12px; color: var(--amber); }
+.origbox > summary::-webkit-details-marker { display: none; }
+.origbox > summary::before { content: '▸ '; }
+.origbox[open] > summary::before { content: '▾ '; }
+.origbox .hint { margin: 6px 0 0; }
+/* 注意：它同时也是 .menulist，得用更高的优先级盖掉"材料表"那条 flex 规则，
+   不然一句话会被 justify-content: space-between 拆得七零八落 */
+.menulist.swapnote li {
+  display: block; border-bottom: none; padding: 3px 0; line-height: 1.65; font-size: 12px;
+}
+.menulist.swapnote li b { color: var(--amber); }
 .menulist { margin: 8px 0; padding: 0; list-style: none; }
 .menulist li { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 4px 0; border-bottom: 1px dashed var(--line); }
 .menulist li b { color: var(--amber); font-weight: 600; font-variant-numeric: tabular-nums; }

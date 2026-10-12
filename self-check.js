@@ -56,7 +56,7 @@ const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
             + ' global.__TEMPS = TEMPS; global.__TD = TEMP_DEFAULT; global.__TF = TEMP; global.__TC = TEMP_CYCLE;'
             + ' global.__METHODS = METHODS; global.__REF = REF_RECIPES; global.__CATS = CATS;'
             + ' global.__OPT = OPTIONAL_ING; global.__HOUSE = HOUSE_PRESETS;'
-            + ' global.__MAP = REF_PRESET_MAP;';
+            + ' global.__MAP = REF_PRESET_MAP; global.__SWAP = SWAP_NOTE;';
 eval(src);
 
 const B = global.BarMix;
@@ -1250,6 +1250,30 @@ console.log('\n--- 酒单 ---');
     && detail.indexOf('装进杯子') >= 0 && detail.indexOf('来历') >= 0;
   console.log('  ' + (okDetail ? '✅' : '❌') + ' 详情面板：材料带用量、有装杯按钮、有来历那栏');
   if (!okDetail) bad('酒单', '详情面板内容不全：' + detail.slice(0, 60));
+
+  /* "用户有权知道原方长什么样"——换过东西的必须能看到原文和替换理由 */
+  const hit = global.__REF.findIndex(r => r.needs.some(nd => nd.need.approx));
+  B.menu.open(hit);
+  const dbg = strip(els.menuDetail.innerHTML);
+  const okOrig = dbg.indexOf('原方长什么样') >= 0 && dbg.indexOf('我改过的地方') >= 0;
+  console.log('  ' + (okOrig ? '✅' : '❌') + ' 有替换的那杯：详情里能展开看「原方」和「我改过的地方」（'
+    + global.__REF[hit].zh + '）');
+  if (!okOrig) bad('酒单', '详情里没有"原方 / 替换说明"');
+
+  /* 真换了东西的（原方和替换名没有共同词）必须写理由 */
+  const noNote = [];
+  global.__REF.forEach(r => r.needs.forEach(nd => {
+    if (!nd.need.approx) return;
+    const a = String(nd.n).replace(/[（(].*?[）)]/g, ''), b = String(nd.n);
+    const to = nd.need.id && B.BY_ID[nd.need.id] ? B.BY_ID[nd.need.id].name : '';
+    if (!global.__SWAP[nd.n]) {
+      /* 名字里有一半重合 = 只是写法不同，不算换东西 */
+      const shared = to && (to.indexOf(a.slice(0, 2)) >= 0 || a.indexOf(to.slice(0, 2)) >= 0);
+      if (!shared) noNote.push(nd.n + '→' + to);
+    }
+  }));
+  console.log('  ' + (noNote.length ? '⚠ ' + noNote.length + ' 项换了东西但没写理由：'
+    + noNote.slice(0, 5).join('、') : '✅ 换了东西的都写了理由'));
 
   /* 删掉测试留下的东西 */
   B.menu.del(0);

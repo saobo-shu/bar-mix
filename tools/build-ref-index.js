@@ -101,7 +101,8 @@ const EXACT = {
   '青柠檬': { id: 'lime' },
   '青柠角': { id: 'lime' },
   '橙子片': { id: 'orange_peel' },
-  '西柚皮': { id: 'grapefruit', approx: 1 },
+  /* 西柚皮是柑橘皮点缀，库里没有西柚皮 → 用橙皮替（同一种用法） */
+  '西柚皮': { id: 'orange_peel', approx: 1 },
   '蛋黄': { id: 'egg_yolk' },
   '黄油': { id: 'butter' },
   '桃子果泥': { id: 'peach', approx: 1 },
@@ -139,6 +140,8 @@ const RULES = [
   [/^(威士忌)/, { family: 'whisky' }],
   [/^(干邑|科涅克)/, { type: 'cognac' }],
   [/^(苹果白兰地)/, { type: 'calvados' }],
+  /* 只写"白兰地"（不指定哪一种）时用干邑最稳——以前会落到苹果白兰地上，那是错的 */
+  [/^白兰地$/, { type: 'cognac', approx: 1 }],
   [/^(皮斯科)/, { type: 'pisco' }],
   [/^(黄柠檬汁|柠檬汁|鲜柠檬汁)/, { id: 'lemon' }],
   [/^(青柠汁|青柠檬汁|莱姆汁)/, { id: 'lime' }],
