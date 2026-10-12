@@ -2122,6 +2122,8 @@
         + ' · ' + esc(pre ? glassOf(pre.glass).name : glassOf(glassFromRef(r)).name)
         + ' · ' + Math.round(st.abv) + '% · ' + (pre ? pre.items.length : r.needs.length) + ' 样材料'
         + (d && d.hasDiff ? '　<b class="mc-pick">本站配比</b>' : '') + '</p>'
+      /* 一句话定位：只有推荐的 51 款有（data.js 的 PICK_LINE） */
+      + (PICK_LINE[recipeName(r)] ? '<p class="hint pickline">' + esc(PICK_LINE[recipeName(r)]) + '</p>' : '')
       + '<ul class="menulist">' + rows + '</ul>'
       /* 参考数据里写了装饰（92 条有），一起显示出来——以前漏了这一栏 */
       + (r.garnish ? '<p class="hint">装饰：' + esc(r.garnish) + (r.ice ? '　冰：' + esc(r.ice) : '') + '</p>'

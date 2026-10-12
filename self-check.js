@@ -56,7 +56,8 @@ const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
             + ' global.__TEMPS = TEMPS; global.__TD = TEMP_DEFAULT; global.__TF = TEMP; global.__TC = TEMP_CYCLE;'
             + ' global.__METHODS = METHODS; global.__REF = REF_RECIPES; global.__CATS = CATS;'
             + ' global.__OPT = OPTIONAL_ING; global.__HOUSE = HOUSE_PRESETS;'
-            + ' global.__MAP = REF_PRESET_MAP; global.__SWAP = SWAP_NOTE; global.__ORIGIN = ORIGIN;';
+            + ' global.__MAP = REF_PRESET_MAP; global.__SWAP = SWAP_NOTE;'
+            + ' global.__ORIGIN = ORIGIN; global.__PICKLINE = PICK_LINE;';
 eval(src);
 
 const B = global.BarMix;
@@ -1340,6 +1341,25 @@ console.log('\n--- 酒单 ---');
   const staleIdea = strip(els.menuDetail.innerHTML).indexOf('正在补') >= 0;
   console.log('  ' + (staleIdea ? '❌' : '✅') + ' 没查证过的来历写成"暂缺"，不再写"正在补…"这种空话');
   if (staleIdea) bad('酒单', '来历还留着"正在补"的占位话术');
+
+  /* 一句话定位：51 款推荐每杯都要有一行，而且得真的渲染出来 */
+  const noLine = [];
+  global.__REF.forEach((r, i) => {
+    if (!r.pick) return;
+    const nm = r.zh || r.en;
+    B.menu.open(i);
+    const txt = strip(els.menuDetail.innerHTML);
+    if (!global.__PICKLINE[nm] || txt.indexOf(global.__PICKLINE[nm].slice(0, 8)) < 0) noLine.push(nm);
+  });
+  const extraLine = Object.keys(global.__PICKLINE)
+    .filter(nm => !global.__REF.some(r => r.pick && (r.zh || r.en) === nm));
+  console.log('  ' + (noLine.length || extraLine.length ? '❌' : '✅')
+    + ' 51 款推荐每杯都有一句话定位（' + Object.keys(global.__PICKLINE).length + ' 行）'
+    + (noLine.length ? '，漏了：' + noLine.slice(0, 3).join('、') : '')
+    + (extraLine.length ? '，多写了非推荐款：' + extraLine.slice(0, 3).join('、') : ''));
+  if (noLine.length || extraLine.length) {
+    bad('酒单', '推荐款的一句话定位不全：缺 ' + noLine.length + ' 条 / 多写 ' + extraLine.length + ' 条');
+  }
 
   /* 预设跟参考本一模一样的（材料和量都对得上），不能再挂"本站配比"的牌子。
      盘尼西林原来把拉弗格换成了黑方——参考本点名要的泥煤味，库里有正主就不该省。 */
