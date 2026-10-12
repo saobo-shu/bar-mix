@@ -78,48 +78,73 @@ console.log('  统计代码：' + (/hm\.baidu\.com\/hm\.js\?[0-9a-f]{32}/.test(h
   ? '自带（ID ' + html.match(/hm\.js\?([0-9a-f]{32})/)[1].slice(0, 8) + '…）✓'
   : '没有 ⚠'));
 
-/* ---------------- 真的跑一遍：把内联脚本抽出来执行 ---------------- */
+/* ---------------- 真的跑一遍：把内联脚本抽出来执行 ----------------
+   要按"用户上次停在哪一页"各跑一遍。因为 setPage() 在初始化时就会调用，
+   而它可能顺手渲染某一页——如果那一页的代码依赖了后面才赋值的变量，整个脚本会挂掉，
+   用户看到的就是"空白页 + 一条红色错误提示"。
+   2026-10-13 真出过这个事故：「今晚喝什么」的 MOODS 还没赋值，renderTonight 先跑了。 */
 const blocks = Array.from(html.matchAll(/<script>([\s\S]*?)<\/script>/g)).map(m => m[1]);
-const els = {};
-global.window = global;
-/* 页面里那段"启动自检"用了这两个 API，校验环境里给个空实现就行 */
-global.addEventListener = function () {};
 const realSetTimeout = global.setTimeout;
+global.window = global;
+global.addEventListener = function () {};   /* 页面里那段"启动自检"用得到 */
 global.setTimeout = function () {};
-global.document = {
-  getElementById(id) {
-    if (!els[id]) els[id] = { innerHTML: '', textContent: '', hidden: false, dataset: {},
-      setAttribute() {}, addEventListener() {}, scrollIntoView() {}, closest() { return null; },
-      classList: { toggle() {}, add() {}, remove() {}, contains() { return false; } } };
-    return els[id];
-  },
-  addEventListener() {},
-  querySelector() { return null; },
-  querySelectorAll() { return []; },
-  body: { classList: { toggle() {}, add() {}, remove() {}, contains() { return false; } } }
-};
-try {
-  eval(blocks.join('\n'));
-  const glassChips = (els.glassPick.innerHTML.match(/class="gchip/g) || []).length;
-  const libChips = (els.lib.innerHTML.match(/class="chip/g) || []).length;
-  const glassDrawn = els.glassPreview.innerHTML.length > 200;
-  const haveRows = (els.haveList.innerHTML.match(/data-have=/g) || []).length;
-  /* 配方已经搬去酒单那一页（那一页是懒加载，开屏不画），所以这里查导航和四页齐不齐 */
-  const navItems = (html.match(/class="navitem/g) || []).length;
-  const pageCount = (html.match(/id="page-\w+"/g) || []).length;
-  const ok = glassChips > 0 && libChips > 0 && glassDrawn && haveRows > 0
-    && navItems === 4 && pageCount === 4;
-console.log('  跑起来：杯型 ' + glassChips + ' 个、材料 ' + libChips
-    + ' 个、手边有什么 ' + haveRows + ' 样、杯子预览 ' + (glassDrawn ? '画出来了' : '没画出来')
-    + '、导航 ' + navItems + ' 项 / 页面 ' + pageCount + ' 个　' + (ok ? '✓' : '⚠'));
-  if (!ok) process.exitCode = 1;
-} catch (e) {
-  console.log('  ⚠ 内联脚本跑不起来：' + e.message);
-  console.log(String(e.stack || '').split('\n').slice(1, 5).join('\n'));
-  process.exitCode = 1;
-} finally {
-  global.setTimeout = realSetTimeout;
+
+function bootWith(pageId) {
+  const els = {};
+  global.document = {
+    getElementById(id) {
+      if (!els[id]) els[id] = { innerHTML: '', textContent: '', hidden: false, dataset: {},
+        setAttribute() {}, addEventListener() {}, scrollIntoView() {}, closest() { return null; },
+        classList: { toggle() {}, add() {}, remove() {}, contains() { return false; } } };
+      return els[id];
+    },
+    addEventListener() {},
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    body: { classList: { toggle() {}, add() {}, remove() {}, contains() { return false; } } }
+  };
+  global.localStorage = {
+    getItem(k) { return k === 'barmix.page' ? pageId : null; },
+    setItem() {}, removeItem() {}
+  };
+  let err = '';
+  try { eval(blocks.join('\n')); } catch (e) { err = e.message; }
+  return { els: els, err: err };
 }
+
+const PAGES = ['bar', 'tonight', 'menu', 'tips'];
+const boots = {};
+PAGES.forEach(p => { boots[p] = bootWith(p); });
+const crashed = PAGES.filter(p => boots[p].err);
+console.log('  跑起来（上次停在哪一页都要画得出来）：'
+  + (crashed.length
+      ? '❌ ' + crashed.map(p => p + '（' + boots[p].err + '）').join('、')
+      : 'bar / tonight / menu / tips 四种都 ✓'));
+if (crashed.length) process.exitCode = 1;
+
+/* 首页那次（停在"调酒台"）看细节：杯子预览、材料、手边有什么 */
+const els = boots.bar.els;
+const glassChips = (els.glassPick.innerHTML.match(/class="gchip/g) || []).length;
+const libChips = (els.lib.innerHTML.match(/class="chip/g) || []).length;
+const glassDrawn = els.glassPreview.innerHTML.length > 200;
+const haveRows = (els.haveList.innerHTML.match(/data-have=/g) || []).length;
+/* 配方已经搬去酒单那一页（那一页是懒加载，开屏不画），所以这里查导航和四页齐不齐 */
+const navItems = (html.match(/class="navitem/g) || []).length;
+const pageCount = (html.match(/id="page-\w+"/g) || []).length;
+const ok = !crashed.length && glassChips > 0 && libChips > 0 && glassDrawn && haveRows > 0
+  && navItems === 4 && pageCount === 4;
+console.log('  杯型 ' + glassChips + ' 个、材料 ' + libChips
+  + ' 个、手边有什么 ' + haveRows + ' 样、杯子预览 ' + (glassDrawn ? '画出来了' : '没画出来')
+  + '、导航 ' + navItems + ' 项 / 页面 ' + pageCount + ' 个　' + (ok ? '✓' : '⚠'));
+if (!ok) process.exitCode = 1;
+
+/* 停在"今晚喝什么"那次：心情按钮要出来（这条就是上面那个事故的看门狗） */
+const moodBtns = (boots.tonight.els.moodRow.innerHTML.match(/class="moodbtn/g) || []).length;
+console.log('  停在「今晚喝什么」时：心情按钮 ' + moodBtns + ' 个'
+  + (moodBtns >= 5 ? ' ✓' : ' ⚠'));
+if (moodBtns < 5) process.exitCode = 1;
+
+global.setTimeout = realSetTimeout;
 
 /* =========================================================
    发布用的附属文件：图标（PNG）+ PWA 清单 + .nojekyll

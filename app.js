@@ -2890,120 +2890,6 @@
   function openNav() { document.body.classList.add('navopen'); }
   function closeNav() { document.body.classList.remove('navopen'); }
 
-  (function () {
-    var btn = document.getElementById('navBtn');
-    if (btn) btn.addEventListener('click', function () {
-      /* 手机上抽屉开合；桌面上把收起的侧栏放出来 */
-      if (window.matchMedia && matchMedia('(max-width: 979px)').matches) {
-        document.body.classList.contains('navopen') ? closeNav() : openNav();
-      } else {
-        var shell = document.querySelector('.shell');
-        if (shell) shell.classList.toggle('folded');
-      }
-    });
-    var fold = document.getElementById('navFold');
-    if (fold) fold.addEventListener('click', function () {
-      var shell = document.querySelector('.shell');
-      if (shell) shell.classList.add('folded');
-    });
-    var back = document.getElementById('navBack');
-    if (back) back.addEventListener('click', closeNav);
-    /* 打开时恢复上次那一页（存不了就默认"调酒台"） */
-    var saved = 'bar';
-    try { saved = localStorage.getItem(PAGE_KEY) || 'bar'; } catch (e) {}
-    setPage(saved, false);
-  })();
-
-  /* ---------------------------------------------------------
-     主题：深色 / 浅色
-
-     只做一件事——在 <html> 上挂 data-theme="light"，
-     颜色全在 CSS 变量里（见 app.css 的两套值）。
-     选择存在本地，下次打开还是它。
-     --------------------------------------------------------- */
-  var THEME_KEY = 'barmix.theme';
-  function currentTheme() {
-    var root = document.documentElement;
-    return root && root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-  }
-  function applyTheme(t, save) {
-    var root = document.documentElement;
-    if (root) {
-      if (t === 'light') root.setAttribute('data-theme', 'light');
-      else root.removeAttribute('data-theme');
-    }
-    var btn = document.getElementById('themeBtn');
-    if (btn) {
-      /* 按钮上写的是"点了会变成什么" */
-      btn.textContent = t === 'light' ? '深色' : '浅色';
-      btn.setAttribute('aria-pressed', t === 'light' ? 'true' : 'false');
-    }
-    var meta = document.querySelector ? document.querySelector('meta[name="theme-color"]') : null;
-    if (meta) meta.setAttribute('content', t === 'light' ? '#f7f4ef' : '#12100f');
-    if (save) {
-      try { localStorage.setItem(THEME_KEY, t); } catch (e) { /* 无痕模式存不了，不影响用 */ }
-    }
-  }
-
-  (function () {
-    var btn = document.getElementById('themeBtn');
-    applyTheme(currentTheme(), false);
-    if (btn) btn.addEventListener('click', function () {
-      applyTheme(currentTheme() === 'light' ? 'dark' : 'light', true);
-    });
-  })();
-
-  /* 酒单：搜索框、清空、翻更多、保存这杯 */
-  (function () {
-    var box = document.getElementById('menuSearch');
-    if (box) box.addEventListener('input', function () { menuQuery = this.value; menuShow = MENU_PAGE; renderMenuList(); });
-    var clr = document.getElementById('menuClear');
-    if (clr) clr.addEventListener('click', function () {
-      menuQuery = ''; menuShow = MENU_PAGE;
-      var b = document.getElementById('menuSearch');
-      if (b) b.value = '';
-      renderMenuList();
-    });
-    var more = document.getElementById('menuMore');
-    if (more) more.addEventListener('click', function () { menuShow += MENU_PAGE; renderMenuList(); });
-    var save = document.getElementById('saveBtn');
-    if (save) save.addEventListener('click', saveCurrent);
-  })();
-
-  /* ③ 材料库：搜索框 + 清空 */
-  (function () {
-    var box = document.getElementById('libSearch');
-    if (box) box.addEventListener('input', function () { libQuery = this.value; renderLib(); });
-    var clr = document.getElementById('libClear');
-    if (clr) clr.addEventListener('click', function () {
-      libQuery = '';
-      var b = document.getElementById('libSearch');
-      if (b) b.value = '';
-      renderLib();
-    });
-  })();
-
-  document.getElementById('riskyBtn').addEventListener('click', function () {
-    state.hideRisky = !state.hideRisky;
-    this.setAttribute('aria-pressed', state.hideRisky ? 'true' : 'false');
-    this.textContent = state.hideRisky ? '显示全部材料' : '隐藏高风险';
-    this.classList.toggle('on', state.hideRisky);
-    renderLib();
-  });
-
-  document.getElementById('swapBtn').addEventListener('click', function () {
-    state.swapOpen = !state.swapOpen;
-    renderSwap();
-  });
-
-  /* ---------------------------------------------------------
-     启动
-     --------------------------------------------------------- */
-  /* 不预置任何基酒——谁来用都从自己手上的那瓶开始 */
-  loadHave();       /* 上次勾的"手边有什么"还在 */
-  renderAll();
-
-  /* 调试 / 二次开发用：在浏览器控制台可以访问 window.BarMix */
   /* =========================================================
      今晚喝什么：给"随手想喝一杯"的人
 
@@ -3165,6 +3051,121 @@
     out.innerHTML = '<div class="tcards">' + picks.map(tonightCard).join('') + '</div>'
       + '<p class="hint tonightfoot">就这三杯。想要更多选择、想看风味和评分，去「酒单」或「调酒台」。</p>';
   }
+
+  (function () {
+    var btn = document.getElementById('navBtn');
+    if (btn) btn.addEventListener('click', function () {
+      /* 手机上抽屉开合；桌面上把收起的侧栏放出来 */
+      if (window.matchMedia && matchMedia('(max-width: 979px)').matches) {
+        document.body.classList.contains('navopen') ? closeNav() : openNav();
+      } else {
+        var shell = document.querySelector('.shell');
+        if (shell) shell.classList.toggle('folded');
+      }
+    });
+    var fold = document.getElementById('navFold');
+    if (fold) fold.addEventListener('click', function () {
+      var shell = document.querySelector('.shell');
+      if (shell) shell.classList.add('folded');
+    });
+    var back = document.getElementById('navBack');
+    if (back) back.addEventListener('click', closeNav);
+    /* 打开时恢复上次那一页（存不了就默认"调酒台"） */
+    var saved = 'bar';
+    try { saved = localStorage.getItem(PAGE_KEY) || 'bar'; } catch (e) {}
+    setPage(saved, false);
+  })();
+
+  /* ---------------------------------------------------------
+     主题：深色 / 浅色
+
+     只做一件事——在 <html> 上挂 data-theme="light"，
+     颜色全在 CSS 变量里（见 app.css 的两套值）。
+     选择存在本地，下次打开还是它。
+     --------------------------------------------------------- */
+  var THEME_KEY = 'barmix.theme';
+  function currentTheme() {
+    var root = document.documentElement;
+    return root && root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+  function applyTheme(t, save) {
+    var root = document.documentElement;
+    if (root) {
+      if (t === 'light') root.setAttribute('data-theme', 'light');
+      else root.removeAttribute('data-theme');
+    }
+    var btn = document.getElementById('themeBtn');
+    if (btn) {
+      /* 按钮上写的是"点了会变成什么" */
+      btn.textContent = t === 'light' ? '深色' : '浅色';
+      btn.setAttribute('aria-pressed', t === 'light' ? 'true' : 'false');
+    }
+    var meta = document.querySelector ? document.querySelector('meta[name="theme-color"]') : null;
+    if (meta) meta.setAttribute('content', t === 'light' ? '#f7f4ef' : '#12100f');
+    if (save) {
+      try { localStorage.setItem(THEME_KEY, t); } catch (e) { /* 无痕模式存不了，不影响用 */ }
+    }
+  }
+
+  (function () {
+    var btn = document.getElementById('themeBtn');
+    applyTheme(currentTheme(), false);
+    if (btn) btn.addEventListener('click', function () {
+      applyTheme(currentTheme() === 'light' ? 'dark' : 'light', true);
+    });
+  })();
+
+  /* 酒单：搜索框、清空、翻更多、保存这杯 */
+  (function () {
+    var box = document.getElementById('menuSearch');
+    if (box) box.addEventListener('input', function () { menuQuery = this.value; menuShow = MENU_PAGE; renderMenuList(); });
+    var clr = document.getElementById('menuClear');
+    if (clr) clr.addEventListener('click', function () {
+      menuQuery = ''; menuShow = MENU_PAGE;
+      var b = document.getElementById('menuSearch');
+      if (b) b.value = '';
+      renderMenuList();
+    });
+    var more = document.getElementById('menuMore');
+    if (more) more.addEventListener('click', function () { menuShow += MENU_PAGE; renderMenuList(); });
+    var save = document.getElementById('saveBtn');
+    if (save) save.addEventListener('click', saveCurrent);
+  })();
+
+  /* ③ 材料库：搜索框 + 清空 */
+  (function () {
+    var box = document.getElementById('libSearch');
+    if (box) box.addEventListener('input', function () { libQuery = this.value; renderLib(); });
+    var clr = document.getElementById('libClear');
+    if (clr) clr.addEventListener('click', function () {
+      libQuery = '';
+      var b = document.getElementById('libSearch');
+      if (b) b.value = '';
+      renderLib();
+    });
+  })();
+
+  document.getElementById('riskyBtn').addEventListener('click', function () {
+    state.hideRisky = !state.hideRisky;
+    this.setAttribute('aria-pressed', state.hideRisky ? 'true' : 'false');
+    this.textContent = state.hideRisky ? '显示全部材料' : '隐藏高风险';
+    this.classList.toggle('on', state.hideRisky);
+    renderLib();
+  });
+
+  document.getElementById('swapBtn').addEventListener('click', function () {
+    state.swapOpen = !state.swapOpen;
+    renderSwap();
+  });
+
+  /* ---------------------------------------------------------
+     启动
+     --------------------------------------------------------- */
+  /* 不预置任何基酒——谁来用都从自己手上的那瓶开始 */
+  loadHave();       /* 上次勾的"手边有什么"还在 */
+  renderAll();
+
+  /* 调试 / 二次开发用：在浏览器控制台可以访问 window.BarMix */
 
   window.BarMix = {
     state: state, analyze: analyze, advise: advise, BY_ID: BY_ID,
