@@ -175,6 +175,9 @@ const RULES = [
   [/^(加力安奴)/, { id: 'galliano' }],
   [/^(黑樱桃利口酒|马拉斯奇诺)/, { id: 'maraschino' }],
   [/^(樱桃白兰地)/, { id: 'cherry_brandy' }],
+  /* 光写"樱桃利口酒"的：经典配方里（血与沙、新加坡司令）指的都是 Heering 那种
+     樱桃味白兰地，不是 Maraschino——不加这条会被下面的模糊匹配捡去当黑樱桃利口酒 */
+  [/^樱桃利口酒/, { id: 'cherry_brandy' }],
   [/^(黑加仑利口酒)/, { id: 'cassis' }],
   [/^(白可可利口酒|白可可)/, { id: 'cocoa_white' }],
   [/^(黑可可利口酒|黑可可)/, { id: 'cocoa_dark' }],

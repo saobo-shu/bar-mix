@@ -182,7 +182,9 @@
       recipeName: '',
       recipeSub: '',
       recipeTip: '',
-      refMiss: []
+      refMiss: [],
+      /* 参考本写了、本库确实没有的那几样（按参考本装杯时只能拿替代品顶） */
+      refNotStocked: []
     };
 
   /* ---------------------------------------------------------
@@ -1219,6 +1221,11 @@
           + (state.refMiss.length
               ? '<p class="rn-miss">还缺：<b>' + state.refMiss.map(esc).join('、')
                 + '</b>　杯子里的量按标准配方装好了，缺的那几样记得补。</p>'
+              : '')
+          + (state.refNotStocked.length
+              ? '<p class="rn-miss">参考本写的是 <b>' + state.refNotStocked.map(esc).join('、')
+                + '</b>，本库没有一样的，杯子里装的是替代品（上面材料表里能看到实际放的量）。'
+                + '想原样复刻，这几样得自己买。</p>'
               : '');
       }
     }
@@ -1843,6 +1850,8 @@
     state.recipeSub = r.en || '';
     state.recipeTip = r.note || '';
     state.refMiss = missingOf(r).map(needLabel);
+    /* 参考本里本库确实没有的那几样——杯子下面要说清楚，装进去的是替代品 */
+    state.refNotStocked = r.needs.map(notStockedName).filter(function (x) { return !!x; });
     state.swapOpen = false;
     renderCup(); renderResult(); renderLib(); renderGlassPick(); renderIcePick();
     renderMethodPick(); renderTastePick();
@@ -2123,6 +2132,12 @@
       + '<p class="hint">来历：' + (r.pick ? '正在补——只写推荐的 51 款，其余不编。' : '参考数据里没写，暂缺。') + '</p>'
       + '<div class="mineacts">'
       + '<button type="button" class="ghost on" data-menu-load="' + i + '">装进杯子</button>'
+      /* 跟参考本不一样的（16 款）：多给一个"照书上来"的按钮。
+         库里确实没有的那几样没法凭空装进去，杯子里会写清楚哪几样是替代品 */
+      + (d && d.hasDiff
+          ? '<button type="button" class="ghost" data-menu-loadref="' + i
+            + '" title="按参考配方本的量装杯；本库没有的材料会用替代品，杯子下面会写出来">按参考本装杯</button>'
+          : '')
       + '<button type="button" class="ghost" data-menu-favbtn="' + i + '">'
         + (isFav(recipeName(r)) ? '★ 已收藏' : '☆ 收藏') + '</button>'
       + '</div>';
@@ -2150,16 +2165,9 @@
          不然每杯都要挂一句"不一样"，用户会麻木 */
       if (justSpelling(nd)) { nameOnly.push(nd.n); return; }
       real.push(nd);
-      /* 库里"没有这一样"的：直接告诉用户装杯装的是替换版，想按原方做要自己买。
-         判断办法：把这个名字拿去库里找，有没有哪样材料的名字跟它沾边——
-         沾边（"园林干味美思"∩"干味美思"）说明只是写法不同；一点都不沾（"柠檬酸溶液"）
-         说明库里确实没有这样东西。 */
-      var raw = String(nd.n).replace(/[（(].*?[）)]/g, '').trim();
-      var inLib = INGREDIENTS.some(function (g) {
-        var gn = g.name.replace(/[（(].*?[）)]/g, '').trim();
-        return gn.indexOf(raw) >= 0 || raw.indexOf(gn) >= 0;
-      });
-      if (!inLib && raw) notStocked.push(raw);
+      /* 库里"没有这一样"的：直接告诉用户装杯装的是替换版，想按原方做要自己买 */
+      var miss = notStockedName(nd);
+      if (miss) notStocked.push(miss);
       var why = SWAP_NOTE[nd.n];
       if (why) notes.push('<li>' + esc(nd.n) + ' → <b>' + esc(needLabel(nd)) + '</b>：' + esc(why) + '</li>');
     });
@@ -2188,6 +2196,18 @@
       + (notes.length ? '<p class="hint"><b>我改过的地方：</b></p><ul class="menulist swapnote">'
         + notes.join('') + '</ul>' : '')
       + '</details>';
+  }
+
+  /* 参考本写了这个名字，本库到底有没有这样东西？
+     有就返回空字符串；确实没有就返回它的名字（"柠檬酸溶液"），用来提示用户。 */
+  function notStockedName(nd) {
+    var raw = String(nd.n).replace(/[（(].*?[）)]/g, '').trim();
+    if (!raw) return '';
+    var inLib = INGREDIENTS.some(function (g) {
+      var gn = g.name.replace(/[（(].*?[）)]/g, '').trim();
+      return gn.indexOf(raw) >= 0 || raw.indexOf(gn) >= 0;
+    });
+    return inLib ? '' : raw;
   }
 
   /* 参考本里"45ml"这种能直接读成数字的写法；"up / 加满 / 3 把勺"读不出来就返回 null */
@@ -2330,6 +2350,7 @@
     state.method = PRESET_METHOD[p.name] || 'build';
     state.taste = tasteForAbv(analyze().abv);
     state.refMiss = [];
+    state.refNotStocked = [];
     state.recipeName = p.name; state.recipeSub = p.sub; state.recipeTip = p.tip || '';
     state.swapOpen = false;
     renderCup(); renderResult(); renderLib(); renderGlassPick(); renderIcePick();
@@ -2542,7 +2563,8 @@
 
   /* 忘掉"这杯是哪条配方"——用户自己动过杯子之后就不该再挂着某条配方的备注 */
   function forgetRecipe() {
-    state.recipeName = ''; state.recipeSub = ''; state.recipeTip = ''; state.refMiss = [];
+    state.recipeName = ''; state.recipeSub = ''; state.recipeTip = '';
+    state.refMiss = []; state.refNotStocked = [];
   }
 
   document.addEventListener('click', function (e) {
@@ -2576,6 +2598,12 @@
       return;
     }
     if (t.dataset.menuLoad !== undefined) { loadRefFromMenu(+t.dataset.menuLoad); return; }
+    if (t.dataset.menuLoadref !== undefined) {
+      /* 照参考本是量装，不用"本站配比"那份 */
+      loadRefRecipe(+t.dataset.menuLoadref);
+      setPage('bar', true);
+      return;
+    }
     if (t.dataset.menuFavbtn !== undefined) {
       var fr2 = REF_RECIPES[+t.dataset.menuFavbtn];
       if (fr2) toggleFav(fr2.zh);

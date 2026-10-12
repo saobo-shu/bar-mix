@@ -1365,6 +1365,28 @@ console.log('\n--- 酒单 ---');
   console.log('  ' + (okClass ? '✅' : '❌') + ' 名字像但东西不同的（果泥/气泡水/糖浆）算"不一样"');
   if (!okClass) bad('酒单', '"桃子果泥 → 桃子利口酒"这类被当成"只是叫法不同"了');
 
+  /* "按参考本装杯"：装出来的量必须是参考本的，不是本站配比的；
+     库里确实没有的那几样（柠檬伏特加 / 蔓越莓糖浆）要在杯子下面说清楚装的是替代品 */
+  const iCosmo = iAt('大都会');
+  B.menu.open(iCosmo);
+  const hasRefBtn = els.menuDetail.innerHTML.indexOf('按参考本装杯') >= 0;
+  fire({ menuLoadref: String(iCosmo) });    /* 真的点那个按钮 */
+  const cup = B.state.cup;
+  const cosmoCup = { vodka: cup.get('vodka'), cointreau: cup.get('cointreau'),
+    cranberry: cup.get('cranberry'), syrup: cup.get('syrup'), lime: cup.get('lime') };
+  const okRefCup = hasRefBtn
+    && cosmoCup.vodka === 45 && cosmoCup.cointreau === 20 && cosmoCup.cranberry === 20
+    && cosmoCup.syrup === 5 && cosmoCup.lime === 20;   /* 参考本是 45/20/20/5/20 */
+  console.log('  ' + (okRefCup ? '✅' : '❌') + ' 按参考本装杯：装上参考本的量（'
+    + JSON.stringify(cosmoCup) + '）');
+  if (!okRefCup) bad('酒单', '按参考本装杯没装出参考本的量');
+  const rnCosmo = strip(els.recipeNote.innerHTML);
+  const okRefNote = rnCosmo.indexOf('柠檬伏特加') >= 0 && rnCosmo.indexOf('本库没有') >= 0;
+  console.log('  ' + (okRefNote ? '✅' : '❌')
+    + ' 杯子下面写清楚哪几样是替代品（参考本写了、本库没有）');
+  if (!okRefNote) bad('酒单', '按参考本装杯时没说清楚哪几样是替代品');
+  B.menu.reset();
+
   /* 删掉测试留下的东西 */
   B.menu.del(0);
   global.localStorage.removeItem('barmix.favs');
