@@ -1205,12 +1205,58 @@ console.log('\n--- 酒单 ---');
   const okGin = ginN > 0 && ginN < all && ginHtml.indexOf('金酒') >= 0;
   console.log('  ' + (okGin ? '✅' : '❌') + ' 按"金酒"筛：' + all + ' → ' + ginN + ' 款');
   if (!okGin) bad('酒单', '基酒筛选没生效');
-  /* 筛选：只看清爽起泡 */
-  B.menu.reset(); B.menu.setTaste('fizz');
-  const fizzN = B.menu.list();
-  console.log('  ' + (fizzN > 0 && fizzN < all ? '✅' : '❌') + ' 按"清爽起泡"筛：' + fizzN + ' 款');
-  if (!(fizzN > 0 && fizzN < all)) bad('酒单', '味道筛选没生效');
-  B.menu.reset();
+    /* 筛选：只看清爽起泡 */
+    B.menu.reset(); B.menu.setTaste('fizz');
+    const fizzN = B.menu.list();
+    console.log('  ' + (fizzN > 0 && fizzN < all ? '✅' : '❌') + ' 按"清爽起泡"筛：' + fizzN + ' 款');
+    if (!(fizzN > 0 && fizzN < all)) bad('酒单', '味道筛选没生效');
+
+    /* 薄荷叶不该带气泡（data.js 里曾经写成 7，于是"薄荷朱丽普"和"绿蚱蜢"
+       都被筛进"清爽起泡"，而真的加汽水的"莫斯科骡子"反倒进不去） */
+    const okMint = B.BY_ID.mint && (B.BY_ID.mint.f.fizz || 0) === 0;
+    console.log('  ' + (okMint ? '✅' : '❌') + ' 薄荷叶的气泡值是 0（它又不是汽水）');
+    if (!okMint) bad('材料库', '薄荷叶带着气泡值，会把薄荷类的酒误判成"清爽起泡"');
+
+    /* 这条维度在雷达图上叫「杀口感」（入口那种刺舌的锐利感），
+       所以只有真碳酸的东西能给它分——黄瓜、冰红茶这些"清凉感"走香料/醇厚。 */
+    const dimFizz = B.dims.filter(d => d.k === 'fizz')[0];
+    const okDimName = dimFizz && dimFizz.name === '杀口感';
+    console.log('  ' + (okDimName ? '✅' : '❌') + ' 雷达图这一维叫「杀口感」（不叫"气泡"）');
+    if (!okDimName) bad('材料库', 'fizz 这一维的名字不是"杀口感"');
+
+    const STILL = ['mint', 'cucumber', 'iced_tea', 'vitale', 'hendricks', 'egg_white'];
+    const stillFizzy = STILL.filter(id => B.BY_ID[id] && (B.BY_ID[id].f.fizz || 0) > 0)
+      .map(id => B.BY_ID[id].name);
+    console.log('  ' + (stillFizzy.length ? '❌' : '✅')
+      + ' 不冒气的材料杀口感是 0（薄荷叶/黄瓜/冰红茶/维他柠檬茶/亨利爵士/蛋清）'
+      + (stillFizzy.length ? '：' + stillFizzy.join('、') : ''));
+    if (stillFizzy.length) bad('材料库', '不冒气的材料带了杀口感：' + stillFizzy.join('、'));
+
+    /* 筛出来"清爽起泡"的，杯里必须真的有带气的材料 */
+    const fizzIdx = (els.menuList.innerHTML.match(/data-menu="(\d+)"/g) || [])
+      .map(s => +s.replace(/\D/g, ''));
+    const noBubble = [];
+    fizzIdx.forEach(i => {
+      B.have.load(i);
+      if (!B.analyze().hasFizzIng) noBubble.push(global.__REF[i].zh || global.__REF[i].en);
+    });
+    console.log('  ' + (noBubble.length ? '❌' : '✅')
+      + ' 筛出来的"清爽起泡"每杯都有真带气的材料（' + fizzN + ' 款）'
+      + (noBubble.length ? '，这几杯没有：' + noBubble.slice(0, 3).join('、') : ''));
+    if (noBubble.length) bad('酒单', '没有气泡材料的酒被筛进了"清爽起泡"：' + noBubble.slice(0, 3).join('、'));
+
+    /* 参考本里的"薄荷利口酒"是利口酒，不是那几片新鲜薄荷叶 */
+    const mintBad = [];
+    global.__REF.forEach(r => r.needs.forEach(nd => {
+      if (nd.n.indexOf('薄荷利口酒') < 0) return;
+      const id = nd.need.id || (nd.need.ids || [])[0] || '';
+      if (id === 'mint') mintBad.push((r.zh || r.en) + '：' + nd.n);
+    }));
+    console.log('  ' + (mintBad.length ? '❌' : '✅') + ' 参考本的"薄荷利口酒"没被当成新鲜薄荷叶'
+      + (mintBad.length ? '：' + mintBad.slice(0, 2).join('、') : ''));
+    if (mintBad.length) bad('材料库', '"薄荷利口酒"配到了薄荷叶：' + mintBad.slice(0, 2).join('、'));
+
+    B.menu.reset();
 
   /* 收藏：点星 → 进"我的收藏" */
   B.menu.fav('黑俄罗斯');

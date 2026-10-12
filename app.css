@@ -186,6 +186,26 @@ main {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mc-star { flex: none; font-size: 14px; color: var(--muted); cursor: pointer; padding: 0 2px; line-height: 1; }
 .mc-star.on { color: var(--amber); }
+
+/* 「今晚喝什么」的三杯：一屏最多三张，手机上一列 */
+.tcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.tcard {
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 11px 12px; border-radius: 12px;
+  background: var(--card2); border: 1px solid var(--line); min-width: 0;
+}
+.tc-head { display: flex; align-items: baseline; gap: 6px; }
+.tc-head b { font-size: 15px; font-weight: 600; color: var(--text); }
+.tc-head i { font-style: normal; font-size: 10.5px; color: var(--muted); flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tc-star { flex: none; font-size: 15px; color: var(--muted); cursor: pointer; padding: 0 2px; line-height: 1; }
+.tc-star.on { color: var(--amber); }
+.tc-line { font-size: 12px; color: var(--prose); line-height: 1.6; margin: 0; }
+.tc-line b { color: var(--amber); font-weight: 600; }
+.tc-line .ti-have { color: var(--green); }
+.tc-miss { font-size: 11.5px; color: var(--muted); margin: 2px 0 0; }
+.tc-acts { display: flex; gap: 6px; margin-top: 4px; }
+.tonightfoot { margin: 12px 0 0; }
 .mc-line { font-size: 11.5px; color: var(--prose); line-height: 1.5; }
 .mc-meta { font-size: 10.5px; color: var(--muted); }
 .mc-pick { font-style: normal; color: var(--amber); }

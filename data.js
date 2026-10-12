@@ -2,7 +2,7 @@
    调酒台 · 材料库
    f 里的数值 = 「按默认份量倒入时，对那一维风味的贡献强度」
    sugar 甜 / acid 酸 / bitter 苦 / booze 酒感
-   fruit 果香 / spice 香料 / fizz 气泡 / body 醇厚
+   fruit 果香 / spice 香料 / fizz 杀口感（碳酸那种刺舌感）/ body 醇厚
    src: near 便利店 / rt 超市 / web 网购
    mlu = 每个单位等于多少毫升（0 表示不计入液量，比如皮、叶、冰）
    ========================================================= */
@@ -49,7 +49,7 @@ var INGREDIENTS = [
     f:{sugar:1.5,acid:0.5,bitter:1.5,booze:8,fruit:4,spice:7,fizz:0,body:3},
     note:'花香和草本突出，杜松子没那么冲，加气泡水特别顺。' },
   { id:'hendricks', cat:'gin', name:'亨利爵士金酒', unit:'ml', mlu:1, def:45, step:5, abv:41.4, src:'web',
-    f:{sugar:1.5,acid:0.5,bitter:1,booze:8,fruit:3,spice:6,fizz:1,body:3.5},
+    f:{sugar:1.5,acid:0.5,bitter:1,booze:8,fruit:3,spice:6,fizz:0,body:3.5},
     note:'黄瓜和玫瑰的香气，是最不"冲"的金酒。配黄瓜片和气泡水，完全不需要其他材料。' },
   { id:'old_tom', cat:'gin', name:'老汤姆金酒', unit:'ml', mlu:1, def:45, step:5, abv:40, src:'web',
     f:{sugar:3,acid:0.5,bitter:2,booze:8,fruit:3,spice:6,fizz:0,body:3.5},
@@ -457,7 +457,7 @@ var INGREDIENTS = [
     f:{sugar:8,acid:2,bitter:0,booze:0,fruit:1,spice:0,fizz:7,body:0},
     note:'酸甜都有，配烧酒是韩式喝法。' },
   { id:'vitale', cat:'teacoffee', name:'维他柠檬茶', unit:'ml', mlu:1, def:90, step:5, abv:0, src:'near',
-    f:{sugar:8,acid:4,bitter:0.5,booze:0,fruit:3,spice:0,fizz:2,body:2},
+    f:{sugar:8,acid:4,bitter:0.5,booze:0,fruit:3,spice:0,fizz:0,body:2},
     note:'中国便利店调酒的万金油。它本身已经酸甜平衡，加威士忌直接成立。' },
   { id:'genki', cat:'mixer', name:'元气森林白桃气泡水', unit:'ml', mlu:1, def:90, step:5, abv:0, src:'near',
     f:{sugar:3,acid:0.5,bitter:0,booze:0,fruit:4,spice:0,fizz:7,body:0},
@@ -524,7 +524,7 @@ var INGREDIENTS = [
     f:{sugar:0,acid:0.5,bitter:1,booze:0,fruit:0,spice:3,fizz:0,body:2},
     note:'花香会跟威士忌的蜂蜜味接上。' },
   { id:'iced_tea', cat:'teacoffee', name:'冰红茶', unit:'ml', mlu:1, def:90, step:5, abv:0, src:'near',
-    f:{sugar:7,acid:1,bitter:2,booze:0,fruit:1,spice:0,fizz:4,body:1},
+    f:{sugar:7,acid:1,bitter:2,booze:0,fruit:1,spice:0,fizz:0,body:1},
     note:'甜度高，用了它就少放糖浆。' },
   { id:'coffee_hot', cat:'teacoffee', name:'挂耳咖啡（热）', unit:'ml', mlu:1, def:120, step:5, abv:0, src:'rt',
     f:{sugar:0,acid:1,bitter:7,booze:0,fruit:0,spice:6,fizz:0,body:4},
@@ -636,19 +636,19 @@ var INGREDIENTS = [
     f:{sugar:0,acid:0,bitter:0,booze:0,fruit:6,spice:6,fizz:0,body:0},
     note:'和威士忌最配的香气。古典的橙皮不要省。' },
   { id:'mint', cat:'fresh', name:'薄荷叶（8 片）', unit:'片', mlu:0, def:8, step:2, abv:0, src:'rt',
-    f:{sugar:0,acid:0,bitter:1,booze:0,fruit:1,spice:7,fizz:7,body:0},
+    f:{sugar:0,acid:0,bitter:1,booze:0,fruit:1,spice:7,fizz:0,body:0},
     note:'轻轻拍一下再放，不要捣碎，碎了会出草腥味。' },
   { id:'rosemary', cat:'garnish', name:'迷迭香', unit:'枝', mlu:0, def:1, step:1, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:1,booze:0,fruit:0,spice:8,fizz:0,body:0},
     note:'松针香气，配酸味和威士忌很好看也很好闻。' },
   { id:'cucumber', cat:'fresh', name:'黄瓜片', unit:'片', mlu:0, def:3, step:1, abv:0, src:'rt',
-    f:{sugar:0,acid:0,bitter:0,booze:0,fruit:1,spice:3,fizz:6,body:0},
+    f:{sugar:0,acid:0,bitter:0,booze:0,fruit:1,spice:3,fizz:0,body:0},
     note:'清爽路线，配金酒或气泡水。' },
   { id:'cherry', cat:'garnish', name:'糖渍樱桃', unit:'颗', mlu:0, def:1, step:1, abv:0, src:'rt',
     f:{sugar:5,acid:1,bitter:0,booze:0,fruit:6,spice:0,fizz:0,body:0},
     note:'丢一颗进去，视觉和甜味都有了。' },
   { id:'egg_white', cat:'fresh', name:'蛋清', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
-    f:{sugar:0,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:1,body:9},
+    f:{sugar:0,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:0,body:9},
     note:'先干摇 15 秒再加冰摇，泡沫才立得起来。鸡蛋就够用了。' },
   { id:'egg_yolk', cat:'fresh', name:'蛋黄', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
     f:{sugar:0,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:0,body:10},

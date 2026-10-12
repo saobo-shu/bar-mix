@@ -15,7 +15,9 @@
     { k: 'booze',  name: '酒感', ref: 26 },
     { k: 'fruit',  name: '果香', ref: 28 },
     { k: 'spice',  name: '香料', ref: 32 },
-    { k: 'fizz',   name: '气泡', ref: 10 },
+  /* 这一维量的是"入口那种刺舌的锐利感"，所以叫杀口感——图上它和甜/酸/苦
+     不是一类东西（那些是味道）。有"真碳酸"这件事是另一回事，见 hasFizzIng。 */
+  { k: 'fizz',   name: '杀口感', ref: 10 },
     { k: 'body',   name: '醇厚', ref: 24 }
   ];
 
@@ -269,7 +271,9 @@
       /* "冷藏 2 样、常温 1 样"只数真有温度的材料，装饰和苦精不算 */
       if (hasTemp(g)) tempMix[tempIdOf(g)]++;
       if (g.cat !== 'ice') nNonIce++;
-      if ((g.f.fizz || 0) >= 6) hasFizzIng = true;
+    /* 5 以上才算"带气的材料"：可乐、芬达、红牛都是 5，之前的门槛 6
+       把它们漏掉了，于是"自由古巴"会被说成没有气泡 */
+    if ((g.f.fizz || 0) >= 5) hasFizzIng = true;
       nItems++;
     });
 
@@ -1885,6 +1889,7 @@
     if (i < 0) favs.push(name); else favs.splice(i, 1);
     storeSet(FAV_KEY, favs);
     renderMenu();
+    if (currentPage() === 'tonight') renderTonight();   /* 「今晚喝什么」上的星星也要跟着变 */
     return i < 0;
   }
 
@@ -2006,7 +2011,7 @@
       if (menuFam && st.fams.indexOf(menuFam) < 0) return;
       if (menuTaste === 'sweet' && st.sugar < 8) return;
       if (menuTaste === 'sour' && st.acid < 5) return;
-      if (menuTaste === 'fizz' && st.fizz < 5) return;
+      if (menuTaste === 'fizz' && st.fizz < 4) return;
       if (menuTaste === 'bitter' && st.bitter < 4) return;
       if (menuStr === 'light' && st.abv >= 10) return;
       if (menuStr === 'mid' && (st.abv < 10 || st.abv > 22)) return;
@@ -2610,6 +2615,8 @@
       return;
     }
     if (t.dataset.menuLoad !== undefined) { loadRefFromMenu(+t.dataset.menuLoad); return; }
+    if (t.dataset.mood) { tonightMood = t.dataset.mood; renderTonight(); return; }
+    if (t.dataset.tonightGo !== undefined) { loadRefFromMenu(+t.dataset.tonightGo); return; }
     if (t.dataset.menuLoadref !== undefined) {
       /* 照参考本是量装，不用"本站配比"那份 */
       loadRefRecipe(+t.dataset.menuLoadref);
@@ -2848,6 +2855,7 @@
     if (PAGES.indexOf(p) < 0) p = 'bar';
     /* 酒单第一次露面时才画（191 张卡片，没必要开屏就建） */
     if (p === 'menu' && !menuRendered) { renderMenu(); menuRendered = true; }
+    if (p === 'tonight') renderTonight();
     PAGES.forEach(function (id) {
       var el = document.getElementById('page-' + id);
       if (el) el.classList.toggle('on', id === p);
@@ -2979,8 +2987,144 @@
   renderAll();
 
   /* 调试 / 二次开发用：在浏览器控制台可以访问 window.BarMix */
+  /* =========================================================
+     今晚喝什么：给"随手想喝一杯"的人
+
+     界面上的约定（用户定的）：一屏只问一个问题、按钮不超过 6 个；
+     点了给三杯，每杯只说三件事——叫什么、要买什么、怎么倒。
+     想细看风味和评分，点「拿去细调」跳到调酒台。
+     ========================================================= */
+  var MOODS = [
+    /* val = 这一档拿什么排序（"想喝酸的"就得把最酸的那几杯排前面，
+       不然按"材料少"排会跳出螺丝刀这种只有橙汁带一点酸的酒） */
+    { id: 'sweet', label: '想喝甜的', hit: function (st) { return st.sugar >= 8; },
+      val: function (st) { return st.sugar; }, desc: true },
+    { id: 'fizz', label: '清爽带气泡', hit: function (st) { return st.fizz >= 4; },
+      val: function (st) { return st.fizz; }, desc: true },
+    { id: 'sour', label: '想喝酸的', hit: function (st) { return st.acid >= 6; },
+      val: function (st) { return st.acid; }, desc: true },
+    { id: 'strong', label: '来点浓的', hit: function (st) { return st.abv > 22; },
+      val: function (st) { return st.abv; }, desc: true },
+    { id: 'light', label: '不想醉', hit: function (st) { return st.abv <= 12; },
+      val: function (st) { return st.abv; } },
+    { id: 'any', label: '没主意，随便来三杯', hit: function () { return true; }, random: true }
+  ];
+  var tonightMood = '';
+
+  function moodById(id) {
+    for (var i = 0; i < MOODS.length; i++) if (MOODS[i].id === id) return MOODS[i];
+    return null;
+  }
+
+  /* 这一档要拿出哪三杯：先推荐款、再材料少的（好做） */
+  function tonightPicks(m) {
+    var out = [];
+    REF_RECIPES.forEach(function (r, i) {
+      var st = refStat(i);
+      if (!m.hit(st, r)) return;
+      out.push({ i: i, v: m.val ? m.val(st) : 0 });
+    });
+    out.sort(function (a, b) {
+      var ra = REF_RECIPES[a.i], rb = REF_RECIPES[b.i];
+      if (!!rb.pick !== !!ra.pick) return rb.pick ? 1 : -1;      /* 先推荐的 */
+      if (a.v !== b.v) return m.desc ? b.v - a.v : a.v - b.v;    /* 再按这一档的强度 */
+      return ra.needs.length - rb.needs.length;                  /* 最后好做的在前 */
+    });
+    out = out.map(function (x) { return x.i; });
+    if (m.random) {
+      /* "没主意"就别每次都给同三杯：在推荐款里随机挑三个 */
+      var pool = out.filter(function (i) { return REF_RECIPES[i].pick; });
+      if (pool.length > 3) {
+        pool = pool.slice();
+        for (var k = pool.length - 1; k > 0; k--) {
+          var j = Math.floor(Math.random() * (k + 1));
+          var t = pool[k]; pool[k] = pool[j]; pool[j] = t;
+        }
+        pool = pool.slice(0, 3);
+      }
+      return pool;
+    }
+    return out.slice(0, 3);
+  }
+
+  /* 这杯要买什么：有本站配比的按配比，否则按参考配方；勾过「手边有什么」的标"有了" */
+  function tonightItems(r) {
+    var d = presetDiffOf(r);
+    if (d) {
+      return d.pre.items.filter(function (it) {
+        return BY_ID[it[0]] && BY_ID[it[0]].cat !== 'ice';
+      }).map(function (it) {
+        return { name: shortName(BY_ID[it[0]]), amt: fmtAmt(BY_ID[it[0]], it[1]), have: !!state.have[it[0]] };
+      });
+    }
+    var mine = Object.keys(state.have);
+    return r.needs.filter(function (nd) { return !nd.need.optional; }).map(function (nd) {
+      return { name: needLabel(nd), amt: String(nd.a || ''), have: needStatusWith(nd.need, mine).ok };
+    });
+  }
+
+  /* 怎么倒：一句话，够用就行（细节去调酒台看） */
+  function tonightHow(r) {
+    var m = methodFromRef(r.method);
+    var glass = glassOf(glassFromRef(r)).name;
+    var ice = /无冰/.test(r.ice || '') ? '' : '（杯里先放冰）';
+    if (m === 'shake') return '材料加冰摇 15 秒，滤进' + glass + ice;
+    if (m === 'stir') return '材料加冰搅 20 秒，滤进' + glass + ice;
+    if (r.method === 'blended' || r.method === 'blend') return '连冰一起打成冰沙，倒进' + glass;
+    return '材料直接倒进' + glass + '搅两下' + ice;
+  }
+
+  function tonightCard(i) {
+    var r = REF_RECIPES[i];
+    var nm = recipeName(r);
+    var items = tonightItems(r);
+    var need = items.filter(function (x) { return !x.have; });
+    var line = items.map(function (x) {
+      return '<span class="' + (x.have ? 'ti-have' : '') + '">' + esc(x.name)
+        + ' ' + esc(x.amt) + (x.have ? ' ✓' : '') + '</span>';
+    }).join(' · ');
+    var miss = need.length
+      ? '要买：' + need.map(function (x) { return esc(x.name); }).join('、')
+      : '材料你都有 ✓';
+    return '<article class="tcard">'
+      + '<div class="tc-head"><b>' + esc(nm) + '</b><i>' + esc(r.en || '') + '</i>'
+        + '<span class="tc-star' + (isFav(nm) ? ' on' : '') + '" data-fav="' + i + '" role="button" tabindex="0"'
+        + ' title="' + (isFav(nm) ? '取消收藏' : '收藏') + '">' + (isFav(nm) ? '★' : '☆') + '</span></div>'
+      + (PICK_LINE[nm] ? '<p class="hint pickline">' + esc(PICK_LINE[nm]) + '</p>' : '')
+      + '<p class="tc-line"><b>要买什么</b>：' + line + '</p>'
+      + '<p class="tc-line"><b>怎么倒</b>：' + esc(tonightHow(r)) + '</p>'
+      + '<p class="tc-miss">' + miss + '</p>'
+      + '<div class="tc-acts"><button type="button" class="ghost on" data-tonight-go="' + i
+        + '">拿去细调</button></div>'
+      + '</article>';
+  }
+
+  function renderTonight() {
+    var row = document.getElementById('moodRow');
+    if (!row) return;
+    row.innerHTML = MOODS.map(function (m) {
+      return '<button type="button" class="moodbtn' + (m.id === tonightMood ? ' on' : '')
+        + '" data-mood="' + m.id + '">' + m.label + '</button>';
+    }).join('');
+    var out = document.getElementById('tonightOut');
+    if (!out) return;
+    var m = moodById(tonightMood);
+    if (!m) {
+      out.innerHTML = '<p class="hint">上面点一个，下面出三杯。</p>';
+      return;
+    }
+    var picks = tonightPicks(m);
+    if (!picks.length) {
+      out.innerHTML = '<p class="hint">这一档暂时没挑出合适的，换个心情试试。</p>';
+      return;
+    }
+    out.innerHTML = '<div class="tcards">' + picks.map(tonightCard).join('') + '</div>'
+      + '<p class="hint tonightfoot">就这三杯。想要更多选择、想看风味和评分，去「酒单」或「调酒台」。</p>';
+  }
+
   window.BarMix = {
     state: state, analyze: analyze, advise: advise, BY_ID: BY_ID,
+    dims: DIMS,                       /* 风味图的八个维度（调试/自检用） */
     tempIdOf: tempIdOf, tempOf: tempOf,
     hasTemp: hasTemp,
     /* ④ 手边有什么：给自检和调试用 */
