@@ -1935,7 +1935,7 @@
       + '<span class="mc-line">' + esc(use.slice(0, 4).join(' · ')) + (use.length > 4 ? ' 等' : '') + '</span>'
       + '<span class="mc-meta">' + ({ shake: '摇和', stir: '搅拌', build: '兑和' }[methodFromRef(r.method)] || '兑和')
         + ' · ' + Math.round(st.abv) + '% · ' + r.needs.length + ' 样'
-        + (p >= 0 ? ' · <i class="mc-pick">我们调过</i>' : '')
+        + (p >= 0 ? ' · <i class="mc-pick">本站配比</i>' : '')
         + (r.pick ? ' · <i class="mc-pick">推荐</i>' : '') + '</span>'
       + '</button>';
   }
@@ -2104,9 +2104,9 @@
       + '<span class="hint">' + esc(r.en || '') + '</span></h2>'
       + '<button type="button" class="ghost" data-menu-close="1">关闭</button></div>'
       + '<p class="hint">' + esc(pre ? (PRESET_METHOD[pre.name] ? methodName({ method: PRESET_METHOD[pre.name] }) : methodName(r)) : methodName(r))
-        + ' · ' + esc(pre ? glassOf(pre.glass).name : (r.glass || '杯子未注明'))
+        + ' · ' + esc(pre ? glassOf(pre.glass).name : glassOf(glassFromRef(r)).name)
         + ' · ' + Math.round(st.abv) + '% · ' + (pre ? pre.items.length : r.needs.length) + ' 样材料'
-        + (pre ? '　<b class="mc-pick">量是我们调过的</b>' : '') + '</p>'
+        + (pre ? '　<b class="mc-pick">本站配比</b>' : '') + '</p>'
       + '<ul class="menulist">' + rows + '</ul>'
       /* 参考数据里写了装饰（92 条有），一起显示出来——以前漏了这一栏 */
       + (r.garnish ? '<p class="hint">装饰：' + esc(r.garnish) + (r.ice ? '　冰：' + esc(r.ice) : '') + '</p>'
@@ -2132,10 +2132,20 @@
      所以只要这杯里有我换过的东西，就在详情里把参考配方本的原文列出来，
      并且一条条说明为什么换（理由在 data.js 的 SWAP_NOTE 里）。 */
   function swapBox(r) {
-    var notes = [], any = false;
+    var notes = [], notStocked = [], any = false;
     r.needs.forEach(function (nd) {
       if (!nd.need.approx) return;
       any = true;
+      /* 库里"没有这一样"的：直接告诉用户装杯装的是替换版，想按原方做要自己买。
+         判断办法：把这个名字拿去库里找，有没有哪样材料的名字跟它沾边——
+         沾边（"园林干味美思"∩"干味美思"）说明只是写法不同；一点都不沾（"柠檬酸溶液"）
+         说明库里确实没有这样东西。 */
+      var raw = String(nd.n).replace(/[（(].*?[）)]/g, '').trim();
+      var inLib = INGREDIENTS.some(function (g) {
+        var gn = g.name.replace(/[（(].*?[）)]/g, '').trim();
+        return gn.indexOf(raw) >= 0 || raw.indexOf(gn) >= 0;
+      });
+      if (!inLib && raw) notStocked.push(raw);
       var why = SWAP_NOTE[nd.n];
       if (why) notes.push('<li>' + esc(nd.n) + ' → <b>' + esc(needLabel(nd)) + '</b>：' + esc(why) + '</li>');
     });
@@ -2145,6 +2155,10 @@
     }).join(' · ');
     return '<details class="origbox"><summary>原方长什么样（参考配方本原文）</summary>'
       + '<p class="hint">' + orig + '</p>'
+      + (notStocked.length
+          ? '<p class="hint">本库没有收录：<b>' + esc(notStocked.join('、'))
+            + '</b>。点「装进杯子」装的是下面的替换版；想按原方做，这几样要另外买。' + '</p>'
+          : '')
       + (notes.length ? '<p class="hint"><b>我改过的地方：</b></p><ul class="menulist swapnote">'
         + notes.join('') + '</ul>' : '<p class="hint">只是名字写法不同，没有换东西。</p>')
       + '</details>';
