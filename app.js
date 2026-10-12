@@ -2218,6 +2218,71 @@
   })();
 
   /* ---------------------------------------------------------
+     页面：今晚喝什么 / 调酒台 / 酒单 / Tips
+
+     四页在同一个 HTML 里，靠 .page.on 切显示——不跳转、不重新加载，
+     所以切页是瞬间的。选过哪一页记在本地，下次打开还在那儿。
+     手机上侧栏是抽屉（点 ☰ 滑出，点黑幕关掉）。
+     --------------------------------------------------------- */
+  var PAGE_KEY = 'barmix.page';
+  var PAGES = ['tonight', 'bar', 'menu', 'tips'];
+  var PAGE_SUB = {
+    tonight: '挑一个心情，来三杯',
+    bar: '挑材料 → 实时风味图 → 评分与调整建议',
+    menu: '191 款经典 · 我的收藏 · 我的特调',
+    tips: '没冰箱也能调：保存、替换、避坑'
+  };
+  function currentPage() {
+    for (var i = 0; i < PAGES.length; i++) {
+      var el = document.getElementById('page-' + PAGES[i]);
+      if (el && el.classList.contains('on')) return PAGES[i];
+    }
+    return 'bar';
+  }
+  function setPage(p, save) {
+    if (PAGES.indexOf(p) < 0) p = 'bar';
+    PAGES.forEach(function (id) {
+      var el = document.getElementById('page-' + id);
+      if (el) el.classList.toggle('on', id === p);
+    });
+    var items = document.querySelectorAll('.navitem');
+    for (var i = 0; i < items.length; i++) {
+      items[i].classList.toggle('on', items[i].dataset.page === p);
+    }
+    var sub = document.getElementById('topSub');
+    if (sub && PAGE_SUB[p]) sub.textContent = PAGE_SUB[p];
+    closeNav();
+    if (save) { try { localStorage.setItem(PAGE_KEY, p); } catch (e) {} }
+    if (window.scrollTo) window.scrollTo(0, 0);
+  }
+  function openNav() { document.body.classList.add('navopen'); }
+  function closeNav() { document.body.classList.remove('navopen'); }
+
+  (function () {
+    var btn = document.getElementById('navBtn');
+    if (btn) btn.addEventListener('click', function () {
+      /* 手机上抽屉开合；桌面上把收起的侧栏放出来 */
+      if (window.matchMedia && matchMedia('(max-width: 979px)').matches) {
+        document.body.classList.contains('navopen') ? closeNav() : openNav();
+      } else {
+        var shell = document.querySelector('.shell');
+        if (shell) shell.classList.toggle('folded');
+      }
+    });
+    var fold = document.getElementById('navFold');
+    if (fold) fold.addEventListener('click', function () {
+      var shell = document.querySelector('.shell');
+      if (shell) shell.classList.add('folded');
+    });
+    var back = document.getElementById('navBack');
+    if (back) back.addEventListener('click', closeNav);
+    /* 打开时恢复上次那一页（存不了就默认"调酒台"） */
+    var saved = 'bar';
+    try { saved = localStorage.getItem(PAGE_KEY) || 'bar'; } catch (e) {}
+    setPage(saved, false);
+  })();
+
+  /* ---------------------------------------------------------
      主题：深色 / 浅色
 
      只做一件事——在 <html> 上挂 data-theme="light"，
@@ -2328,6 +2393,11 @@
     theme: {
       current: currentTheme,
       set: function (t) { applyTheme(t, true); return currentTheme(); }
+    },
+    /* 页面切换：给自检和调试用 */
+    page: {
+      current: currentPage,
+      set: function (p) { setPage(p, true); return currentPage(); }
     },
     scores: function () {
       var a = analyze(), sc = totalScore(a);

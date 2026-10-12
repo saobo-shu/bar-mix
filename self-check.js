@@ -5,11 +5,26 @@ const dir = __dirname;
 
 global.window = global;
 const els = {};
+/* 一个真的会记事的 classList——页面切换就是靠它判断的 */
+function mkClassList() {
+  const set = new Set();
+  return {
+    _set: set,
+    toggle(n, on) {
+      const v = on === undefined ? !set.has(n) : !!on;
+      if (v) set.add(n); else set.delete(n);
+      return v;
+    },
+    add(n) { set.add(n); },
+    remove(n) { set.delete(n); },
+    contains(n) { return set.has(n); }
+  };
+}
 global.document = {
   getElementById(id) {
     if (!els[id]) els[id] = { innerHTML: '', textContent: '', hidden: false, dataset: {},
       setAttribute() {}, addEventListener() {}, scrollIntoView() {}, closest() { return null; },
-      classList: { toggle() {}, add() {}, remove() {} } };
+      classList: mkClassList() };
     return els[id];
   },
   /* 把 click 处理器存下来，测试里可以真的模拟一次点击 */
@@ -22,7 +37,9 @@ global.document = {
     setAttribute(n, v) { this._a[n] = String(v); },
     removeAttribute(n) { delete this._a[n]; }
   },
-  querySelector() { return null; }
+  querySelector() { return null; },
+  querySelectorAll() { return []; },
+  body: { classList: mkClassList() }
 };
 /* 主题和"手边有什么"的选择都存在本地，测试里给个内存版 */
 global.localStorage = {
@@ -1174,6 +1191,37 @@ console.log('\n--- 图例搬进怎么用 ---');
 })();
 
 /* ---- 汇总 ---- */
+/* ---- 四个页面 + 侧边导航 ---- */
+console.log('\n--- 页面与导航 ---');
+(function () {
+  const html = fs.readFileSync(path.join(dir, 'dev.html'), 'utf8');
+  const pages = ['tonight', 'bar', 'menu', 'tips'];
+  const pageHtml = pages.filter(p => new RegExp('id="page-' + p + '"').test(html));
+  const navHtml = (html.match(/data-page="(\w+)"/g) || []).map(s => s.replace(/.*"(\w+)"/, '$1'));
+  console.log('  ' + (pageHtml.length === 4 ? '✅' : '❌') + ' 页面：' + pageHtml.join(' / '));
+  console.log('  ' + (navHtml.length === 4 ? '✅' : '❌') + ' 侧栏导航项：' + navHtml.join(' / '));
+  if (pageHtml.length !== 4) bad('页面', '缺页面：' + pages.filter(p => pageHtml.indexOf(p) < 0).join('、'));
+  if (navHtml.length !== 4) bad('页面', '侧栏导航项不对：' + navHtml.join('、'));
+
+  /* 切换：一次只亮一页；选中项跟着走；选过就记住 */
+  const cur = B.page.set('menu');
+  const menuOn = els['page-menu'].classList.contains('on');
+  const barOff = !els['page-bar'].classList.contains('on');
+  const saved = global.localStorage.getItem('barmix.page');
+  const ok = cur === 'menu' && menuOn && barOff && saved === 'menu';
+  console.log('  ' + (ok ? '✅' : '❌') + ' 切到「酒单」：只有它在显示，且记到了本地（' + saved + '）');
+  if (!ok) bad('页面', '页面切换不对：' + [cur, menuOn, barOff, saved].join(' / '));
+  const back = B.page.set('bar') === 'bar' && els['page-bar'].classList.contains('on');
+  console.log('  ' + (back ? '✅' : '❌') + ' 切回「调酒台」');
+  if (!back) bad('页面', '切回调酒台失败');
+
+  /* 手机上侧栏是抽屉，要有黑幕可以关 */
+  const drawer = /id="navBack"/.test(html) && /navopen/.test(
+    fs.readFileSync(path.join(dir, 'app.css'), 'utf8'));
+  console.log('  ' + (drawer ? '✅' : '❌') + ' 手机端有抽屉和黑幕（点黑幕能关）');
+  if (!drawer) bad('页面', '手机端抽屉不完整');
+})();
+
 /* ---- 浅色 / 深色主题 ---- */
 console.log('\n--- 主题切换 ---');
 (function () {

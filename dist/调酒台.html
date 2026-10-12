@@ -175,10 +175,49 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .themebtn { margin-left: auto; flex: none; font-size: 11.5px; padding: 4px 10px; }
 
 /* ---------------- 布局 ---------------- */
+/* 侧栏 + 内容。桌面上侧栏可收起，手机上它是个抽屉 */
+.shell {
+  max-width: 1320px; margin: 0 auto; padding: 12px;
+  display: grid; gap: 12px; grid-template-columns: 194px minmax(0, 1fr);
+  align-items: start;
+}
+.shell > main { max-width: none; margin: 0; padding: 0; }
+.shell.folded { grid-template-columns: minmax(0, 1fr); }
+.shell.folded .sidenav { display: none; }
+.sidenav { position: sticky; top: 66px; display: grid; gap: 6px; align-content: start; }
+.navitem {
+  text-align: left; padding: 9px 11px; border-radius: 11px;
+  background: var(--card2); border: 1px solid var(--line); color: var(--muted);
+}
+.navitem b { display: block; font-size: 13.5px; font-weight: 600; color: var(--text); }
+.navitem i { font-style: normal; font-size: 11px; }
+.navitem.on { border-color: var(--amber); background: rgba(224, 163, 92, .14); }
+.navitem.on b { color: var(--amber); }
+.navitem:active { transform: scale(.99); }
+.navfold { width: 100%; margin-top: 2px; }
+.navbtn { display: inline-block; flex: none; padding: 4px 9px; font-size: 14px; line-height: 1.2; }
+.navback { display: none; }
+
+/* 页面切换：一次只显示一页 */
+.page { display: none; }
+.page.on { display: grid; gap: 12px; }
+
 main {
   max-width: 1180px; margin: 0 auto; padding: 12px;
   display: grid; gap: 12px;
 }
+
+/* 酒单 / 今晚喝什么的容器（内容下一步填） */
+.menutabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 9px; }
+.menufilters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px; }
+.menugrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.menudetail { background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.moodrow { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 12px; }
+.moodbtn {
+  padding: 10px 16px; border-radius: 999px; font-size: 14px;
+  background: var(--card2); border: 1px solid var(--line); color: var(--text);
+}
+.moodbtn.on { background: var(--amber); border-color: var(--amber); color: var(--on-ink); font-weight: 600; }
 
 /* 手机上：两栏容器不参与布局，各面板直接排在 .cols 里，用 order 排成 ①②③④ */
 .cols { display: grid; gap: 12px; }
@@ -420,6 +459,21 @@ details.panel:not([open]) { padding-bottom: 13px; }
   .havelist { max-height: 300px; }
 }
 
+/* 手机上：侧栏变成抽屉，从左边滑出来；点后面那层黑幕关掉 */
+@media (max-width: 979px) {
+  .shell { grid-template-columns: minmax(0, 1fr); padding: 10px; }
+  .shell.folded .sidenav { display: grid; }        /* 手机上"收起"由抽屉接管 */
+  .sidenav {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 252px; z-index: 60;
+    padding: 14px 12px; background: var(--card); border-right: 1px solid var(--line);
+    overflow-y: auto; transform: translateX(-103%); transition: transform .18s ease-out;
+    top: 0;
+  }
+  body.navopen .sidenav { transform: none; }
+  body.navopen .navback { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(0, 0, 0, .5); }
+  .navfold { display: none; }
+}
+
 /* ---------------- 换基酒 ---------------- */
 .swap-panel { margin-bottom: 11px; }
 .swap-panel[hidden] { display: none; }
@@ -652,11 +706,12 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
 </script>
 
 <header class="topbar">
+  <button type="button" class="ghost navbtn" id="navBtn" aria-label="展开导航" aria-expanded="false">☰</button>
   <div class="brand">
     <span class="dot"></span>
     <div>
       <h1>调酒台</h1>
-      <p>挑材料 → 实时风味图 → 评分与调整建议</p>
+      <p id="topSub">挑材料 → 实时风味图 → 评分与调整建议</p>
     </div>
   </div>
   <div class="scorechip">
@@ -669,7 +724,20 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
   <button type="button" class="ghost themebtn" id="themeBtn" aria-pressed="false" title="切换浅色 / 深色">浅色</button>
 </header>
 
+<div class="shell">
+  <!-- 侧边导航：桌面可收起，手机上是个抽屉 -->
+  <nav class="sidenav" id="sidenav" aria-label="页面导航">
+    <button type="button" class="navitem" data-page="tonight"><b>今晚喝什么</b><i>挑一个心情，来三杯</i></button>
+    <button type="button" class="navitem on" data-page="bar"><b>调酒台</b><i>配比 · 风味 · 评分</i></button>
+    <button type="button" class="navitem" data-page="menu"><b>酒单</b><i>191 款经典</i></button>
+    <button type="button" class="navitem" data-page="tips"><b>Tips</b><i>没冰箱也能调</i></button>
+    <button type="button" class="ghost navfold" id="navFold">收起侧栏</button>
+  </nav>
+  <div class="navback" id="navBack" hidden></div>
+
 <main>
+
+  <section class="page on" id="page-bar">
 
   <!-- 怎么用：第一次来的人不知道「常温」「40%」这些标签能点，所以单独放一块 -->
   <details class="panel p-howto">
@@ -759,6 +827,7 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
     <div class="panel-head">
       <h2>① 杯子里</h2>
       <div class="head-acts">
+        <button type="button" class="ghost" id="saveBtn">保存这杯</button>
         <button type="button" class="ghost" id="swapBtn">换基酒</button>
         <button type="button" class="ghost" id="clearBtn">清空</button>
       </div>
@@ -856,10 +925,46 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
     <div class="presets" id="presets"></div>
   </details>
 
-  <!-- ⑥ 生存指南（整块可以收起） -->
-  <details class="panel p-guide">
+  </section><!-- /page-bar -->
+
+  <!-- 酒单：191 款经典，可以筛、可以搜、点开看材料和来历 -->
+  <section class="page" id="page-menu">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>酒单 · 191 款经典</h2>
+        <span class="hint">点一杯看材料、做法和来历</span>
+      </div>
+      <div class="havebar">
+        <input type="search" id="menuSearch" class="havesearch" placeholder="搜酒名、材料…（比如：金酒、柠檬、薄荷）" aria-label="搜索酒单">
+        <button type="button" class="ghost" id="menuClear">清空</button>
+      </div>
+      <div class="menutabs" id="menuTabs"></div>
+      <div class="menufilters" id="menuFilters"></div>
+      <p class="hint menucount" id="menuCount"></p>
+      <div class="menugrid" id="menuList"></div>
+      <button type="button" class="ghost menumore" id="menuMore" hidden></button>
+    </section>
+    <aside class="menudetail" id="menuDetail" hidden></aside>
+  </section>
+
+  <!-- 今晚喝什么：给"突然想喝一杯"的人 -->
+  <section class="page" id="page-tonight">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>今晚喝什么</h2>
+        <span class="hint">挑一个心情，我给你三杯</span>
+      </div>
+      <p class="hint">每杯只告诉你三件事：<b>要买什么、怎么倒、叫什么</b>。想看风味和评分，点「拿去细调」。</p>
+      <div class="moodrow" id="moodRow"></div>
+      <div id="tonightOut" aria-live="polite"></div>
+    </section>
+  </section>
+
+  <!-- Tips -->
+  <section class="page" id="page-tips">
+  <details class="panel p-guide" open>
     <summary class="panel-head">
-      <h2>⑥ 没冰箱 · 小空间生存指南</h2>
+      <h2>没冰箱 · 小空间生存指南</h2>
       <span class="hint">点标题展开　<b class="fold"></b></span>
     </summary>
     <div class="guide">
@@ -997,9 +1102,11 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
 
     </div>
   </details>
+  </section><!-- /page-tips -->
 
   <footer>风味图与评分是根据配比推算的参考值，用于比较和调整方向，不是客观事实。</footer>
 </main>
+</div><!-- /shell -->
 
 <script>
 /* =========================================================
@@ -4449,6 +4556,71 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
   })();
 
   /* ---------------------------------------------------------
+     页面：今晚喝什么 / 调酒台 / 酒单 / Tips
+
+     四页在同一个 HTML 里，靠 .page.on 切显示——不跳转、不重新加载，
+     所以切页是瞬间的。选过哪一页记在本地，下次打开还在那儿。
+     手机上侧栏是抽屉（点 ☰ 滑出，点黑幕关掉）。
+     --------------------------------------------------------- */
+  var PAGE_KEY = 'barmix.page';
+  var PAGES = ['tonight', 'bar', 'menu', 'tips'];
+  var PAGE_SUB = {
+    tonight: '挑一个心情，来三杯',
+    bar: '挑材料 → 实时风味图 → 评分与调整建议',
+    menu: '191 款经典 · 我的收藏 · 我的特调',
+    tips: '没冰箱也能调：保存、替换、避坑'
+  };
+  function currentPage() {
+    for (var i = 0; i < PAGES.length; i++) {
+      var el = document.getElementById('page-' + PAGES[i]);
+      if (el && el.classList.contains('on')) return PAGES[i];
+    }
+    return 'bar';
+  }
+  function setPage(p, save) {
+    if (PAGES.indexOf(p) < 0) p = 'bar';
+    PAGES.forEach(function (id) {
+      var el = document.getElementById('page-' + id);
+      if (el) el.classList.toggle('on', id === p);
+    });
+    var items = document.querySelectorAll('.navitem');
+    for (var i = 0; i < items.length; i++) {
+      items[i].classList.toggle('on', items[i].dataset.page === p);
+    }
+    var sub = document.getElementById('topSub');
+    if (sub && PAGE_SUB[p]) sub.textContent = PAGE_SUB[p];
+    closeNav();
+    if (save) { try { localStorage.setItem(PAGE_KEY, p); } catch (e) {} }
+    if (window.scrollTo) window.scrollTo(0, 0);
+  }
+  function openNav() { document.body.classList.add('navopen'); }
+  function closeNav() { document.body.classList.remove('navopen'); }
+
+  (function () {
+    var btn = document.getElementById('navBtn');
+    if (btn) btn.addEventListener('click', function () {
+      /* 手机上抽屉开合；桌面上把收起的侧栏放出来 */
+      if (window.matchMedia && matchMedia('(max-width: 979px)').matches) {
+        document.body.classList.contains('navopen') ? closeNav() : openNav();
+      } else {
+        var shell = document.querySelector('.shell');
+        if (shell) shell.classList.toggle('folded');
+      }
+    });
+    var fold = document.getElementById('navFold');
+    if (fold) fold.addEventListener('click', function () {
+      var shell = document.querySelector('.shell');
+      if (shell) shell.classList.add('folded');
+    });
+    var back = document.getElementById('navBack');
+    if (back) back.addEventListener('click', closeNav);
+    /* 打开时恢复上次那一页（存不了就默认"调酒台"） */
+    var saved = 'bar';
+    try { saved = localStorage.getItem(PAGE_KEY) || 'bar'; } catch (e) {}
+    setPage(saved, false);
+  })();
+
+  /* ---------------------------------------------------------
      主题：深色 / 浅色
 
      只做一件事——在 <html> 上挂 data-theme="light"，
@@ -4559,6 +4731,11 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
     theme: {
       current: currentTheme,
       set: function (t) { applyTheme(t, true); return currentTheme(); }
+    },
+    /* 页面切换：给自检和调试用 */
+    page: {
+      current: currentPage,
+      set: function (p) { setPage(p, true); return currentPage(); }
     },
     scores: function () {
       var a = analyze(), sc = totalScore(a);

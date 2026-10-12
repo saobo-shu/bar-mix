@@ -129,10 +129,49 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .themebtn { margin-left: auto; flex: none; font-size: 11.5px; padding: 4px 10px; }
 
 /* ---------------- 布局 ---------------- */
+/* 侧栏 + 内容。桌面上侧栏可收起，手机上它是个抽屉 */
+.shell {
+  max-width: 1320px; margin: 0 auto; padding: 12px;
+  display: grid; gap: 12px; grid-template-columns: 194px minmax(0, 1fr);
+  align-items: start;
+}
+.shell > main { max-width: none; margin: 0; padding: 0; }
+.shell.folded { grid-template-columns: minmax(0, 1fr); }
+.shell.folded .sidenav { display: none; }
+.sidenav { position: sticky; top: 66px; display: grid; gap: 6px; align-content: start; }
+.navitem {
+  text-align: left; padding: 9px 11px; border-radius: 11px;
+  background: var(--card2); border: 1px solid var(--line); color: var(--muted);
+}
+.navitem b { display: block; font-size: 13.5px; font-weight: 600; color: var(--text); }
+.navitem i { font-style: normal; font-size: 11px; }
+.navitem.on { border-color: var(--amber); background: rgba(224, 163, 92, .14); }
+.navitem.on b { color: var(--amber); }
+.navitem:active { transform: scale(.99); }
+.navfold { width: 100%; margin-top: 2px; }
+.navbtn { display: inline-block; flex: none; padding: 4px 9px; font-size: 14px; line-height: 1.2; }
+.navback { display: none; }
+
+/* 页面切换：一次只显示一页 */
+.page { display: none; }
+.page.on { display: grid; gap: 12px; }
+
 main {
   max-width: 1180px; margin: 0 auto; padding: 12px;
   display: grid; gap: 12px;
 }
+
+/* 酒单 / 今晚喝什么的容器（内容下一步填） */
+.menutabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 9px; }
+.menufilters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px; }
+.menugrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.menudetail { background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.moodrow { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 12px; }
+.moodbtn {
+  padding: 10px 16px; border-radius: 999px; font-size: 14px;
+  background: var(--card2); border: 1px solid var(--line); color: var(--text);
+}
+.moodbtn.on { background: var(--amber); border-color: var(--amber); color: var(--on-ink); font-weight: 600; }
 
 /* 手机上：两栏容器不参与布局，各面板直接排在 .cols 里，用 order 排成 ①②③④ */
 .cols { display: grid; gap: 12px; }
@@ -372,6 +411,21 @@ details.panel:not([open]) { padding-bottom: 13px; }
 @media (max-width: 720px) {
   .havewrap { grid-template-columns: minmax(0, 1fr); }
   .havelist { max-height: 300px; }
+}
+
+/* 手机上：侧栏变成抽屉，从左边滑出来；点后面那层黑幕关掉 */
+@media (max-width: 979px) {
+  .shell { grid-template-columns: minmax(0, 1fr); padding: 10px; }
+  .shell.folded .sidenav { display: grid; }        /* 手机上"收起"由抽屉接管 */
+  .sidenav {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 252px; z-index: 60;
+    padding: 14px 12px; background: var(--card); border-right: 1px solid var(--line);
+    overflow-y: auto; transform: translateX(-103%); transition: transform .18s ease-out;
+    top: 0;
+  }
+  body.navopen .sidenav { transform: none; }
+  body.navopen .navback { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(0, 0, 0, .5); }
+  .navfold { display: none; }
 }
 
 /* ---------------- 换基酒 ---------------- */

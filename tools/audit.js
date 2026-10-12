@@ -13,10 +13,13 @@ global.document = {
   getElementById(id) {
     if (!els[id]) els[id] = { innerHTML: '', textContent: '', hidden: false, dataset: {},
       setAttribute() {}, addEventListener() {}, scrollIntoView() {}, closest() { return null; },
-      classList: { toggle() {}, add() {}, remove() {} } };
+      classList: { toggle() {}, add() {}, remove() {}, contains() { return false; } } };
     return els[id];
   },
-  addEventListener() {}
+  addEventListener() {},
+  querySelector() { return null; },
+  querySelectorAll() { return []; },
+  body: { classList: { toggle() {}, add() {}, remove() {}, contains() { return false; } } }
 };
 
 const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +

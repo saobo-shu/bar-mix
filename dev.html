@@ -76,11 +76,12 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
 </script>
 
 <header class="topbar">
+  <button type="button" class="ghost navbtn" id="navBtn" aria-label="展开导航" aria-expanded="false">☰</button>
   <div class="brand">
     <span class="dot"></span>
     <div>
       <h1>调酒台</h1>
-      <p>挑材料 → 实时风味图 → 评分与调整建议</p>
+      <p id="topSub">挑材料 → 实时风味图 → 评分与调整建议</p>
     </div>
   </div>
   <div class="scorechip">
@@ -93,7 +94,20 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
   <button type="button" class="ghost themebtn" id="themeBtn" aria-pressed="false" title="切换浅色 / 深色">浅色</button>
 </header>
 
+<div class="shell">
+  <!-- 侧边导航：桌面可收起，手机上是个抽屉 -->
+  <nav class="sidenav" id="sidenav" aria-label="页面导航">
+    <button type="button" class="navitem" data-page="tonight"><b>今晚喝什么</b><i>挑一个心情，来三杯</i></button>
+    <button type="button" class="navitem on" data-page="bar"><b>调酒台</b><i>配比 · 风味 · 评分</i></button>
+    <button type="button" class="navitem" data-page="menu"><b>酒单</b><i>191 款经典</i></button>
+    <button type="button" class="navitem" data-page="tips"><b>Tips</b><i>没冰箱也能调</i></button>
+    <button type="button" class="ghost navfold" id="navFold">收起侧栏</button>
+  </nav>
+  <div class="navback" id="navBack" hidden></div>
+
 <main>
+
+  <section class="page on" id="page-bar">
 
   <!-- 怎么用：第一次来的人不知道「常温」「40%」这些标签能点，所以单独放一块 -->
   <details class="panel p-howto">
@@ -183,6 +197,7 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
     <div class="panel-head">
       <h2>① 杯子里</h2>
       <div class="head-acts">
+        <button type="button" class="ghost" id="saveBtn">保存这杯</button>
         <button type="button" class="ghost" id="swapBtn">换基酒</button>
         <button type="button" class="ghost" id="clearBtn">清空</button>
       </div>
@@ -280,10 +295,46 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
     <div class="presets" id="presets"></div>
   </details>
 
-  <!-- ⑥ 生存指南（整块可以收起） -->
-  <details class="panel p-guide">
+  </section><!-- /page-bar -->
+
+  <!-- 酒单：191 款经典，可以筛、可以搜、点开看材料和来历 -->
+  <section class="page" id="page-menu">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>酒单 · 191 款经典</h2>
+        <span class="hint">点一杯看材料、做法和来历</span>
+      </div>
+      <div class="havebar">
+        <input type="search" id="menuSearch" class="havesearch" placeholder="搜酒名、材料…（比如：金酒、柠檬、薄荷）" aria-label="搜索酒单">
+        <button type="button" class="ghost" id="menuClear">清空</button>
+      </div>
+      <div class="menutabs" id="menuTabs"></div>
+      <div class="menufilters" id="menuFilters"></div>
+      <p class="hint menucount" id="menuCount"></p>
+      <div class="menugrid" id="menuList"></div>
+      <button type="button" class="ghost menumore" id="menuMore" hidden></button>
+    </section>
+    <aside class="menudetail" id="menuDetail" hidden></aside>
+  </section>
+
+  <!-- 今晚喝什么：给"突然想喝一杯"的人 -->
+  <section class="page" id="page-tonight">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>今晚喝什么</h2>
+        <span class="hint">挑一个心情，我给你三杯</span>
+      </div>
+      <p class="hint">每杯只告诉你三件事：<b>要买什么、怎么倒、叫什么</b>。想看风味和评分，点「拿去细调」。</p>
+      <div class="moodrow" id="moodRow"></div>
+      <div id="tonightOut" aria-live="polite"></div>
+    </section>
+  </section>
+
+  <!-- Tips -->
+  <section class="page" id="page-tips">
+  <details class="panel p-guide" open>
     <summary class="panel-head">
-      <h2>⑥ 没冰箱 · 小空间生存指南</h2>
+      <h2>没冰箱 · 小空间生存指南</h2>
       <span class="hint">点标题展开　<b class="fold"></b></span>
     </summary>
     <div class="guide">
@@ -421,9 +472,11 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
 
     </div>
   </details>
+  </section><!-- /page-tips -->
 
   <footer>风味图与评分是根据配比推算的参考值，用于比较和调整方向，不是客观事实。</footer>
 </main>
+</div><!-- /shell -->
 
 <script src="data.js"></script>
 <script src="ref-recipes.js"></script>
