@@ -2096,7 +2096,11 @@
               + '<b>' + esc(fmtAmt(g, it[1])) + '</b></li>';
           }).join('')
       : r.needs.map(function (nd) {
-          return '<li><span>' + esc(nd.n) + (nd.need.optional ? ' <i class="opt">可省</i>' : '') + '</span>'
+          /* 材料表是"你要买、要用的东西"：换过的就直接写换之后的名字 + 一个「替」字，
+             参考原文放到下面的「原方」里——两边内容不一样，才各自有意义 */
+          return '<li><span>' + esc(nd.need.approx ? needLabel(nd) : nd.n)
+            + (nd.need.approx ? ' <i class="opt swap">替</i>' : '')
+            + (nd.need.optional ? ' <i class="opt">可省</i>' : '') + '</span>'
             + '<b>' + esc(String(nd.a || '')) + '</b></li>';
         }).join('');
     box.hidden = false;
@@ -2133,6 +2137,8 @@
      并且一条条说明为什么换（理由在 data.js 的 SWAP_NOTE 里）。 */
   function swapBox(r) {
     var notes = [], notStocked = [], any = false;
+    /* 有本站配比的（33 款）：就算材料没换，量也是我们调的，原方照样值得一看 */
+    var hasPre = presetIndexByName(REF_PRESET_MAP[recipeName(r)] || '') >= 0;
     r.needs.forEach(function (nd) {
       if (!nd.need.approx) return;
       any = true;
@@ -2149,7 +2155,10 @@
       var why = SWAP_NOTE[nd.n];
       if (why) notes.push('<li>' + esc(nd.n) + ' → <b>' + esc(needLabel(nd)) + '</b>：' + esc(why) + '</li>');
     });
-    if (!any) return '';
+    /* 第三种情况：没换材料、也不是本站配比——那材料表本身就是参考原文 */
+    if (!any && !hasPre) {
+      return '<p class="hint origbox-plain">这份和参考配方本一致：材料、用量、做法都照它，没改动。</p>';
+    }
     var orig = r.needs.map(function (nd) {
       return esc(nd.n) + (nd.a ? ' ' + esc(String(nd.a)) : '');
     }).join(' · ');
@@ -2160,7 +2169,9 @@
             + '</b>。点「装进杯子」装的是下面的替换版；想按原方做，这几样要另外买。' + '</p>'
           : '')
       + (notes.length ? '<p class="hint"><b>我改过的地方：</b></p><ul class="menulist swapnote">'
-        + notes.join('') + '</ul>' : '<p class="hint">只是名字写法不同，没有换东西。</p>')
+        + notes.join('') + '</ul>'
+        : (hasPre ? '<p class="hint">材料没换，但<b>用量是本站配比</b>（上面那份）；原方这里也能看到，想照原方做就按它的量来。</p>'
+          : '<p class="hint">只是名字写法不同，没有换东西。</p>'))
       + '</details>';
   }
 

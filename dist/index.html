@@ -236,6 +236,7 @@ main {
 .mc-meta { font-size: 10.5px; color: var(--muted); }
 .mc-pick { font-style: normal; color: var(--amber); }
 .origbox { margin: 8px 0 0; }
+.origbox-plain { margin: 8px 0 0; }
 .origbox > summary { cursor: pointer; font-size: 12px; color: var(--amber); }
 .origbox > summary::-webkit-details-marker { display: none; }
 .origbox > summary::before { content: '▸ '; }
@@ -251,6 +252,7 @@ main {
 .menulist li { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 4px 0; border-bottom: 1px dashed var(--line); }
 .menulist li b { color: var(--amber); font-weight: 600; font-variant-numeric: tabular-nums; }
 .menulist .opt { font-style: normal; font-size: 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 5px; }
+.menulist .opt.swap { color: var(--amber); border-color: rgba(224, 163, 92, .55); }
 .minecard { display: flex; flex-direction: column; gap: 5px; padding: 10px 11px; border-radius: 11px; background: var(--card2); border: 1px solid var(--line); }
 .mineacts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .menu-card-wrap { display: grid; gap: 12px; }
@@ -4550,7 +4552,11 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
               + '<b>' + esc(fmtAmt(g, it[1])) + '</b></li>';
           }).join('')
       : r.needs.map(function (nd) {
-          return '<li><span>' + esc(nd.n) + (nd.need.optional ? ' <i class="opt">可省</i>' : '') + '</span>'
+          /* 材料表是"你要买、要用的东西"：换过的就直接写换之后的名字 + 一个「替」字，
+             参考原文放到下面的「原方」里——两边内容不一样，才各自有意义 */
+          return '<li><span>' + esc(nd.need.approx ? needLabel(nd) : nd.n)
+            + (nd.need.approx ? ' <i class="opt swap">替</i>' : '')
+            + (nd.need.optional ? ' <i class="opt">可省</i>' : '') + '</span>'
             + '<b>' + esc(String(nd.a || '')) + '</b></li>';
         }).join('');
     box.hidden = false;
@@ -4587,6 +4593,8 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
      并且一条条说明为什么换（理由在 data.js 的 SWAP_NOTE 里）。 */
   function swapBox(r) {
     var notes = [], notStocked = [], any = false;
+    /* 有本站配比的（33 款）：就算材料没换，量也是我们调的，原方照样值得一看 */
+    var hasPre = presetIndexByName(REF_PRESET_MAP[recipeName(r)] || '') >= 0;
     r.needs.forEach(function (nd) {
       if (!nd.need.approx) return;
       any = true;
@@ -4603,7 +4611,10 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
       var why = SWAP_NOTE[nd.n];
       if (why) notes.push('<li>' + esc(nd.n) + ' → <b>' + esc(needLabel(nd)) + '</b>：' + esc(why) + '</li>');
     });
-    if (!any) return '';
+    /* 第三种情况：没换材料、也不是本站配比——那材料表本身就是参考原文 */
+    if (!any && !hasPre) {
+      return '<p class="hint origbox-plain">这份和参考配方本一致：材料、用量、做法都照它，没改动。</p>';
+    }
     var orig = r.needs.map(function (nd) {
       return esc(nd.n) + (nd.a ? ' ' + esc(String(nd.a)) : '');
     }).join(' · ');
@@ -4614,7 +4625,9 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
             + '</b>。点「装进杯子」装的是下面的替换版；想按原方做，这几样要另外买。' + '</p>'
           : '')
       + (notes.length ? '<p class="hint"><b>我改过的地方：</b></p><ul class="menulist swapnote">'
-        + notes.join('') + '</ul>' : '<p class="hint">只是名字写法不同，没有换东西。</p>')
+        + notes.join('') + '</ul>'
+        : (hasPre ? '<p class="hint">材料没换，但<b>用量是本站配比</b>（上面那份）；原方这里也能看到，想照原方做就按它的量来。</p>'
+          : '<p class="hint">只是名字写法不同，没有换东西。</p>'))
       + '</details>';
   }
 
