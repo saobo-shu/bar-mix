@@ -303,6 +303,8 @@ details.panel:not([open]) > summary .fold::before { content: '▸'; }
 details.panel:not([open]) { padding-bottom: 13px; }
 .panel-head h2 { font-size: 14px; margin: 0; font-weight: 600; color: var(--text); }
 .hint { font-size: 11.5px; color: var(--muted); }
+/* 和参考本不一样这件事要显眼：常驻在材料表下面，不用点开折叠就能看到 */
+.hint.warnline { color: var(--amber); margin: 8px 0 0; }
 
 /* ---------------- 材料库 ---------------- */
 .cats { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 9px; margin-bottom: 10px; scrollbar-width: none; }
@@ -1402,12 +1404,12 @@ var INGREDIENTS = [
   { id:'campari', cat:'liqueur', name:'金巴利', unit:'ml', mlu:1, def:20, step:5, abv:25, src:'web',
     f:{sugar:3,acid:2,bitter:9,booze:5,fruit:4,spice:4,fizz:0,body:3},
     note:'苦味担当，一小份就能给甜味「刹车」。' },
-  { id:'vermouth', cat:'liqueur', name:'甜味美思（Martini Rosso）', unit:'ml', mlu:1, def:30, step:5, abv:16, src:'rt',
+  { id:'vermouth', cat:'liqueur', name:'红味美思（甜味美思 / Martini Rosso）', unit:'ml', mlu:1, def:30, step:5, abv:16, src:'rt',
     f:{sugar:6,acid:2,bitter:4,booze:2,fruit:4,spice:6,fizz:0,body:3},
     note:'⚠️ 两件事：一、开瓶后必须低温保存，没冰箱就别买大瓶，买 375ml 尽快用完。二、它叫「味美思」不叫「苦艾酒」——中文里那个是历史误译，苦艾酒是 68% 的蒸馏烈酒，和这个完全两回事。' },
-  { id:'dry_vermouth', cat:'liqueur', name:'干味美思（Extra Dry）', unit:'ml', mlu:1, def:15, step:5, abv:16, src:'web',
+  { id:'dry_vermouth', cat:'liqueur', name:'干味美思（白味美思 / Extra Dry）', unit:'ml', mlu:1, def:15, step:5, abv:16, src:'web',
     f:{sugar:2,acid:3,bitter:4,booze:2,fruit:3,spice:6,fizz:0,body:2},
-    note:'干爽带草本味，和甜味美思是一对。同样怕氧化，买 375ml。它也是味美思（加香加强葡萄酒），不是苦艾酒。' },
+    note:'干爽带草本味，和红味美思（也叫甜味美思）是一对。同样怕氧化，买 375ml。它也是味美思（加香加强葡萄酒），不是苦艾酒。' },
   { id:'maraschino', cat:'liqueur', name:'黑樱桃利口酒（Luxardo）', unit:'ml', mlu:1, def:15, step:5, abv:32, src:'web',
     f:{sugar:6,acid:0.5,bitter:1.5,booze:4,fruit:7,spice:4,fizz:0,body:2},
     note:'经典威士忌配方里出现频率最高的利口酒之一。不甜腻，带一点杏仁和花香，15ml 就是点睛。' },
@@ -1544,7 +1546,7 @@ var INGREDIENTS = [
     note:'极干的雪莉酒，带坚果和一点咸味。阿多尼斯、竹鹤都用它。开瓶后必须冷藏，两周内喝完。' },
   { id:'port', cat:'wine', name:'波特酒', unit:'ml', mlu:1, def:45, step:5, abv:20, src:'web',
     f:{sugar:9,acid:2,bitter:3,booze:4,fruit:6,spice:3,fizz:0,body:5},
-    note:'甜的红加强酒。代替甜味美思用，风味更厚更甜。开瓶后冷藏，两三个月内喝完。' },
+    note:'甜的红加强酒。代替红味美思用，风味更厚更甜。开瓶后冷藏，两三个月内喝完。' },
   { id:'red_wine', cat:'wine', name:'红葡萄酒', unit:'ml', mlu:1, def:90, step:5, abv:13, src:'rt',
     f:{sugar:1.5,acid:4,bitter:3,booze:3,fruit:6,spice:2,fizz:0,body:4},
     note:'做红酒调酒用（比如纽约酸上的那层红酒浮层）。开瓶后 2-3 天内用完。' },
@@ -1967,7 +1969,7 @@ var STORE = {
 
   /* ---- 利口酒：住处最容易翻车的都在这里 ---- */
   vermouth: { lv: 'bad', risk: 2, text: '开瓶后必须冷藏，2-4 周内用完。没冰箱的话这是最容易翻车的一样，建议直接跳过或买 375ml 一次喝完。' },
-  dry_vermouth: { lv: 'bad', risk: 2, text: '同甜味美思：开瓶后必须冷藏，4 周内用完。没冰箱别买大瓶。' },
+  dry_vermouth: { lv: 'bad', risk: 2, text: '同红味美思：开瓶后必须冷藏，4 周内用完。没冰箱别买大瓶。' },
   lillet: { lv: 'bad', risk: 2, text: '开瓶后冷藏，1-2 个月内用完。住处建议不买。' },
   absinthe: { lv: 'ok', risk: 0, text: '68 度，常温放很多年都不会坏——比味美思省心得多。' },
   pastis: { lv: 'ok', risk: 0, text: '45 度，常温阴凉处不用担心保存。' },
@@ -2217,8 +2219,20 @@ var THERMO = {
    用户的要求：**用户有权知道原方长什么样**，换了什么也要说清楚，
    而且要解释为什么换。所以酒单的详情里会同时显示"原方"和下面这些话。
 
-   只写**真的换了东西**的那些；纯粹的名字写法差异（园林干味美思 → 干味美思、
-   添加利 → 添加利金酒）不用写，那不是替换。
+  只写**真的换了东西**的那些；纯粹的名字写法差异（园林干味美思 → 干味美思、
+  添加利 → 添加利金酒）不用写，那不是替换。
+   ========================================================= */
+/* 反面的一小张表：这几样**看着**像"同一件事换了个说法"，其实是两样东西，
+   别被名字骗了（"柠檬伏特加"和普通伏特加查一下名字就互相包含，但它不是）。
+   判定逻辑在 app.js 的 justSpelling。 */
+var SWAP_REAL = {
+  '柠檬伏特加': 1,     /* 加味伏特加，不是普通伏特加换了个叫法 */
+  '百香果果茸': 1,     /* 带果肉的半成品，不是新鲜百香果 */
+  '百香果糖浆': 1,     /* 糖浆 ≠ 水果 */
+  '生姜糖浆': 1        /* 糖浆里有糖，和现磨姜片不是一回事 */
+};
+/* =========================================================
+   下面开始是换掉东西的理由
    ========================================================= */
 var SWAP_NOTE = {
   '柠檬酸溶液': '柠檬酸溶液是酒吧用来精确控酸的（柠檬酸粉兑水）。住处没必要为这一杯备一套，用现挤柠檬汁——酸度不如它稳定，但更像真柠檬。',
@@ -2247,7 +2261,7 @@ var SWAP_NOTE = {
   '希灵樱桃利口酒': '这个牌子要网购，用樱桃白兰地替。',
   '希零樱桃利口酒': '同一个牌子的另一种写法，用樱桃白兰地替。',
   '樱桃利口酒': '指樱桃味的利口酒，用樱桃白兰地替。',
-  '自制味美思': '自制太费事，用现成的甜味美思。',
+    '自制味美思': '自制太费事，用现成的红味美思。',
   '自制阿马罗': '自制太费事，用现成的阿玛罗（阿维尔纳）。',
   '季之美金酒': '季之美网购能买到，只是不便宜。这杯用任一干金都成立。',
   '巍城夏日花园金酒': '这个牌子网购能买到，也不便宜。用任一干金替。',
@@ -4552,9 +4566,12 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
           }).join('')
       : r.needs.map(function (nd) {
           /* 材料表是"你要买、要用的东西"：换过的就直接写换之后的名字 + 一个「替」字，
-             参考原文放到下面的「原方」里——两边内容不一样，才各自有意义 */
-          return '<li><span>' + esc(nd.need.approx ? needLabel(nd) : nd.n)
-            + (nd.need.approx ? ' <i class="opt swap">替</i>' : '')
+             参考原文放到下面的「原方」里——两边内容不一样，才各自有意义。
+             只是叫法不同的（园林干味美思 / 干味美思）不挂「替」，不然后面那句
+             "和参考本一致"就跟「替」字打架了 */
+          var swapped = nd.need.approx && !justSpelling(nd);
+          return '<li><span>' + esc(swapped ? needLabel(nd) : nd.n)
+            + (swapped ? ' <i class="opt swap">替</i>' : '')
             + (nd.need.optional ? ' <i class="opt">可省</i>' : '') + '</span>'
             + '<b>' + esc(String(nd.a || '')) + '</b></li>';
         }).join('');
@@ -4596,10 +4613,13 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
        "蔓越莓糖浆 → 白糖浆"和这杯备注里"不用再加糖浆"同时显示这种自相矛盾。 */
   function swapBox(r) {
     if (presetDiffOf(r)) return presetSwapBox(r);
-    var notes = [], notStocked = [], any = false;
+    var notes = [], notStocked = [], real = [], nameOnly = [];
     r.needs.forEach(function (nd) {
       if (!nd.need.approx) return;
-      any = true;
+      /* 名字只是写法不同（园林干味美思 / 干味美思）不算"和参考本不一样"，
+         不然每杯都要挂一句"不一样"，用户会麻木 */
+      if (justSpelling(nd)) { nameOnly.push(nd.n); return; }
+      real.push(nd);
       /* 库里"没有这一样"的：直接告诉用户装杯装的是替换版，想按原方做要自己买。
          判断办法：把这个名字拿去库里找，有没有哪样材料的名字跟它沾边——
          沾边（"园林干味美思"∩"干味美思"）说明只是写法不同；一点都不沾（"柠檬酸溶液"）
@@ -4614,21 +4634,29 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
       if (why) notes.push('<li>' + esc(nd.n) + ' → <b>' + esc(needLabel(nd)) + '</b>：' + esc(why) + '</li>');
     });
     /* 没换材料、也不是本站配比——那材料表本身就是参考原文 */
-    if (!any) {
+    if (!real.length) {
+      if (nameOnly.length) {
+        return '<p class="hint origbox-plain">这份和参考配方本一致：材料、用量、做法都照它，'
+          + '只是个别叫法按本库的写法来（' + esc(nameOnly.join('、')) + '）。</p>';
+      }
       return '<p class="hint origbox-plain">这份和参考配方本一致：材料、用量、做法都照它，没改动。</p>';
     }
     var orig = r.needs.map(function (nd) {
       return esc(nd.n) + (nd.a ? ' ' + esc(String(nd.a)) : '');
     }).join(' · ');
-    return '<details class="origbox"><summary>原方长什么样（参考配方本原文）</summary>'
+    /* 换了东西这件事必须一眼看到，不能藏在折叠里——用户说过"按人家的酒单挑出来的
+       一定比咱们配的好喝"，那就得让人知道我们哪儿没照人家的来 */
+    return '<p class="hint warnline">⚠️ 这杯和参考本不一样。参考本写的是 '
+      + real.map(function (nd) { return esc(nd.n); }).join('、')
+      + '；这杯用的是材料表里带「替」的那几样。点开下面看原文和理由。</p>'
+      + '<details class="origbox"><summary>原方长什么样（参考配方本原文）</summary>'
       + '<p class="hint">' + orig + '</p>'
       + (notStocked.length
           ? '<p class="hint">本库没有收录：<b>' + esc(notStocked.join('、'))
             + '</b>。点「装进杯子」装的是下面的替换版；想按原方做，这几样要另外买。' + '</p>'
           : '')
       + (notes.length ? '<p class="hint"><b>我改过的地方：</b></p><ul class="menulist swapnote">'
-        + notes.join('') + '</ul>'
-        : '<p class="hint">只是名字写法不同，没有换东西。</p>')
+        + notes.join('') + '</ul>' : '')
       + '</details>';
   }
 
@@ -4644,11 +4672,14 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
   }
   /* "生姜片"跟库里的"生姜"、"水妈妈椰浆"跟"椰浆"——只是叫法不同，不算换东西 */
   function justSpelling(nd) {
+    if (SWAP_REAL[nd.n]) return false;   /* 名字像，东西不一样（见 data.js 的 SWAP_REAL） */
     var a = String(nd.n).replace(/[（(].*?[）)]/g, '').trim();
     var b = needLabel(nd).replace(/[（(].*?[）)]/g, '').trim();
     if (!a || !b) return false;
-    /* 一个名字是另一个的开头（生姜片 / 生姜、红糖 / 红糖糖浆），或者头两个字一样 */
-    return a.indexOf(b) === 0 || b.indexOf(a) === 0 || a.slice(0, 2) === b.slice(0, 2);
+    /* 一个名字整段被另一个包住（生姜片 / 生姜、园林干味美思 / 干味美思、
+       水妈妈椰浆 / 椰浆）才算"就是它，只是写法不同"。
+       只对前两个字相同不算——"桃子利口酒 / 桃子果泥""西柚汁 / 西柚气泡水"是两样东西。 */
+    return a.indexOf(b) >= 0 || b.indexOf(a) >= 0;
   }
 
   /* 有本站配比的这 33 款：拿预设的材料和参考本比一遍，看这杯到底差在哪。
@@ -4733,12 +4764,13 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
     var orig = r.needs.map(function (nd) {
       return esc(nd.n) + (nd.a ? ' ' + esc(String(nd.a)) : '');
     }).join(' · ');
-    return '<details class="origbox"><summary>原方长什么样（参考配方本原文）</summary>'
+    /* 差别常驻显示，折叠里只留参考原文——用户明确要求"和他的不一致的要确保用户知道" */
+    return (lines
+        ? '<p class="hint warnline">⚠️ 这杯和参考本不一样：</p><ul class="menulist swapnote">' + lines + '</ul>'
+          + (d.amountDiff ? '<p class="hint">量也不一样：上面是本站的量，这里是参考本的量。</p>' : '')
+        : '<p class="hint warnline">⚠️ 材料跟参考本一样，但量不一样（上面是本站的，这里是参考本的量）。</p>')
+      + '<details class="origbox"><summary>原方长什么样（参考配方本原文）</summary>'
       + '<p class="hint">' + orig + '</p>'
-      + (lines
-          ? '<p class="hint">这杯和参考本的差别：</p><ul class="menulist swapnote">' + lines + '</ul>'
-            + (d.amountDiff ? '<p class="hint">量也不一样：上面是本站的量，这里是参考本的量。</p>' : '')
-          : '<p class="hint">材料跟参考本一样，量不一样（上面是本站的，这里是参考本的量）。</p>')
       + '</details>';
   }
 

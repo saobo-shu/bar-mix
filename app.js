@@ -2096,9 +2096,12 @@
           }).join('')
       : r.needs.map(function (nd) {
           /* 材料表是"你要买、要用的东西"：换过的就直接写换之后的名字 + 一个「替」字，
-             参考原文放到下面的「原方」里——两边内容不一样，才各自有意义 */
-          return '<li><span>' + esc(nd.need.approx ? needLabel(nd) : nd.n)
-            + (nd.need.approx ? ' <i class="opt swap">替</i>' : '')
+             参考原文放到下面的「原方」里——两边内容不一样，才各自有意义。
+             只是叫法不同的（园林干味美思 / 干味美思）不挂「替」，不然后面那句
+             "和参考本一致"就跟「替」字打架了 */
+          var swapped = nd.need.approx && !justSpelling(nd);
+          return '<li><span>' + esc(swapped ? needLabel(nd) : nd.n)
+            + (swapped ? ' <i class="opt swap">替</i>' : '')
             + (nd.need.optional ? ' <i class="opt">可省</i>' : '') + '</span>'
             + '<b>' + esc(String(nd.a || '')) + '</b></li>';
         }).join('');
@@ -2140,10 +2143,13 @@
        "蔓越莓糖浆 → 白糖浆"和这杯备注里"不用再加糖浆"同时显示这种自相矛盾。 */
   function swapBox(r) {
     if (presetDiffOf(r)) return presetSwapBox(r);
-    var notes = [], notStocked = [], any = false;
+    var notes = [], notStocked = [], real = [], nameOnly = [];
     r.needs.forEach(function (nd) {
       if (!nd.need.approx) return;
-      any = true;
+      /* 名字只是写法不同（园林干味美思 / 干味美思）不算"和参考本不一样"，
+         不然每杯都要挂一句"不一样"，用户会麻木 */
+      if (justSpelling(nd)) { nameOnly.push(nd.n); return; }
+      real.push(nd);
       /* 库里"没有这一样"的：直接告诉用户装杯装的是替换版，想按原方做要自己买。
          判断办法：把这个名字拿去库里找，有没有哪样材料的名字跟它沾边——
          沾边（"园林干味美思"∩"干味美思"）说明只是写法不同；一点都不沾（"柠檬酸溶液"）
@@ -2158,21 +2164,29 @@
       if (why) notes.push('<li>' + esc(nd.n) + ' → <b>' + esc(needLabel(nd)) + '</b>：' + esc(why) + '</li>');
     });
     /* 没换材料、也不是本站配比——那材料表本身就是参考原文 */
-    if (!any) {
+    if (!real.length) {
+      if (nameOnly.length) {
+        return '<p class="hint origbox-plain">这份和参考配方本一致：材料、用量、做法都照它，'
+          + '只是个别叫法按本库的写法来（' + esc(nameOnly.join('、')) + '）。</p>';
+      }
       return '<p class="hint origbox-plain">这份和参考配方本一致：材料、用量、做法都照它，没改动。</p>';
     }
     var orig = r.needs.map(function (nd) {
       return esc(nd.n) + (nd.a ? ' ' + esc(String(nd.a)) : '');
     }).join(' · ');
-    return '<details class="origbox"><summary>原方长什么样（参考配方本原文）</summary>'
+    /* 换了东西这件事必须一眼看到，不能藏在折叠里——用户说过"按人家的酒单挑出来的
+       一定比咱们配的好喝"，那就得让人知道我们哪儿没照人家的来 */
+    return '<p class="hint warnline">⚠️ 这杯和参考本不一样。参考本写的是 '
+      + real.map(function (nd) { return esc(nd.n); }).join('、')
+      + '；这杯用的是材料表里带「替」的那几样。点开下面看原文和理由。</p>'
+      + '<details class="origbox"><summary>原方长什么样（参考配方本原文）</summary>'
       + '<p class="hint">' + orig + '</p>'
       + (notStocked.length
           ? '<p class="hint">本库没有收录：<b>' + esc(notStocked.join('、'))
             + '</b>。点「装进杯子」装的是下面的替换版；想按原方做，这几样要另外买。' + '</p>'
           : '')
       + (notes.length ? '<p class="hint"><b>我改过的地方：</b></p><ul class="menulist swapnote">'
-        + notes.join('') + '</ul>'
-        : '<p class="hint">只是名字写法不同，没有换东西。</p>')
+        + notes.join('') + '</ul>' : '')
       + '</details>';
   }
 
@@ -2188,11 +2202,14 @@
   }
   /* "生姜片"跟库里的"生姜"、"水妈妈椰浆"跟"椰浆"——只是叫法不同，不算换东西 */
   function justSpelling(nd) {
+    if (SWAP_REAL[nd.n]) return false;   /* 名字像，东西不一样（见 data.js 的 SWAP_REAL） */
     var a = String(nd.n).replace(/[（(].*?[）)]/g, '').trim();
     var b = needLabel(nd).replace(/[（(].*?[）)]/g, '').trim();
     if (!a || !b) return false;
-    /* 一个名字是另一个的开头（生姜片 / 生姜、红糖 / 红糖糖浆），或者头两个字一样 */
-    return a.indexOf(b) === 0 || b.indexOf(a) === 0 || a.slice(0, 2) === b.slice(0, 2);
+    /* 一个名字整段被另一个包住（生姜片 / 生姜、园林干味美思 / 干味美思、
+       水妈妈椰浆 / 椰浆）才算"就是它，只是写法不同"。
+       只对前两个字相同不算——"桃子利口酒 / 桃子果泥""西柚汁 / 西柚气泡水"是两样东西。 */
+    return a.indexOf(b) >= 0 || b.indexOf(a) >= 0;
   }
 
   /* 有本站配比的这 33 款：拿预设的材料和参考本比一遍，看这杯到底差在哪。
@@ -2277,12 +2294,13 @@
     var orig = r.needs.map(function (nd) {
       return esc(nd.n) + (nd.a ? ' ' + esc(String(nd.a)) : '');
     }).join(' · ');
-    return '<details class="origbox"><summary>原方长什么样（参考配方本原文）</summary>'
+    /* 差别常驻显示，折叠里只留参考原文——用户明确要求"和他的不一致的要确保用户知道" */
+    return (lines
+        ? '<p class="hint warnline">⚠️ 这杯和参考本不一样：</p><ul class="menulist swapnote">' + lines + '</ul>'
+          + (d.amountDiff ? '<p class="hint">量也不一样：上面是本站的量，这里是参考本的量。</p>' : '')
+        : '<p class="hint warnline">⚠️ 材料跟参考本一样，但量不一样（上面是本站的，这里是参考本的量）。</p>')
+      + '<details class="origbox"><summary>原方长什么样（参考配方本原文）</summary>'
       + '<p class="hint">' + orig + '</p>'
-      + (lines
-          ? '<p class="hint">这杯和参考本的差别：</p><ul class="menulist swapnote">' + lines + '</ul>'
-            + (d.amountDiff ? '<p class="hint">量也不一样：上面是本站的量，这里是参考本的量。</p>' : '')
-          : '<p class="hint">材料跟参考本一样，量不一样（上面是本站的，这里是参考本的量）。</p>')
       + '</details>';
   }
 

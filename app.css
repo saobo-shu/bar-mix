@@ -257,6 +257,8 @@ details.panel:not([open]) > summary .fold::before { content: '▸'; }
 details.panel:not([open]) { padding-bottom: 13px; }
 .panel-head h2 { font-size: 14px; margin: 0; font-weight: 600; color: var(--text); }
 .hint { font-size: 11.5px; color: var(--muted); }
+/* 和参考本不一样这件事要显眼：常驻在材料表下面，不用点开折叠就能看到 */
+.hint.warnline { color: var(--amber); margin: 8px 0 0; }
 
 /* ---------------- 材料库 ---------------- */
 .cats { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 9px; margin-bottom: 10px; scrollbar-width: none; }

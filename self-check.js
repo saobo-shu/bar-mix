@@ -1331,6 +1331,40 @@ console.log('\n--- 酒单 ---');
     + ' 预设跟参考本一样的（青霉素 / 爱尔兰咖啡）不再挂"本站配比"；该用正主的用正主');
   if (!okSame) bad('酒单', '预设和参考本的关系标错了（青霉素 / 爱尔兰咖啡 / 椰林飘香）');
 
+  /* 用户说"按人家的酒单挑出来的一定比咱们配的好喝"——那"不一样"就必须一眼看到，
+     不能只藏在折叠里。这里把 <details> 整段抠掉，剩下的部分仍然要写清楚。 */
+  const visible = i => {
+    B.menu.open(i);
+    return els.menuDetail.innerHTML.replace(/<details[\s\S]*?<\/details>/g, '');
+  };
+  const iAt = n => global.__REF.findIndex(r => r.zh === n);
+  const okVisible = visible(iAt('纸飞机')).indexOf('和参考本不一样') >= 0
+    && visible(iAt('大都会')).indexOf('蔓越莓糖浆') >= 0
+    && visible(iAt('盘尼西林')).indexOf('和参考配方本一致') >= 0;
+  console.log('  ' + (okVisible ? '✅' : '❌') + ' 不一样的地方写在常驻位置（不用点开折叠就看得到）');
+  if (!okVisible) bad('酒单', '"和参考本不一样"又藏回折叠里了');
+
+  /* 材料表上挂过「替」的杯子，前一句必须已经说了"不一样" */
+  const hidSwap = [];
+  global.__REF.forEach((r, i) => {
+    B.menu.open(i);
+    const all = els.menuDetail.innerHTML;
+    if (all.indexOf('class="opt swap"') < 0) return;
+    if (visible(i).indexOf('和参考本不一样') < 0) hidSwap.push(r.zh || r.en);
+  });
+  console.log('  ' + (hidSwap.length ? '❌' : '✅') + ' 带「替」字的杯子都有常驻提醒'
+    + (hidSwap.length ? '（漏了 ' + hidSwap.slice(0, 3).join('、') + '）' : ''));
+  if (hidSwap.length) bad('酒单', '材料表挂了「替」却没告诉用户和参考本不一样：' + hidSwap.slice(0, 3).join('、'));
+
+  /* 反过来：名字互相包含、其实是两样东西的（桃子果泥 / 桃子利口酒、西柚气泡水 / 西柚汁），
+     不能因为"名字像"就判成"和参考本一致"。真正的叫法差异（红味美思）才判一致。 */
+  const okClass = visible(iAt('贝里尼')).indexOf('和参考本不一样') >= 0
+    && visible(iAt('白鸽')).indexOf('和参考本不一样') >= 0
+    && visible(iAt('莫斯科骡子')).indexOf('和参考本不一样') >= 0
+    && visible(iAt('曼哈顿')).indexOf('和参考配方本一致') >= 0;
+  console.log('  ' + (okClass ? '✅' : '❌') + ' 名字像但东西不同的（果泥/气泡水/糖浆）算"不一样"');
+  if (!okClass) bad('酒单', '"桃子果泥 → 桃子利口酒"这类被当成"只是叫法不同"了');
+
   /* 删掉测试留下的东西 */
   B.menu.del(0);
   global.localStorage.removeItem('barmix.favs');
