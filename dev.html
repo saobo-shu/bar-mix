@@ -197,8 +197,9 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
     <div class="panel-head">
       <h2>① 杯子里</h2>
       <div class="head-acts">
-        <button type="button" class="ghost" id="saveBtn">保存这杯</button>
-        <button type="button" class="ghost" id="swapBtn">换基酒</button>
+      <button type="button" class="ghost" id="saveBtn">保存这杯</button>
+      <button type="button" class="ghost" id="shareCupBtn" title="把杯子里这一杯画成一张竖版图片">做成分享卡</button>
+      <button type="button" class="ghost" id="swapBtn">换基酒</button>
         <button type="button" class="ghost" id="clearBtn">清空</button>
       </div>
     </div>
@@ -468,9 +469,22 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
   </details>
   </section><!-- /page-tips -->
 
-  <footer>风味图与评分是根据配比推算的参考值，用于比较和调整方向，不是客观事实。</footer>
+<footer>风味图与评分是根据配比推算的参考值，用于比较和调整方向，不是客观事实。</footer>
 </main>
 </div><!-- /shell -->
+
+<!-- 分享卡：把一杯酒画成一张竖版图片（手机上长按保存） -->
+<div class="sharewrap" id="shareWrap" hidden>
+  <div class="sharebox" role="dialog" aria-label="分享卡">
+    <div class="sharehead">
+      <b>分享卡 · 1080 × 1440</b>
+      <button type="button" class="ghost" data-share-close="1">关闭</button>
+    </div>
+    <img id="shareImg" alt="这一杯的分享卡">
+    <p class="hint">手机上<b>长按图片</b>存到相册；电脑上点下面的按钮下载。</p>
+    <a class="ghost sharedl" id="shareDl" download="调酒台.png">下载图片</a>
+  </div>
+</div>
 
 <script src="data.js"></script>
 <script src="ref-recipes.js"></script>

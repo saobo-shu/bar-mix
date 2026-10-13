@@ -328,6 +328,25 @@ details.panel:not([open]) { padding-bottom: 13px; }
 /* 推荐款的一句话定位：比普通提示亮一点，读起来像副标题 */
 .hint.pickline { color: var(--text); opacity: .82; margin: 3px 0 0; }
 
+/* ---------------- 分享卡 ---------------- */
+.sharewrap {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(0, 0, 0, .72);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 18px; overflow: auto;
+}
+.sharewrap[hidden] { display: none; }
+.sharebox {
+  width: min(520px, 100%); display: flex; flex-direction: column; gap: 10px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 12px; margin: auto 0;
+}
+.sharehead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.sharehead b { font-size: 14px; color: var(--text); }
+#shareImg { width: 100%; height: auto; display: block; border-radius: 10px; border: 1px solid var(--line); }
+.sharedl { display: block; text-align: center; text-decoration: none; padding: 10px; }
+.sharebox .hint { margin: 0; }
+
 /* ---------------- 材料库 ---------------- */
 .cats { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 9px; margin-bottom: 10px; scrollbar-width: none; }
 .cats::-webkit-scrollbar { display: none; }
@@ -899,8 +918,9 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
     <div class="panel-head">
       <h2>① 杯子里</h2>
       <div class="head-acts">
-        <button type="button" class="ghost" id="saveBtn">保存这杯</button>
-        <button type="button" class="ghost" id="swapBtn">换基酒</button>
+      <button type="button" class="ghost" id="saveBtn">保存这杯</button>
+      <button type="button" class="ghost" id="shareCupBtn" title="把杯子里这一杯画成一张竖版图片">做成分享卡</button>
+      <button type="button" class="ghost" id="swapBtn">换基酒</button>
         <button type="button" class="ghost" id="clearBtn">清空</button>
       </div>
     </div>
@@ -1170,9 +1190,22 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
   </details>
   </section><!-- /page-tips -->
 
-  <footer>风味图与评分是根据配比推算的参考值，用于比较和调整方向，不是客观事实。</footer>
+<footer>风味图与评分是根据配比推算的参考值，用于比较和调整方向，不是客观事实。</footer>
 </main>
 </div><!-- /shell -->
+
+<!-- 分享卡：把一杯酒画成一张竖版图片（手机上长按保存） -->
+<div class="sharewrap" id="shareWrap" hidden>
+  <div class="sharebox" role="dialog" aria-label="分享卡">
+    <div class="sharehead">
+      <b>分享卡 · 1080 × 1440</b>
+      <button type="button" class="ghost" data-share-close="1">关闭</button>
+    </div>
+    <img id="shareImg" alt="这一杯的分享卡">
+    <p class="hint">手机上<b>长按图片</b>存到相册；电脑上点下面的按钮下载。</p>
+    <a class="ghost sharedl" id="shareDl" download="调酒台.png">下载图片</a>
+  </div>
+</div>
 
 <script>
 /* =========================================================
@@ -4557,6 +4590,7 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
       abv: a.abv, sugar: a.fd.sugar, acid: a.fd.acid, fizz: a.fd.fizz, bitter: a.fd.bitter,
       body: a.fd.body, fruit: a.fd.fruit, spice: a.fd.spice,
       bubbly: a.hasFizzIng,        /* 杯里到底有没有带气的材料（跟气泡分是两回事） */
+      dims: a.fd,                  /* 风味八维的原始值（分享卡要画雷达图） */
       fams: Object.keys(fams)
     };
     return REF_STAT[i];
@@ -4783,6 +4817,8 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
           : '')
       + '<button type="button" class="ghost" data-menu-favbtn="' + i + '">'
         + (isFav(recipeName(r)) ? '★ 已收藏' : '☆ 收藏') + '</button>'
+      + '<button type="button" class="ghost" data-share="' + i + '"'
+        + ' title="做成一张竖版图片，手机上长按保存">做成分享卡</button>'
       + '</div>';
   }
   function methodName(r) {
@@ -5268,6 +5304,8 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
       renderTonight();
       return;
     }
+    if (t.dataset.share !== undefined) { openShareCard(shareSpecFromRef(+t.dataset.share)); return; }
+    if (t.dataset.shareClose !== undefined) { closeShareCard(); return; }
     if (t.dataset.tonightGo !== undefined) { loadRefFromMenu(+t.dataset.tonightGo); return; }
     if (t.dataset.menuLoadref !== undefined) {
       /* 照参考本是量装，不用"本站配比"那份 */
@@ -5635,26 +5673,43 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
       return d.pre.items.filter(function (it) {
         return BY_ID[it[0]] && BY_ID[it[0]].cat !== 'ice';
       }).map(function (it) {
-        return { name: shortName(BY_ID[it[0]]), amt: fmtAmt(BY_ID[it[0]], it[1]), have: !!state.have[it[0]] };
+        return { id: it[0], name: shortName(BY_ID[it[0]]), amt: fmtAmt(BY_ID[it[0]], it[1]), have: !!state.have[it[0]] };
       });
     }
     var mine = Object.keys(state.have);
     return r.needs.filter(function (nd) { return !nd.need.optional; }).map(function (nd) {
-      return { name: needLabel(nd), amt: String(nd.a || ''), have: needStatusWith(nd.need, mine).ok };
+      return { id: resolveNeedId(nd.need), name: needLabel(nd), amt: String(nd.a || ''),
+        have: needStatusWith(nd.need, mine).ok };
     });
   }
 
+  /* 这杯里最"娇气"的那一样，怎么放（分享卡底部那句） */
+  function keepHintOf(ids) {
+    var mid = '';
+    for (var i = 0; i < (ids || []).length; i++) {
+      var g = BY_ID[ids[i]];
+      if (!g) continue;
+      var s = (typeof STORE !== 'undefined' && STORE[g.id]) || STORE_DEFAULT[g.cat];
+      if (!s) continue;
+      if (s.lv === 'bad') return shortName(g) + '：' + s.text;
+      if (!mid && s.lv === 'mid') mid = shortName(g) + '：' + s.text;
+    }
+    return mid;
+  }
+
   /* 怎么倒：一句话，够用就行（细节去调酒台看） */
-  function tonightHow(r) {
-    var m = methodFromRef(r.method);
-    var gl = glassOf(glassFromRef(r));
+  /* 做法说成人话（分享卡也用它） */
+  function howText(m, gl, refMethod) {
     var glass = gl.name;
     /* 只有"冰留在杯里"那种杯型才提加冰；马天尼杯/香槟杯是冰镇后滤进去的 */
     var ice = gl.ice === 'inglass' ? '（杯里先放冰）' : '';
+    if (refMethod === 'blended' || refMethod === 'blend') return '连冰一起打成冰沙，倒进' + glass;
     if (m === 'shake') return '材料加冰摇 15 秒，滤进' + glass + ice;
     if (m === 'stir') return '材料加冰搅 20 秒，滤进' + glass + ice;
-    if (r.method === 'blended' || r.method === 'blend') return '连冰一起打成冰沙，倒进' + glass;
     return '材料直接倒进' + glass + '搅两下' + ice;
+  }
+  function tonightHow(r) {
+    return howText(methodFromRef(r.method), glassOf(glassFromRef(r)), r.method);
   }
 
   function tonightCard(i) {
@@ -5816,6 +5871,24 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
     renderSwap();
   });
 
+  /* 分享卡：调酒台那杯、弹层关闭、点黑幕关闭、Esc 关闭 */
+  var shareCupBtn = document.getElementById('shareCupBtn');
+  if (shareCupBtn) shareCupBtn.addEventListener('click', function () {
+    var spec = shareSpecFromCup();
+    if (!spec) {
+      if (typeof alert === 'function') alert('杯子是空的。先放点东西进去，再来做分享卡。');
+      return;
+    }
+    openShareCard(spec);
+  });
+  var shareWrap = document.getElementById('shareWrap');
+  if (shareWrap) shareWrap.addEventListener('click', function (e) {
+    if (e.target === shareWrap) closeShareCard();      /* 点黑幕关掉 */
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeShareCard();
+  });
+
   /* ---------------------------------------------------------
      启动
      --------------------------------------------------------- */
@@ -5824,6 +5897,286 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
   renderAll();
 
   /* 调试 / 二次开发用：在浏览器控制台可以访问 window.BarMix */
+
+  /* =========================================================
+     分享卡：把一杯酒画成一张竖版图片（1080×1440，3:4）
+
+     手机上是长按图片保存，电脑上是下载。全程离线，用 canvas 现画，
+     没有外部依赖、也不上传任何东西。
+     ========================================================= */
+  var SHARE_W = 1080, SHARE_H = 1440;
+  var SHARE_FONT = '"Segoe UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif';
+  var SHARE_C = {
+    bg: '#12100f', panel: '#1c1817', line: 'rgba(255,255,255,.12)',
+    text: '#f3ebe3', muted: '#a3978c', amber: '#e0a35c', prose: '#ddd3c9'
+  };
+
+  /* 按宽度把一句话拆成多行（中文没有空格，只能量一个字一个字加） */
+  function wrapCanvas(g, text, maxW) {
+    var out = [], cur = '';
+    var s = String(text || '');
+    for (var i = 0; i < s.length; i++) {
+      var t = cur + s[i];
+      if (g.measureText(t).width > maxW && cur) { out.push(cur); cur = s[i]; }
+      else cur = t;
+    }
+    if (cur) out.push(cur);
+    /* 末尾只剩一个标点就别单独占一行 */
+    if (out.length > 1 && /^[。，、！？；：,.!?;:]+$/.test(out[out.length - 1])) {
+      out[out.length - 2] += out.pop();
+    }
+    return out;
+  }
+  /* 太长的名字就截断，别让它顶着边 */
+  function clipCanvas(g, text, maxW) {
+    var s = String(text || '');
+    if (g.measureText(s).width <= maxW) return s;
+    while (s.length > 1 && g.measureText(s + '…').width > maxW) s = s.slice(0, -1);
+    return s + '…';
+  }
+
+  /* 风味八维画在 canvas 上（跟页面里那张用同一套归一化） */
+  function drawShareRadar(g, cx, cy, R, vals) {
+    var n = 8, i, a;
+    g.lineWidth = 2;
+    for (var ring = 1; ring <= 4; ring++) {
+      g.beginPath();
+      for (i = 0; i < n; i++) {
+        a = -Math.PI / 2 + i * 2 * Math.PI / n;
+        var rr = R * ring / 4;
+        var x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr;
+        if (i) g.lineTo(x, y); else g.moveTo(x, y);
+      }
+      g.closePath();
+      g.strokeStyle = 'rgba(255,255,255,.10)';
+      g.stroke();
+    }
+    g.strokeStyle = 'rgba(255,255,255,.10)';
+    for (i = 0; i < n; i++) {
+      a = -Math.PI / 2 + i * 2 * Math.PI / n;
+      g.beginPath();
+      g.moveTo(cx, cy);
+      g.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
+      g.stroke();
+      /* 轴标签 */
+      var lx = cx + Math.cos(a) * (R + 36), ly = cy + Math.sin(a) * (R + 36);
+      var cosv = Math.cos(a);
+      g.fillStyle = SHARE_C.muted;
+      g.font = '400 24px ' + SHARE_FONT;
+      g.textAlign = Math.abs(cosv) < 0.25 ? 'center' : (cosv > 0 ? 'left' : 'right');
+      g.textBaseline = 'middle';
+      g.fillText(DIMS[i].name, lx, ly);
+    }
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+    /* 形状 */
+    g.beginPath();
+    for (i = 0; i < n; i++) {
+      a = -Math.PI / 2 + i * 2 * Math.PI / n;
+      var rad = R * clamp(vals[i] || 0, 0.03, 1);
+      var px = cx + Math.cos(a) * rad, py = cy + Math.sin(a) * rad;
+      if (i) g.lineTo(px, py); else g.moveTo(px, py);
+    }
+    g.closePath();
+    g.fillStyle = 'rgba(224,163,92,.30)';
+    g.fill();
+    g.strokeStyle = SHARE_C.amber;
+    g.lineWidth = 3;
+    g.stroke();
+    for (i = 0; i < n; i++) {
+      a = -Math.PI / 2 + i * 2 * Math.PI / n;
+      var r2 = R * clamp(vals[i] || 0, 0.03, 1);
+      g.beginPath();
+      g.arc(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2, 5, 0, Math.PI * 2);
+      g.fillStyle = SHARE_C.amber;
+      g.fill();
+    }
+  }
+
+  function drawShareCard(cv, s) {
+    if (!cv || !cv.getContext) return false;
+    cv.width = SHARE_W; cv.height = SHARE_H;
+    var g = cv.getContext('2d');
+    if (!g) return false;
+    var pad = 76;
+    g.fillStyle = SHARE_C.bg; g.fillRect(0, 0, SHARE_W, SHARE_H);
+    g.fillStyle = SHARE_C.amber; g.fillRect(0, 0, SHARE_W, 12);
+
+    var y = 160;
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+    g.fillStyle = SHARE_C.text;
+    g.font = '700 74px ' + SHARE_FONT;
+    g.fillText(clipCanvas(g, s.name, SHARE_W - pad * 2), pad, y);
+    if (s.en) {
+      y += 52;
+      g.fillStyle = SHARE_C.muted; g.font = '400 32px ' + SHARE_FONT;
+      g.fillText(clipCanvas(g, s.en, SHARE_W - pad * 2), pad, y);
+    }
+    if (s.line) {
+      g.font = '400 36px ' + SHARE_FONT;
+      var lines = wrapCanvas(g, s.line, SHARE_W - pad * 2).slice(0, 2);
+      g.fillStyle = SHARE_C.amber;
+      lines.forEach(function (ln, i) { g.fillText(ln, pad, y + 62 + i * 48); });
+      y += 62 + (lines.length - 1) * 48;
+    }
+    y += 52;
+    g.strokeStyle = SHARE_C.line; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(pad, y); g.lineTo(SHARE_W - pad, y); g.stroke();
+
+    /* 左栏：材料表（右栏留给风味图，两边留出足够间隔，别让轴标签压到用量上） */
+    var leftW = 444;
+    var ly = y + 66;
+    g.fillStyle = SHARE_C.muted; g.font = '400 28px ' + SHARE_FONT;
+    g.fillText('材料', pad, ly);
+    ly += 56;
+    var items = (s.items || []).slice(0, 12);
+    items.forEach(function (it) {
+      g.fillStyle = it.have ? SHARE_C.amber : SHARE_C.text;
+      g.font = '400 38px ' + SHARE_FONT;
+      g.fillText(clipCanvas(g, it.name, leftW - 150), pad, ly);
+      g.fillStyle = SHARE_C.amber;
+      g.textAlign = 'right';
+      g.fillText(String(it.amt || ''), pad + leftW, ly);
+      g.textAlign = 'left';
+      ly += 54;
+    });
+    if ((s.items || []).length > items.length) {
+      g.fillStyle = SHARE_C.muted; g.font = '400 28px ' + SHARE_FONT;
+      g.fillText('…还有 ' + ((s.items || []).length - items.length) + ' 样', pad, ly + 10);
+    }
+
+    /* 右栏：风味图 + 杯型/度数 */
+    var rcx = 780, rcy = y + 250;
+    drawShareRadar(g, rcx, rcy, 130, s.dims || []);
+    g.fillStyle = SHARE_C.muted; g.font = '400 30px ' + SHARE_FONT;
+    g.textAlign = 'center';
+    g.fillText(s.glass || '', rcx, rcy + 232);
+    g.fillText(Math.round(s.abv || 0) + '% vol', rcx, rcy + 274);
+    g.textAlign = 'left';
+
+    /* 做法：整宽放在两栏下面 */
+    var hy = Math.max(ly + 54, rcy + 316);
+    g.fillStyle = SHARE_C.muted; g.font = '400 28px ' + SHARE_FONT;
+    g.fillText('怎么做', pad, hy);
+    g.fillStyle = SHARE_C.prose; g.font = '400 36px ' + SHARE_FONT;
+    var howLines = wrapCanvas(g, s.how || '', SHARE_W - pad * 2).slice(0, 3);
+    howLines.forEach(function (ln, i) { g.fillText(ln, pad, hy + 52 + i * 46); });
+    var afterHow = hy + 52 + (howLines.length - 1) * 46;
+
+    /* 小提示：这杯的备注 + 最容易坏的那样材料怎么放（都是页面上本来就有的内容） */
+    var ty = Math.max(afterHow + 96, rcy + 366);
+    if (ty < SHARE_H - 280) {
+      g.fillStyle = SHARE_C.muted; g.font = '400 28px ' + SHARE_FONT;
+      g.fillText('小提示', pad, ty);
+      var ty2 = ty + 50;
+      if (s.note) {
+        g.fillStyle = SHARE_C.prose; g.font = '400 34px ' + SHARE_FONT;
+        wrapCanvas(g, s.note, SHARE_W - pad * 2).slice(0, 3).forEach(function (ln, i) {
+          g.fillText(ln, pad, ty2 + i * 44);
+        });
+        ty2 += 44 * Math.min(3, wrapCanvas(g, s.note, SHARE_W - pad * 2).length);
+      }
+      if (s.keep) {
+        g.fillStyle = SHARE_C.amber; g.font = '400 32px ' + SHARE_FONT;
+        wrapCanvas(g, s.keep, SHARE_W - pad * 2).slice(0, 2).forEach(function (ln, i) {
+          g.fillText(ln, pad, ty2 + 16 + i * 42);
+        });
+      }
+    }
+
+    /* 底部：站名 + 网址 */
+    g.strokeStyle = SHARE_C.line; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(pad, SHARE_H - 150); g.lineTo(SHARE_W - pad, SHARE_H - 150); g.stroke();
+    g.fillStyle = SHARE_C.amber; g.font = '700 34px ' + SHARE_FONT;
+    g.fillText('调酒台', pad, SHARE_H - 92);
+    g.fillStyle = SHARE_C.muted; g.font = '400 30px ' + SHARE_FONT;
+    g.fillText('saobo-shu.github.io/bar-mix　·　没冰箱也能调', pad, SHARE_H - 44);
+    return true;
+  }
+
+  var lastShareSpec = null;
+  function openShareCard(spec) {
+    var wrap = document.getElementById('shareWrap');
+    var img = document.getElementById('shareImg');
+    if (!wrap || !img || !spec) return false;
+    var cv = document.createElement ? document.createElement('canvas') : null;
+    if (!drawShareCard(cv, spec)) {
+      /* 环境不支持 canvas（比如某些老浏览器）：别装作成功了 */
+      if (typeof alert === 'function') alert('这个浏览器不支持生成图片，换一个浏览器再试。');
+      return false;
+    }
+    lastShareSpec = spec;
+    var url = cv.toDataURL('image/png');
+    img.src = url;
+    var dl = document.getElementById('shareDl');
+    if (dl) {
+      dl.setAttribute('href', url);
+      dl.setAttribute('download', '调酒台-' + String(spec.name || '这一杯').replace(/[\\/:*?"<>|]/g, '') + '.png');
+    }
+    wrap.hidden = false;
+    return true;
+  }
+  function closeShareCard() {
+    var wrap = document.getElementById('shareWrap');
+    if (wrap) wrap.hidden = true;
+  }
+
+  /* 从「酒单」的一杯里取出分享卡要用的东西 */
+  function shareSpecFromRef(i) {
+    var r = REF_RECIPES[i];
+    if (!r) return null;
+    var d = presetDiffOf(r);
+    var nm = recipeName(r);
+    var its = tonightItems(r);
+    return {
+      name: nm,
+      en: r.en || '',
+      line: PICK_LINE[nm] || '',
+      items: its,
+      how: tonightHow(r),
+      note: (d && d.pre.tip) || r.note || '',
+      keep: keepHintOf(its.map(function (x) { return x.id; })),
+      glass: glassOf(d ? d.pre.glass : glassFromRef(r)).name,
+      abv: refStat(i).abv,
+      dims: DIMS.map(function (x) { return clamp(refStat(i).dims[x.k] / x.ref, 0, 1); })
+    };
+  }
+
+  /* 从「调酒台」杯子里那一杯取（自己的特调也能做成卡） */
+  /* 杯子里这杯的一句话定位：预设名和酒单里的名字不一定一样（生锈钉 ↔ 锈钉），反查一下 */
+  function pickLineForCup() {
+    var nm = state.recipeName;
+    if (!nm) return '';
+    if (PICK_LINE[nm]) return PICK_LINE[nm];
+    for (var i = 0; i < REF_RECIPES.length; i++) {
+      var rn = recipeName(REF_RECIPES[i]);
+      if (REF_PRESET_MAP[rn] === nm) return PICK_LINE[rn] || '';
+    }
+    return '';
+  }
+
+  function shareSpecFromCup() {
+    var a = analyze();
+    var items = [];
+    state.cup.forEach(function (amt, id) {
+      var g = BY_ID[id];
+      if (!g) return;
+      items.push({ id: id, name: shortName(g), amt: fmtAmt(g, amt), have: false });
+    });
+    if (!items.length) return null;
+    return {
+      name: state.recipeName || '我的特调',
+      en: state.recipeSub || '',
+      /* 定位只认"推荐款那句"；提示（recipeTip）放到下面的"小提示"，别重复两遍 */
+      line: pickLineForCup(),
+      items: items,
+      how: howText(state.method, glassOf(state.glass)),
+      note: state.recipeTip || '',
+      keep: keepHintOf(items.map(function (x) { return x.id; })),
+      glass: glassOf(state.glass).name,
+      abv: a.abv,
+      dims: DIMS.map(function (x) { return clamp(a.fd[x.k] / x.ref, 0, 1); })
+    };
+  }
 
   window.BarMix = {
     state: state, analyze: analyze, advise: advise, BY_ID: BY_ID,
@@ -5843,6 +6196,15 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
       render: renderTonight,
       seed: daySeed,
       fresh: isFresh
+    },
+    /* 分享卡：给自检和调试用 */
+    share: {
+      specFromRef: shareSpecFromRef,
+      specFromCup: shareSpecFromCup,
+      draw: drawShareCard,
+      open: openShareCard,
+      close: closeShareCard,
+      last: function () { return lastShareSpec; }
     },
     tempIdOf: tempIdOf, tempOf: tempOf,
     hasTemp: hasTemp,

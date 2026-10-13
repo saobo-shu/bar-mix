@@ -1615,6 +1615,52 @@ console.log('\n--- 今晚喝什么 ---');
   if (!okGo) bad('今晚喝什么', '「拿去细调」没装杯或没跳页');
 })();
 
+/* ---- 分享卡：把一杯画成一张竖版图片 ---- */
+console.log('\n--- 分享卡 ---');
+(function () {
+  const idxOf = n => global.__REF.findIndex(r => r.zh === n);
+  const html = fs.readFileSync(path.join(dir, 'dev.html'), 'utf8');
+
+  /* 酒单里的一杯：卡上该有的东西都得有 */
+  const cosmo = B.share.specFromRef(idxOf('大都会'));
+  const okSpec = cosmo && cosmo.name === '大都会' && cosmo.items.length === 4
+    && cosmo.how.indexOf('摇') >= 0 && cosmo.dims.length === 8
+    && cosmo.note && cosmo.keep && cosmo.glass && cosmo.abv > 0;
+  console.log('  ' + (okSpec ? '✅' : '❌') + ' 一张卡的内容齐了：名字/材料/做法/风味八维/提示/保存提醒');
+  if (!okSpec) bad('分享卡', '分享卡内容不全：' + JSON.stringify(cosmo && Object.keys(cosmo)));
+
+  /* 白鸽那杯卡上写的是西柚气泡水（不是西柚汁） */
+  const dove = B.share.specFromRef(idxOf('白鸽'));
+  const okDove = dove.items.some(x => x.name.indexOf('西柚气泡水') >= 0);
+  console.log('  ' + (okDove ? '✅' : '❌') + ' 白鸽的卡上写的是西柚气泡水');
+  if (!okDove) bad('分享卡', '白鸽的卡上材料不对：' + dove.items.map(x => x.name).join('、'));
+
+  /* 调酒台那杯：预设名和酒单名不一样，也要能找到那句话定位（生锈钉 ↔ 锈钉） */
+  const pi = global.__PRESETS.findIndex(p => p.name === '锈钉');
+  B.preset(pi);
+  const cupSpec = B.share.specFromCup();
+  const okCup = cupSpec && cupSpec.name === '锈钉' && cupSpec.items.length === 2
+    && cupSpec.line && cupSpec.line.length > 4 && cupSpec.how;
+  console.log('  ' + (okCup ? '✅' : '❌') + ' 调酒台那杯也能做成卡（含一句话定位）：'
+    + (cupSpec ? cupSpec.name + ' · ' + (cupSpec.line || '（没找到定位）') : '（没做出来）'));
+  if (!okCup) bad('分享卡', '调酒台那杯做不出分享卡');
+
+  /* 两个入口：酒单详情里一个、调酒台杯子那一栏一个 */
+  B.menu.open(idxOf('大都会'));
+  const btnInMenu = els.menuDetail.innerHTML.indexOf('data-share=') >= 0;
+  const btnInCup = html.indexOf('id="shareCupBtn"') >= 0 && html.indexOf('id="shareWrap"') >= 0;
+  console.log('  ' + (btnInMenu && btnInCup ? '✅' : '❌')
+    + ' 两个入口都在（酒单详情、调酒台杯子那一栏）');
+  if (!(btnInMenu && btnInCup)) bad('分享卡', '少了入口：酒单 ' + btnInMenu + ' / 调酒台 ' + btnInCup);
+
+  /* 这个环境里没有 canvas：不能装作生成成功，也不能炸 */
+  let threw = false, opened = null;
+  try { opened = B.share.open(cosmo); } catch (e) { threw = true; }
+  console.log('  ' + (!threw && opened === false ? '✅' : '❌')
+    + ' 没有 canvas 的环境里老实返回失败（不炸、不假装成功）');
+  if (threw || opened !== false) bad('分享卡', '没 canvas 时的处理不对：threw=' + threw + ' opened=' + opened);
+})();
+
 /* ---- 四个页面 + 侧边导航 ---- */
 console.log('\n--- 页面与导航 ---');
 (function () {

@@ -282,6 +282,25 @@ details.panel:not([open]) { padding-bottom: 13px; }
 /* 推荐款的一句话定位：比普通提示亮一点，读起来像副标题 */
 .hint.pickline { color: var(--text); opacity: .82; margin: 3px 0 0; }
 
+/* ---------------- 分享卡 ---------------- */
+.sharewrap {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(0, 0, 0, .72);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 18px; overflow: auto;
+}
+.sharewrap[hidden] { display: none; }
+.sharebox {
+  width: min(520px, 100%); display: flex; flex-direction: column; gap: 10px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 12px; margin: auto 0;
+}
+.sharehead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.sharehead b { font-size: 14px; color: var(--text); }
+#shareImg { width: 100%; height: auto; display: block; border-radius: 10px; border: 1px solid var(--line); }
+.sharedl { display: block; text-align: center; text-decoration: none; padding: 10px; }
+.sharebox .hint { margin: 0; }
+
 /* ---------------- 材料库 ---------------- */
 .cats { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 9px; margin-bottom: 10px; scrollbar-width: none; }
 .cats::-webkit-scrollbar { display: none; }
