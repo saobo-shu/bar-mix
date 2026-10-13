@@ -51,6 +51,7 @@ global.localStorage = {
 
 const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
             fs.readFileSync(path.join(dir, 'ref-recipes.js'), 'utf8') + '\n' +
+            fs.readFileSync(path.join(dir, 'qrcode.js'), 'utf8') + '\n' +
             fs.readFileSync(path.join(dir, 'app.js'), 'utf8') + '\n' +
             'global.__PRESETS = PRESETS; global.__I = INGREDIENTS; global.__PH = PH; global.__SCHEMES = SCORING_SCHEMES; global.__G = GLASSES; global.__PM = PRESET_METHOD;'
             + ' global.__TEMPS = TEMPS; global.__TD = TEMP_DEFAULT; global.__TF = TEMP; global.__TC = TEMP_CYCLE;'
@@ -1659,6 +1660,27 @@ console.log('\n--- 分享卡 ---');
   console.log('  ' + (!threw && opened === false ? '✅' : '❌')
     + ' 没有 canvas 的环境里老实返回失败（不炸、不假装成功）');
   if (threw || opened !== false) bad('分享卡', '没 canvas 时的处理不对：threw=' + threw + ' opened=' + opened);
+
+  /* 二维码：内容必须是那个网址，而且得是一张"真二维码"（三个角上的回字形定位图案） */
+  const url = B.share.qrText();
+  const qm = B.share.qrMatrix(url);
+  const finderAt = (rows, r0, c0) => {
+    for (let r = 0; r < 7; r++) {
+      for (let c = 0; c < 7; c++) {
+        const edge = (r === 0 || r === 6 || c === 0 || c === 6);
+        const core = (r >= 2 && r <= 4 && c >= 2 && c <= 4);
+        if (rows[r0 + r][c0 + c] !== (edge || core ? 1 : 0)) return false;
+      }
+    }
+    return true;
+  };
+  const okQr = qm && qm.count >= 21 && qm.ratio > 0.3 && qm.ratio < 0.6
+    && finderAt(qm.rows, 0, 0)
+    && finderAt(qm.rows, 0, qm.count - 7)
+    && finderAt(qm.rows, qm.count - 7, 0);
+  console.log('  ' + (okQr ? '✅' : '❌') + ' 二维码是对的：' + url
+    + '（' + (qm ? qm.count + '×' + qm.count + '，黑块 ' + Math.round(qm.ratio * 100) + '%' : '没生成出来') + '，三个定位图案都在）');
+  if (!okQr) bad('分享卡', '二维码不对：' + JSON.stringify(qm && { n: qm.count, r: qm.ratio }));
 })();
 
 /* ---- 四个页面 + 侧边导航 ---- */

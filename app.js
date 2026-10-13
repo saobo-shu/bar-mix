@@ -3254,6 +3254,7 @@
      ========================================================= */
   var SHARE_W = 1080, SHARE_H = 1440;
   var SHARE_FONT = '"Segoe UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif';
+  var SHARE_URL = 'https://saobo-shu.github.io/bar-mix/';
   var SHARE_C = {
     bg: '#12100f', panel: '#1c1817', line: 'rgba(255,255,255,.12)',
     text: '#f3ebe3', muted: '#a3978c', amber: '#e0a35c', prose: '#ddd3c9'
@@ -3281,6 +3282,49 @@
     if (g.measureText(s).width <= maxW) return s;
     while (s.length > 1 && g.measureText(s + '…').width > maxW) s = s.slice(0, -1);
     return s + '…';
+  }
+
+  /* 二维码：内容就是网址，扫一下直接进站。
+     用内嵌的 qrcode-generator（MIT）现画——不是去调在线接口，
+     这样别人把「调酒台.html」存到手机里、断网打开，卡片照样能出二维码。 */
+  function qrMatrixOf(text) {
+    if (typeof qrcode !== 'function') return null;
+    var qr;
+    try {
+      qr = qrcode(0, 'M');       /* 0 = 让库自己挑版本，M = 中等纠错 */
+      qr.addData(text);
+      qr.make();
+    } catch (e) { return null; }
+    var n = qr.getModuleCount(), dark = 0;
+    var rows = [];
+    for (var r = 0; r < n; r++) {
+      var line = [];
+      for (var c = 0; c < n; c++) {
+        var d = qr.isDark(r, c) ? 1 : 0;
+        dark += d;
+        line.push(d);
+      }
+      rows.push(line);
+    }
+    return { count: n, rows: rows, ratio: dark / (n * n) };
+  }
+  function drawShareQr(g, x, y, size, text) {
+    var m = qrMatrixOf(text);
+    if (!m) return false;
+    /* 深色卡上必须垫白底 + 白边，不然扫不出来 */
+    var quiet = Math.round(size * 0.07);
+    g.fillStyle = '#ffffff';
+    g.fillRect(x, y, size, size);
+    var inner = size - quiet * 2;
+    var cell = inner / m.count;
+    g.fillStyle = '#12100f';
+    for (var r = 0; r < m.count; r++) {
+      for (var c = 0; c < m.count; c++) {
+        if (!m.rows[r][c]) continue;
+        g.fillRect(x + quiet + c * cell, y + quiet + r * cell, Math.ceil(cell), Math.ceil(cell));
+      }
+    }
+    return true;
   }
 
   /* 风味八维画在 canvas 上（跟页面里那张用同一套归一化） */
@@ -3410,9 +3454,11 @@
     howLines.forEach(function (ln, i) { g.fillText(ln, pad, hy + 52 + i * 46); });
     var afterHow = hy + 52 + (howLines.length - 1) * 46;
 
+    /* 底部区块（站名 + 二维码）的位置先算出来，小提示别压到它 */
+    var footY = SHARE_H - 300;
     /* 小提示：这杯的备注 + 最容易坏的那样材料怎么放（都是页面上本来就有的内容） */
     var ty = Math.max(afterHow + 96, rcy + 366);
-    if (ty < SHARE_H - 280) {
+    if (ty < footY - 130) {
       g.fillStyle = SHARE_C.muted; g.font = '400 28px ' + SHARE_FONT;
       g.fillText('小提示', pad, ty);
       var ty2 = ty + 50;
@@ -3431,13 +3477,17 @@
       }
     }
 
-    /* 底部：站名 + 网址 */
+    /* 底部：站名 + 网址 + 二维码（扫码直接跳转，不用手输） */
     g.strokeStyle = SHARE_C.line; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(pad, SHARE_H - 150); g.lineTo(SHARE_W - pad, SHARE_H - 150); g.stroke();
-    g.fillStyle = SHARE_C.amber; g.font = '700 34px ' + SHARE_FONT;
-    g.fillText('调酒台', pad, SHARE_H - 92);
-    g.fillStyle = SHARE_C.muted; g.font = '400 30px ' + SHARE_FONT;
-    g.fillText('saobo-shu.github.io/bar-mix　·　没冰箱也能调', pad, SHARE_H - 44);
+    g.beginPath(); g.moveTo(pad, footY); g.lineTo(SHARE_W - pad, footY); g.stroke();
+    var qrSize = 196;
+    drawShareQr(g, SHARE_W - pad - qrSize, footY + 42, qrSize, SHARE_URL);
+    g.fillStyle = SHARE_C.amber; g.font = '700 38px ' + SHARE_FONT;
+    g.fillText('调酒台', pad, footY + 96);
+    g.fillStyle = SHARE_C.prose; g.font = '400 30px ' + SHARE_FONT;
+    g.fillText('扫码打开，自己也能调一杯', pad, footY + 152);
+    g.fillStyle = SHARE_C.muted; g.font = '400 26px ' + SHARE_FONT;
+    g.fillText('saobo-shu.github.io/bar-mix', pad, footY + 202);
     return true;
   }
 
@@ -3550,6 +3600,8 @@
       specFromRef: shareSpecFromRef,
       specFromCup: shareSpecFromCup,
       draw: drawShareCard,
+      qrMatrix: qrMatrixOf,
+      qrText: function () { return SHARE_URL; },
       open: openShareCard,
       close: closeShareCard,
       last: function () { return lastShareSpec; }

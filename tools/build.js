@@ -15,6 +15,7 @@ let html = read('dev.html');
 const css = read('app.css');
 const dataJs = read('data.js');
 const refJs = read('ref-recipes.js');
+const qrJs = read('qrcode.js');          /* 二维码生成（MIT，见文件头的版权声明） */
 const appJs = read('app.js');
 
 /* 内联的 JS 里如果出现 </script> 会把标签提前闭合，必须拆开 */
@@ -32,10 +33,14 @@ const favicon = 'data:image/svg+xml,' + encodeURIComponent(
 html = html.replace(/<link rel="stylesheet" href="app\.css">\s*/, '');
 html = html.replace(/<script src="data\.js"><\/script>\s*/, '');
 html = html.replace(/<script src="ref-recipes\.js"><\/script>\s*/, '');
+html = html.replace(/<script src="qrcode\.js"><\/script>\s*/, '');
 html = html.replace(/<script src="app\.js"><\/script>\s*/, '');
 
 /* 分享用的 meta + 图标 */
-html = html.replace('</head>',
+/* 注意：替换文本一定要用函数返回。字符串替换里 $&、$'、$`、$$ 是特殊记号——
+   源码里一句 case '$' 就够了：它会被换成"匹配位置之后的整段 HTML"，
+   插进去的代码当场废掉（2026-10-13 内嵌二维码库时真踩了这个坑）。 */
+html = html.replace('</head>', () =>
   '<link rel="icon" href="' + favicon + '">\n' +
   '<link rel="manifest" href="manifest.webmanifest">\n' +
   '<link rel="apple-touch-icon" href="icon-192.png">\n' +
@@ -44,9 +49,10 @@ html = html.replace('</head>',
   '<meta property="og:description" content="挑材料倒进杯子，实时看风味图、评分和调节建议。">\n' +
   '<style>\n' + css + '\n</style>\n</head>');
 
-html = html.replace('</body>',
+html = html.replace('</body>', () =>
   '<script>\n' + safe(dataJs) + '\n</script>\n' +
   '<script>\n' + safe(refJs) + '\n</script>\n' +
+  '<script>\n' + safe(qrJs) + '\n</script>\n' +
   '<script>\n' + safe(appJs) + '\n</script>\n</body>');
 
 fs.mkdirSync(dist, { recursive: true });
@@ -55,7 +61,7 @@ fs.writeFileSync(path.join(dist, '调酒台.html'), html, 'utf8');
 
 /* 自检：产物里不该再有任何本地文件引用 */
 const leftovers = [];
-['app.css', 'app.js', 'data.js', 'ref-recipes.js'].forEach(f => {
+['app.css', 'app.js', 'data.js', 'ref-recipes.js', 'qrcode.js'].forEach(f => {
   if (html.includes('"' + f + '"') || html.includes("'" + f + "'")) leftovers.push(f);
 });
 const scripts = (html.match(/<script/g) || []).length;
@@ -63,14 +69,19 @@ const closes = (html.match(/<\/script>/g) || []).length;
 
 console.log('产物：dist/index.html 和 dist/调酒台.html');
 const kb = (s) => (Buffer.byteLength(s, 'utf8') / 1024).toFixed(1);
-console.log('  大小 ' + kb(html) + ' KB　（原始五个文件合计 '
-  + kb(css + dataJs + refJs + appJs) + ' KB）');
+console.log('  大小 ' + kb(html) + ' KB　（原始文件合计 '
++ kb(css + dataJs + refJs + qrJs + appJs) + ' KB）');
 console.log('  <script> ' + scripts + ' 个，</script> ' + closes + ' 个' + (scripts === closes ? '　配平 ✓' : '　⚠ 不配平'));
 console.log('  残留的本地文件引用：' + (leftovers.length ? leftovers.join('、') + ' ⚠' : '无 ✓'));
 /* 外部请求：只允许百度统计那一处（文件里其它 http 都是 XML 命名空间之类的死字符串）。
    统计脚本只在 http(s) 下加载，而且是动态插入的——它挂了或者断网，页面照常跑。 */
-const extUrls = (html.replace(/w3\.org/g, '')
-  .match(/https?:\/\/[^"'\s)]+/g) || []).filter(u => u.indexOf('https://hm.baidu.com/hm.js?') !== 0);
+/* 分享卡上印的那个网址是给用户扫的字符串，不是请求；二维码库注释里的链接也只是出处说明 */
+const extUrls = (html.replace(/https?:\/\/www\.w3\.org\/[^"'\s)]*/g, '')
+  .match(/https?:\/\/[^"'\s)]+/g) || [])
+  .filter(u => u.indexOf('https://hm.baidu.com/hm.js?') !== 0)
+  .filter(u => u.indexOf('https://saobo-shu.github.io/bar-mix/') !== 0)
+  .filter(u => u.indexOf('www.d-project.com') < 0 && u.indexOf('opensource.org') < 0
+    && u.indexOf('www.denso-wave.com') < 0 && u.indexOf('stackoverflow.com') < 0);
 console.log('  外部网络请求：' + (extUrls.length
   ? extUrls.join('、') + ' ⚠'
   : '只有百度统计 1 处（hm.baidu.com）✓　离线时它加载失败，页面照常跑'));
