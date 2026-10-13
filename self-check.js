@@ -1468,14 +1468,29 @@ console.log('\n--- 酒单 ---');
 
   /* 反过来：名字互相包含、其实是两样东西的（桃子果泥 / 桃子利口酒、西柚气泡水 / 西柚汁），
      不能因为"名字像"就判成"和参考本一致"。真正的叫法差异（红味美思）才判一致。 */
-  const okClass = visible(iAt('贝里尼')).indexOf('和参考本不一样') >= 0
-    && visible(iAt('白鸽')).indexOf('和参考本不一样') >= 0
-    && visible(iAt('莫斯科骡子')).indexOf('和参考本不一样') >= 0
-    && visible(iAt('曼哈顿')).indexOf('和参考配方本一致') >= 0;
+    const okClass = visible(iAt('贝里尼')).indexOf('和参考本不一样') >= 0
+      && visible(iAt('僵尸')).indexOf('和参考本不一样') >= 0
+      && visible(iAt('莫斯科骡子')).indexOf('和参考本不一样') >= 0
+      && visible(iAt('曼哈顿')).indexOf('和参考配方本一致') >= 0;
   console.log('  ' + (okClass ? '✅' : '❌') + ' 名字像但东西不同的（果泥/气泡水/糖浆）算"不一样"');
-  if (!okClass) bad('酒单', '"桃子果泥 → 桃子利口酒"这类被当成"只是叫法不同"了');
+    if (!okClass) bad('酒单', '"桃子果泥 → 桃子利口酒"这类被当成"只是叫法不同"了');
 
-  /* "按参考本装杯"：装出来的量必须是参考本的，不是本站配比的；
+    /* 白鸽：参考本写"西柚气泡水"，以前库里没有这样材料、被换成西柚汁，于是它被判成"不冒气"。
+       现在库里有了，就该：① 材料表直接写西柚气泡水（不带「替」）② 算有气泡 ③ 退出"别冒气"那一档 */
+    B.menu.open(iAt('白鸽'));
+    const doveHtml = els.menuDetail.innerHTML;
+    const doveOk = doveHtml.indexOf('西柚气泡水') >= 0 && doveHtml.indexOf('class="opt swap"') < 0;
+    B.have.load(iAt('白鸽'));
+    const doveBubbly = B.analyze().hasFizzIng === true;
+    const doveInStill = B.tonight.pool('still').indexOf(iAt('白鸽')) >= 0;
+    console.log('  ' + (doveOk && doveBubbly && !doveInStill ? '✅' : '❌')
+      + ' 白鸽用上库里的西柚气泡水（材料表不带「替」、算有气泡、退出"别冒气"）');
+    if (!(doveOk && doveBubbly && !doveInStill)) {
+      bad('酒单', '白鸽的西柚气泡水没接上：材料表 ' + doveOk + ' / 有气泡 ' + doveBubbly
+        + ' / 还在别冒气里 ' + doveInStill);
+    }
+
+    /* "按参考本装杯"：装出来的量必须是参考本的，不是本站配比的；
      库里确实没有的那几样（柠檬伏特加 / 蔓越莓糖浆）要在杯子下面说清楚装的是替代品 */
   const iCosmo = iAt('大都会');
   B.menu.open(iCosmo);
