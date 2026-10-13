@@ -1695,6 +1695,22 @@ console.log('\n--- 页面与导航 ---');
   if (pageHtml.length !== 4) bad('页面', '缺页面：' + pages.filter(p => pageHtml.indexOf(p) < 0).join('、'));
   if (navHtml.length !== 4) bad('页面', '侧栏导航项不对：' + navHtml.join('、'));
 
+  /* 侧栏按重要性分三档（用户反馈：四项一样大，分不出主次；Tips 要压扁、沉到最下面） */
+  const navButtons = html.match(/<button[^>]*class="navitem[^"]*"[^>]*data-page="\w+"[^>]*>/g) || [];
+  const bigOne = navButtons.filter(b => /is-big/.test(b));
+  const miniOne = navButtons.filter(b => /is-mini/.test(b) && /data-page="tips"/.test(b));
+  const miniIsLast = navButtons.length > 0 && navButtons[navButtons.length - 1] === miniOne[0];
+  const navCss = fs.readFileSync(path.join(dir, 'app.css'), 'utf8');
+  const miniSticksBottom = /\.navitem\.is-mini\s*\{[^}]*margin-top:\s*auto/.test(navCss);
+  const okNav = bigOne.length === 1 && /data-page="bar"/.test(bigOne[0]) && miniOne.length === 1
+    && miniIsLast && miniSticksBottom;
+  console.log('  ' + (okNav ? '✅' : '❌')
+    + ' 侧栏分三档：调酒台最大、Tips 压扁并沉到最下方');
+  if (!okNav) {
+    bad('页面', '侧栏层级不对：大项 ' + bigOne.length + ' 个 / Tips 小项 ' + miniOne.length
+      + ' 个 / 在最末 ' + miniIsLast + ' / 贴底样式 ' + miniSticksBottom);
+  }
+
   /* 切换：一次只亮一页；选中项跟着走；选过就记住 */
   const cur = B.page.set('menu');
   const menuOn = els['page-menu'].classList.contains('on');
@@ -1863,6 +1879,16 @@ console.log('\n--- 操作说明（页面里有没有教怎么用）---');
   const stale = /⑤|经典配方/.test(bar);
   console.log('  ' + (stale ? '❌' : '✅') + ' 调酒台不再让用户去找已经搬走的「⑤ 经典配方」');
   if (stale) bad('操作说明', '调酒台里还在指「⑤ 经典配方」——那个面板已经搬去酒单了');
+
+  /* 用户反馈：页脚那句"风味图和评分是按配比推算的"跟内容无关。
+     话本身该留着（这是我们说实话的地方），但要从页脚挪到「怎么读结果」里。 */
+  const footGone = !/<footer[\s\S]{0,200}风味图/.test(html);
+  const movedIn = /分数和风味图都只是参考[\s\S]{0,30}按配比推算/.test(html);
+  console.log('  ' + (footGone && movedIn ? '✅' : '❌')
+    + ' "分数只是参考"挪进了「怎么读结果」，页脚不再单独挂一句');
+  if (!(footGone && movedIn)) {
+    bad('操作说明', '页脚说明位置不对：页脚已清 ' + footGone + ' / 怎么读结果里有 ' + movedIn);
+  }
 })();
 
 /* ---- 统计：加了百度统计，但只能加这一个外部请求，而且本地文件不能上报 ---- */

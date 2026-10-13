@@ -138,7 +138,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .shell > main { max-width: none; margin: 0; padding: 0; }
 .shell.folded { grid-template-columns: minmax(0, 1fr); }
 .shell.folded .sidenav { display: none; }
-.sidenav { position: sticky; top: 66px; display: grid; gap: 6px; align-content: start; }
+/* 侧边导航：按重要性分三档——主功能（调酒台）最大，普通项中等，
+   Tips 压扁成一条、贴在侧栏最下方（有反馈说四项一样大、分不出主次） */
+.sidenav {
+  position: sticky; top: 66px;
+  display: flex; flex-direction: column; gap: 6px;
+  /* 给"Tips 贴底"留高度，但别在桌面大屏上扯出一整屏的空白 */
+  min-height: min(520px, calc(100vh - 96px));
+}
 .navitem {
   text-align: left; padding: 9px 11px; border-radius: 11px;
   background: var(--card2); border: 1px solid var(--line); color: var(--muted);
@@ -146,6 +153,18 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .navitem b { display: block; font-size: 13.5px; font-weight: 600; color: var(--text); }
 .navitem i { font-style: normal; font-size: 11px; }
 .navitem.on { border-color: var(--amber); background: rgba(224, 163, 92, .14); }
+.navitem.is-big { padding: 12px 12px; border-radius: 12px; }
+.navitem.is-big b { font-size: 15.5px; }
+.navitem.is-big i { font-size: 11.5px; }
+/* Tips：扁的一条，不抢视线，固定在侧栏底部 */
+.navitem.is-mini {
+  margin-top: auto;
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 6px 10px; background: transparent; border-color: transparent;
+}
+.navitem.is-mini b { display: inline; font-size: 12px; }
+.navitem.is-mini i { font-size: 10.5px; }
+.navitem.is-mini.on { border-color: var(--amber); background: rgba(224, 163, 92, .14); }
 .navitem.on b { color: var(--amber); }
 .navitem:active { transform: scale(.99); }
 .navfold { width: 100%; margin-top: 2px; }

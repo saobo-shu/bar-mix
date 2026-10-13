@@ -184,7 +184,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .shell > main { max-width: none; margin: 0; padding: 0; }
 .shell.folded { grid-template-columns: minmax(0, 1fr); }
 .shell.folded .sidenav { display: none; }
-.sidenav { position: sticky; top: 66px; display: grid; gap: 6px; align-content: start; }
+/* 侧边导航：按重要性分三档——主功能（调酒台）最大，普通项中等，
+   Tips 压扁成一条、贴在侧栏最下方（有反馈说四项一样大、分不出主次） */
+.sidenav {
+  position: sticky; top: 66px;
+  display: flex; flex-direction: column; gap: 6px;
+  /* 给"Tips 贴底"留高度，但别在桌面大屏上扯出一整屏的空白 */
+  min-height: min(520px, calc(100vh - 96px));
+}
 .navitem {
   text-align: left; padding: 9px 11px; border-radius: 11px;
   background: var(--card2); border: 1px solid var(--line); color: var(--muted);
@@ -192,6 +199,18 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .navitem b { display: block; font-size: 13.5px; font-weight: 600; color: var(--text); }
 .navitem i { font-style: normal; font-size: 11px; }
 .navitem.on { border-color: var(--amber); background: rgba(224, 163, 92, .14); }
+.navitem.is-big { padding: 12px 12px; border-radius: 12px; }
+.navitem.is-big b { font-size: 15.5px; }
+.navitem.is-big i { font-size: 11.5px; }
+/* Tips：扁的一条，不抢视线，固定在侧栏底部 */
+.navitem.is-mini {
+  margin-top: auto;
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 6px 10px; background: transparent; border-color: transparent;
+}
+.navitem.is-mini b { display: inline; font-size: 12px; }
+.navitem.is-mini i { font-size: 10.5px; }
+.navitem.is-mini.on { border-color: var(--amber); background: rgba(224, 163, 92, .14); }
 .navitem.on b { color: var(--amber); }
 .navitem:active { transform: scale(.99); }
 .navfold { width: 100%; margin-top: 2px; }
@@ -818,11 +837,11 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
 <div class="shell">
   <!-- 侧边导航：桌面可收起，手机上是个抽屉 -->
   <nav class="sidenav" id="sidenav" aria-label="页面导航">
-    <button type="button" class="navitem" data-page="tonight"><b>今晚喝什么</b><i>挑一个心情，来三杯</i></button>
-    <button type="button" class="navitem on" data-page="bar"><b>调酒台</b><i>配比 · 风味 · 评分</i></button>
-    <button type="button" class="navitem" data-page="menu"><b>酒单</b><i>191 款经典</i></button>
-    <button type="button" class="navitem" data-page="tips"><b>Tips</b><i>没冰箱也能调</i></button>
-    <button type="button" class="ghost navfold" id="navFold">收起侧栏</button>
+      <button type="button" class="navitem is-big on" data-page="bar"><b>调酒台</b><i>配比 · 风味 · 评分</i></button>
+      <button type="button" class="navitem" data-page="tonight"><b>今晚喝什么</b><i>挑一个心情，来三杯</i></button>
+      <button type="button" class="navitem" data-page="menu"><b>酒单</b><i>191 款经典</i></button>
+      <button type="button" class="ghost navfold" id="navFold">收起侧栏</button>
+      <button type="button" class="navitem is-mini" data-page="tips"><b>Tips</b><i>没冰箱也能调</i></button>
   </nav>
   <div class="navback" id="navBack" hidden></div>
 
@@ -899,7 +918,8 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
               <b>从下往上一层就是一样材料，这层有多高，就是它占多少</b>——先倒的在下面。
               颜色代表类别，看下面的图例；白色方格是冰（画在颗粒背后，满冰铺满整杯、半杯冰只有杯底那一段）。
               <div class="legend" id="glassLegend"></div></li>
-            <li><b>分数只是参考</b>。真正有用的是下面三块：风味图（这杯是什么味道）、「冰化开会怎么样」（会变多淡）、「怎么再调一步」（下一步加什么）。</li>
+        <li><b>分数和风味图都只是参考</b>：它们是按配比推算出来的，用来比较和调整方向，不是客观事实。
+        真正有用的是下面三块：风味图（这杯是什么味道）、「冰化开会怎么样」（会变多淡）、「怎么再调一步」（下一步加什么）。</li>
             <li>杯子里<b>只有一样酒</b>（比如纯饮一杯威士忌）时不评分，只描述味道——"这杯好不好"不是这个工具能回答的。</li>
             <li>杯子装不下只是提醒，不扣分：你手上那只杯子可能比标称的大，自己判断。</li>
             <li>手机上可以「添加到主屏幕」，打开是全屏、没地址栏，断网也能用。</li>
@@ -1190,7 +1210,6 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
   </details>
   </section><!-- /page-tips -->
 
-<footer>风味图与评分是根据配比推算的参考值，用于比较和调整方向，不是客观事实。</footer>
 </main>
 </div><!-- /shell -->
 
