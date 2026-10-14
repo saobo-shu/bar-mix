@@ -1362,6 +1362,8 @@
     if (m === 'stir' || m === 'rolling') return 'stir';
     return 'build';        /* build / smash / 没写 */
   }
+  /* 技法的中文名。酒单的筛选和卡片上的小标签都用它，只此一处，别各写各的。 */
+  var TECH_NAME = { shake: '摇和', stir: '搅拌', build: '兑和' };
   /* "45ml / 2dash / 3片 / 一个 / 15g" → 数字。单位对不上就用材料的默认量 */
   function parseAmount(txt, g) {
     var s = String(txt || '');
@@ -1876,7 +1878,7 @@
      ========================================================= */
   var FAV_KEY = 'barmix.favs', MINE_KEY = 'barmix.mine';
   var favs = storeGet(FAV_KEY), myRecipes = storeGet(MINE_KEY);
-  var menuTab = 'classic', menuFam = '', menuTaste = '', menuStr = '', menuQuery = '';
+  var menuTab = 'classic', menuFam = '', menuTaste = '', menuStr = '', menuQuery = '', menuTech = '';
   var MENU_PAGE = 12, menuShow = MENU_PAGE;
   var openRecipe = -1;                 /* 详情面板里正在看的那一杯 */
 
@@ -1963,8 +1965,9 @@
         + '<span class="mc-star' + (on ? ' on' : '') + '" data-fav="' + i + '" role="button" tabindex="0"'
         + ' title="' + (on ? '取消收藏' : '收藏') + '">' + (on ? '★' : '☆') + '</span></span>'
       + '<span class="mc-line">' + esc(use.slice(0, 4).join(' · ')) + (use.length > 4 ? ' 等' : '') + '</span>'
-      + '<span class="mc-meta">' + ({ shake: '摇和', stir: '搅拌', build: '兑和' }[methodFromRef(r.method)] || '兑和')
-        + ' · ' + Math.round(st.abv) + '% · ' + r.needs.length + ' 样'
+      + '<span class="mc-meta"><i class="mc-tech t-' + methodFromRef(r.method) + '">'
+        + (TECH_NAME[methodFromRef(r.method)] || '兑和') + '</i>'
+        + Math.round(st.abv) + '% · ' + r.needs.length + ' 样'
         + (d && d.hasDiff ? ' · <i class="mc-pick">本站配比</i>' : '')
         + (r.pick ? ' · <i class="mc-pick">推荐</i>' : '') + '</span>'
       + '</button>';
@@ -1997,13 +2000,24 @@
     var tastes = [['', '全部味道'], ['sweet', '甜'], ['sour', '酸'],
       ['fresh', '清爽'], ['fizz', '带气泡'], ['bitter', '苦']];
     var strs = [['', '全部浓淡'], ['light', '清淡'], ['mid', '标准'], ['strong', '浓烈']];
+    /* 技法单独一行、放最前面：这是"我有什么器材"的问题，比口味更先决定你能做哪几杯。
+       「不用摇壶」= 兑和 + 搅拌——捣压和直接兑都不需要摇壶，搅拌有把勺子就行。 */
+    var techs = [
+      ['', '全部技法'],
+      ['build', '兑和 ' + METHODS[0].en],
+      ['stir', '搅拌 ' + METHODS[1].en],
+      ['shake', '摇和 ' + METHODS[2].en],
+      ['noshaker', '不用摇壶', '没有摇壶？只剩兑和和搅拌这两种做法']
+    ];
     function row(list, cur, attr) {
       return list.map(function (x) {
         return '<button type="button" class="ghost' + (x[0] === cur ? ' on' : '') + '" '
-          + attr + '="' + x[0] + '">' + x[1] + '</button>';
+          + attr + '="' + x[0] + '"' + (x[2] ? ' title="' + x[2] + '"' : '')
+          + '>' + x[1] + '</button>';
       }).join('');
     }
-    box.innerHTML = '<span class="mf-row">' + row(fams, menuFam, 'data-menu-fam') + '</span>'
+    box.innerHTML = '<span class="mf-row">' + row(techs, menuTech, 'data-menu-tech') + '</span>'
+      + '<span class="mf-row">' + row(fams, menuFam, 'data-menu-fam') + '</span>'
       + '<span class="mf-row">' + row(tastes, menuTaste, 'data-menu-taste') + '</span>'
       + '<span class="mf-row">' + row(strs, menuStr, 'data-menu-str') + '</span>';
   }
@@ -2025,6 +2039,14 @@
         if (hay.indexOf(q) < 0) return;
       }
       var st = refStat(i);
+      /* 技法筛选：按"这杯实际要用什么家伙"分。
+         摇和（含电动搅拌）要摇壶；搅拌（含 rolling）要搅拌杯或一只杯子加勺子；
+         兑和、捣压、没写做法的，倒进杯子就行。 */
+      if (menuTech) {
+        var tech = methodFromRef(r.method);
+        if (menuTech === 'noshaker') { if (tech === 'shake') return; }
+        else if (tech !== menuTech) return;
+      }
       if (menuFam && st.fams.indexOf(menuFam) < 0) return;
       if (menuTaste === 'sweet' && st.sugar < 8) return;
       if (menuTaste === 'sour' && st.acid < 5) return;
@@ -2618,6 +2640,7 @@
     /* 酒单：切栏目 / 筛选 / 翻更多 / 开关详情 / 收藏 */
     if (t.dataset.menuTab) { menuTab = t.dataset.menuTab; menuShow = MENU_PAGE; renderMenu(); return; }
     if (t.dataset.menuFam !== undefined) { menuFam = t.dataset.menuFam; menuShow = MENU_PAGE; renderMenu(); return; }
+    if (t.dataset.menuTech !== undefined) { menuTech = t.dataset.menuTech; menuShow = MENU_PAGE; renderMenu(); return; }
     if (t.dataset.menuTaste !== undefined) { menuTaste = t.dataset.menuTaste; menuShow = MENU_PAGE; renderMenu(); return; }
     if (t.dataset.menuStr !== undefined) { menuStr = t.dataset.menuStr; menuShow = MENU_PAGE; renderMenu(); return; }
     if (t.dataset.menuMore) { menuShow += MENU_PAGE; renderMenuList(); return; }
@@ -3052,6 +3075,8 @@
     /* 只有"冰留在杯里"那种杯型才提加冰；马天尼杯/香槟杯是冰镇后滤进去的 */
     var ice = gl.ice === 'inglass' ? '（杯里先放冰）' : '';
     if (refMethod === 'blended' || refMethod === 'blend') return '连冰一起打成冰沙，倒进' + glass;
+    /* 捣压（莫吉托、凯匹林纳这一类）不能写成"直接倒进搅两下"——那样薄荷出不来味 */
+    if (refMethod === 'smash') return '青柠和糖先在' + glass + '里捣两下出汁，再加冰、倒酒，搅两下';
     if (m === 'shake') return '材料加冰摇 15 秒，滤进' + glass + ice;
     if (m === 'stir') return '材料加冰搅 20 秒，滤进' + glass + ice;
     return '材料直接倒进' + glass + '搅两下' + ice;
@@ -3652,12 +3677,15 @@
     menu: {
       render: renderMenu,
       list: function () { return menuList().length; },
+      /* 筛完之后剩哪些配方（自检要逐条核对技法过滤得准不准） */
+      listRefs: function () { return menuList().map(function (x) { return x.r; }); },
       setTab: function (t) { menuTab = t; menuShow = MENU_PAGE; renderMenu(); },
       setFam: function (f) { menuFam = f; menuShow = MENU_PAGE; renderMenu(); },
       setTaste: function (t) { menuTaste = t; menuShow = MENU_PAGE; renderMenu(); },
       setStr: function (s) { menuStr = s; menuShow = MENU_PAGE; renderMenu(); },
+      setTech: function (t) { menuTech = t; menuShow = MENU_PAGE; renderMenu(); },
       reset: function () {
-        menuTab = 'classic'; menuFam = ''; menuTaste = ''; menuStr = '';
+        menuTab = 'classic'; menuFam = ''; menuTaste = ''; menuStr = ''; menuTech = '';
         openRecipe = -1; renderMenu();
       },
       open: function (i) { openRecipe = i; renderMenuDetail(); },

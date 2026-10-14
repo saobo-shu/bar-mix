@@ -1218,6 +1218,52 @@ console.log('\n--- 酒单 ---');
     console.log('  ' + (freshN > 0 && freshN < all ? '✅' : '❌') + ' 按"清爽"筛：' + freshN + ' 款');
     if (!(freshN > 0 && freshN < all)) bad('酒单', '"清爽"筛选没生效');
 
+    /* 技法筛选：用户提的——"我没有摇壶，就只想看 stir 和 build"
+       摇和（含 blended）要摇壶；搅拌（含 rolling）勺子就行；兑和、捣压、没写做法的不用器材。 */
+    const NEED_SHAKER = { shake: 1, blended: 1 };
+    const NOSH = { build: 1, stir: 1, smash: 1, rolling: 1, undefined: 1 };
+    function byTech(t) {
+      B.menu.reset();
+      B.menu.setTech(t);
+      return B.menu.listRefs();
+    }
+    B.menu.reset();
+    const chipHtml = els.menuFilters.innerHTML;
+    const chipN = (chipHtml.match(/data-menu-tech="/g) || []).length;
+    const okChip = chipN === 5 && chipHtml.indexOf('不用摇壶') >= 0;
+    console.log('  ' + (okChip ? '✅' : '❌') + ' 技法那一行有 ' + chipN + ' 个按钮：全部 / 兑和 / 搅拌 / 摇和 / 不用摇壶');
+    if (!okChip) bad('酒单', '技法筛选那一行没画对（' + chipN + ' 个按钮）');
+
+    const shakeList = byTech('shake');
+    const stirList = byTech('stir');
+    const buildList = byTech('build');
+    const nosList = byTech('noshaker');
+    const shakeBad = shakeList.filter(r => !NEED_SHAKER[r.method]);
+    const stirBad = stirList.filter(r => r.method !== 'stir' && r.method !== 'rolling');
+    const buildBad = buildList.filter(r => r.method === 'shake' || r.method === 'blended' || r.method === 'stir' || r.method === 'rolling');
+    const nosBad = nosList.filter(r => NEED_SHAKER[r.method]);
+    const sums = shakeList.length + stirList.length + buildList.length;
+    console.log('  ' + (shakeBad.length ? '❌' : '✅') + ' 筛"摇和"：' + shakeList.length + ' 款，全是 shake/blended'
+      + (shakeBad.length ? '，混进了 ' + shakeBad.slice(0, 2).map(r => r.zh).join('、') : ''));
+    if (shakeBad.length) bad('酒单', '摇和筛选混进了别的技法：' + shakeBad.slice(0, 3).map(r => r.zh + '/' + r.method).join('、'));
+    console.log('  ' + (stirBad.length ? '❌' : '✅') + ' 筛"搅拌"：' + stirList.length + ' 款，全是 stir/rolling');
+    if (stirBad.length) bad('酒单', '搅拌筛选混进了别的技法：' + stirBad.slice(0, 3).map(r => r.zh + '/' + r.method).join('、'));
+    console.log('  ' + (buildBad.length ? '❌' : '✅') + ' 筛"兑和"：' + buildList.length + ' 款，没有要摇、要搅的');
+    if (buildBad.length) bad('酒单', '兑和筛选混进了摇/搅的酒：' + buildBad.slice(0, 3).map(r => r.zh + '/' + r.method).join('、'));
+    console.log('  ' + (nosBad.length ? '❌' : '✅') + ' 筛"不用摇壶"：' + nosList.length + ' 款，一杯都不用摇'
+      + '（= 兑和 ' + buildList.length + ' + 搅拌 ' + stirList.length + '）');
+    if (nosBad.length) bad('酒单', '"不用摇壶"里出现了要摇壶的酒：' + nosBad.slice(0, 3).map(r => r.zh + '/' + r.method).join('、'));
+    if (nosList.length !== buildList.length + stirList.length) bad('酒单', '"不用摇壶"的数量对不上：' + nosList.length);
+    if (sums !== global.__REF.length) bad('酒单', '三种技法加起来不等于全部：' + sums + ' / ' + global.__REF.length);
+
+    /* 卡片上要有技法标签，不然扫一眼看不出哪杯要摇壶 */
+    B.menu.reset(); B.menu.setTech('shake');
+    const tagHtml = els.menuList.innerHTML;
+    const okTag = tagHtml.indexOf('mc-tech t-shake') >= 0;
+    console.log('  ' + (okTag ? '✅' : '❌') + ' 卡片上带技法标签（点开前就知道要不要摇壶）');
+    if (!okTag) bad('酒单', '卡片上没有技法标签');
+    B.menu.reset();
+
     /* 香槟杯：参考本写"香槟杯"的那几款必须配到细长笛形 */
     const fluteBad = [];
     global.__REF.forEach(r => {
