@@ -42,6 +42,8 @@ global.document = {
   body: { classList: mkClassList() }
 };
 /* 主题和"手边有什么"的选择都存在本地，测试里给个内存版 */
+/* 启动地址栏：给一条带配方码的网址，验证"扫码/点链接就直接装杯"这条路 */
+global.location = { search: '?r=BM1-rocks-full-build-bourbon.45-coke.150', hash: '' };
 global.localStorage = {
   _d: {},
   getItem(k) { return this._d[k] === undefined ? null : this._d[k]; },
@@ -94,6 +96,20 @@ function fire(dataset, tag) {
 }
 
 const rows = [];
+/* ---- 启动时地址栏里带着配方码：必须已经把那杯装好了 ---- */
+console.log('\n--- 带配方码的网址（?r=…）---');
+(function () {
+  const boot = [...B.state.cup.entries()];
+  const ok = boot.length === 2 && boot[0][0] === 'bourbon' && boot[0][1] === 45
+    && boot[1][0] === 'coke' && boot[1][1] === 150
+    && B.state.glass === 'rocks' && B.state.iceLevel === 'full' && B.state.method === 'build'
+    && B.page.current() === 'bar';
+  console.log('  ' + (ok ? '✅' : '❌') + ' 打开 ?r=… 就直接装出那一杯并停在调酒台：'
+    + JSON.stringify(boot));
+  if (!ok) bad('配方码', '网址里带的配方码没有自动装杯：' + JSON.stringify(boot));
+  B.load([]);
+})();
+
 global.__PRESETS.forEach(function (p, i) {
   const r = B.preset(i);
   const a = B.analyze();
@@ -1961,6 +1977,72 @@ console.log('\n--- 访问统计 ---');
   const quiet = !/看匿名访问量/.test(html);
   console.log('  ' + (quiet ? '✅' : '❌') + ' 页面上不再提"统计"这件事（用户要求删掉那句）');
   if (!quiet) bad('统计', '页面上还留着统计的说明文字');
+})();
+
+/* ---- 配方码：一串文字带走一整杯 ---- */
+console.log('\n--- 配方码 ---');
+(function () {
+  const strip = s => String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+  /* 装一杯有零有整的：7.5ml 这样的小数、苦精的 dash、整瓶的养乐多都要活得下来 */
+  B.state.glass = 'rocks'; B.state.iceLevel = 'half'; B.state.method = 'stir';
+  B.load([['bourbon', 45], ['lemon', 20], ['syrup', 7.5], ['angostura', 2], ['yakult', 1]]);
+  const code = B.code.make();
+  const okShape = /^BM1-rocks-half-stir-bourbon\.45-lemon\.20-syrup\.7\.5-angostura\.2-yakult\.1$/.test(code);
+  console.log('  ' + (okShape ? '✅' : '❌') + ' 生成的码：' + code);
+  if (!okShape) bad('配方码', '码的格式不对：' + code);
+
+  /* 清空再粘回来：材料、分量、杯型、冰量、做法必须一模一样 */
+  const before = { cup: [...B.state.cup.entries()], g: B.state.glass, i: B.state.iceLevel, m: B.state.method };
+  B.load([]);
+  const p = B.code.load(code);
+  const after = { cup: [...B.state.cup.entries()], g: B.state.glass, i: B.state.iceLevel, m: B.state.method };
+  const same = p.ok && JSON.stringify(before) === JSON.stringify(after);
+  console.log('  ' + (same ? '✅' : '❌') + ' 粘回来装出同一杯：' + JSON.stringify(after.cup));
+  if (!same) bad('配方码', '粘回来和原杯不一致：' + JSON.stringify(before) + ' vs ' + JSON.stringify(after));
+
+  /* 从一坨聊天记录里也要认得出来（前后有别的话、甚至是整条链接） */
+  const noisy = '你看这杯好喝 ' + code + ' 试试';
+  const noisyOk = B.code.parse(noisy).ok;
+  const urlOk = B.code.parse('https://saobo-shu.github.io/bar-mix/?r=' + code).ok;
+  console.log('  ' + (noisyOk && urlOk ? '✅' : '❌') + ' 夹在聊天记录里、或者整条链接粘进来都认得');
+  if (!noisyOk || !urlOk) bad('配方码', '从长文本里认不出配方码');
+
+  /* 乱码要拦住，不能悄悄装出一杯似是而非的酒 */
+  const junk = ['', '你好', 'BM1', 'BM1-rocks-half-stir', 'BM1-不存在的杯子-half-stir-bourbon.45',
+    'BM1-rocks-half-stir-bourbon.-5', 'BM1-rocks-half-stir-nobody.45'];
+  const passed = junk.filter(s => B.code.parse(s).ok);
+  console.log('  ' + (passed.length ? '❌' : '✅') + ' 乱码 / 缺料 / 量不对的一律拒绝，试了 ' + junk.length + ' 种');
+  if (passed.length) bad('配方码', '这些不该通过却通过了：' + JSON.stringify(passed));
+
+  /* 本库没有的材料：跳过但要说出来，不能装作没事 */
+  const pu = B.code.parse(code + '-nosuchdrink.30');
+  const okMiss = pu.ok && pu.missing.length === 1 && pu.missing[0] === 'nosuchdrink' && pu.cup.length === 5;
+  console.log('  ' + (okMiss ? '✅' : '❌') + ' 遇到本库没有的材料：照样装，但把少了什么报出来');
+  if (!okMiss) bad('配方码', '本库没有的材料没处理好：' + JSON.stringify(pu && pu.missing));
+
+  /* 码里不该带口味/评分——那是收件人自己的设置 */
+  B.state.taste = 'strong'; B.state.scheme = 'strength';
+  const c2 = B.code.make();
+  B.state.taste = 'light'; B.state.scheme = 'taste';
+  const c3 = B.code.make();
+  const okStable = c2 === c3 && c2.indexOf('strong') < 0;
+  console.log('  ' + (okStable ? '✅' : '❌') + ' 换口味 / 换评分方案，码不变（那些是你自己的设置）');
+  if (!okStable) bad('配方码', '口味或评分混进码里了：' + c2 + ' vs ' + c3);
+  B.state.taste = 'normal'; B.state.scheme = 'balanced';
+
+  /* 界面：点一下按钮，弹层里就是这杯的码；空杯子时提示去粘贴 */
+  B.code.open();
+  const shown = els['codeOut'].value;
+  console.log('  ' + (shown.indexOf('BM1-') === 0 ? '✅' : '❌') + ' 点「配方码」弹层里就有这杯的码');
+  if (shown.indexOf('BM1-') !== 0) bad('配方码', '弹层里没显示码：' + shown);
+  B.load([]);
+  B.code.open();
+  const emptyMsg = strip(els['codeMsg'].textContent || els['codeMsg'].innerHTML);
+  const okEmpty = /空的/.test(emptyMsg) && els['codeOut'].value === '';
+  console.log('  ' + (okEmpty ? '✅' : '❌') + ' 空杯子时提示"把别人的码粘进来"');
+  if (!okEmpty) bad('配方码', '空杯子时的提示不对：' + emptyMsg);
+  B.code.load(code); B.load([]);
 })();
 
 console.log('\n================ 自检结果 ================');

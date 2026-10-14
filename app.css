@@ -286,6 +286,8 @@ main {
 .panel-head {
   display: flex; align-items: baseline; justify-content: space-between;
   gap: 10px; margin-bottom: 10px;
+  /* 按钮多了要能换行——窄屏上宁可换到下一行，也不能被挤出面板 */
+  flex-wrap: wrap;
 }
 
 /* ---------------- 整块可收起的面板（④ 配方 / ⑤ 指南） ---------------- */
@@ -327,6 +329,15 @@ details.panel:not([open]) { padding-bottom: 13px; }
 #shareImg { width: 100%; height: auto; display: block; border-radius: 10px; border: 1px solid var(--line); }
 .sharedl { display: block; text-align: center; text-decoration: none; padding: 10px; }
 .sharebox .hint { margin: 0; }
+/* 配方码那两个输入框：码要能一眼看清，所以用等宽字、能全选 */
+.codefield {
+  width: 100%; font: inherit; font-size: 13px; font-family: ui-monospace, Consolas, Menlo, monospace;
+  padding: 8px 10px; border-radius: 10px; word-break: break-all;
+  background: var(--card2); border: 1px solid var(--line); color: var(--text);
+}
+.codefield::placeholder { color: var(--muted); font-family: inherit; }
+.coderow { display: flex; gap: 6px; }
+.coderow .ghost { flex: 1; }
 
 /* ---------------- 材料库 ---------------- */
 .cats { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 9px; margin-bottom: 10px; scrollbar-width: none; }
@@ -390,7 +401,7 @@ details.panel:not([open]) { padding-bottom: 13px; }
 
 /* ---------------- 杯子 ---------------- */
 .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 11px; }
-.head-acts { display: flex; gap: 6px; flex: none; }
+.head-acts { display: flex; gap: 6px; flex: none; flex-wrap: wrap; justify-content: flex-end; }
 
 /* ---------------- 杯子：选择 + 预览图 ---------------- */
 .glasspick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }

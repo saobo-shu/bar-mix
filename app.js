@@ -2677,6 +2677,7 @@
     }
     if (t.dataset.share !== undefined) { openShareCard(shareSpecFromRef(+t.dataset.share)); return; }
     if (t.dataset.shareClose !== undefined) { closeShareCard(); return; }
+    if (t.dataset.codeClose !== undefined) { closeCodeBox(); return; }
     if (t.dataset.tonightGo !== undefined) { loadRefFromMenu(+t.dataset.tonightGo); return; }
     if (t.dataset.menuLoadref !== undefined) {
       /* 照参考本是量装，不用"本站配比"那份 */
@@ -3258,9 +3259,161 @@
   if (shareWrap) shareWrap.addEventListener('click', function (e) {
     if (e.target === shareWrap) closeShareCard();      /* 点黑幕关掉 */
   });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeShareCard();
+
+  /* 配方码：点一下就复制好；收到码的人粘进来就能装杯 */
+  var codeBtn = document.getElementById('codeBtn');
+  if (codeBtn) codeBtn.addEventListener('click', function () { openCodeBox(); });
+  var codeWrap = document.getElementById('codeWrap');
+  if (codeWrap) codeWrap.addEventListener('click', function (e) {
+    if (e.target === codeWrap) closeCodeBox();         /* 点黑幕关掉 */
   });
+  var codeCopy = document.getElementById('codeCopy');
+  if (codeCopy) codeCopy.addEventListener('click', function () {
+    var out = document.getElementById('codeOut');
+    var msg = document.getElementById('codeMsg');
+    if (out && out.value && msg) msg.textContent = copyText(out.value)
+      ? '已复制 ✓' : '没能自动复制——长按上面那串字手动复制。';
+  });
+  function loadFromCodeInput() {
+    var inBox = document.getElementById('codeIn');
+    var msg = document.getElementById('codeMsg');
+    if (!inBox) return;
+    var p = applyRecipeCode(inBox.value);
+    if (!p.ok) { if (msg) msg.textContent = '❌ ' + p.why; return; }
+    if (p.missing && p.missing.length) {
+      if (msg) msg.textContent = '装进杯子了 ✓　有 ' + p.missing.length + ' 样本库没有，已经跳过。';
+      return;
+    }
+    closeCodeBox();
+  }
+  var codeLoad = document.getElementById('codeLoad');
+  if (codeLoad) codeLoad.addEventListener('click', loadFromCodeInput);
+  var codeIn = document.getElementById('codeIn');
+  if (codeIn) codeIn.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); loadFromCodeInput(); }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { closeShareCard(); closeCodeBox(); }
+  });
+
+  /* ---------------------------------------------------------
+     配方码：一串文字带走一整杯
+
+     BM1-<杯子>-<冰量>-<做法>-<材料>.<量>-<材料>.<量>…
+     例：BM1-icecup-full-shake-tanqueray.45-tonic.150-lime.10
+
+     只带"这杯是什么"：材料、分量、杯型、冰量、做法。
+     口味、评分方案、材料温度、酒精度都不带——那是你自己的设置，和你瓶子上印的数。
+     材料名（id）里只有小写字母、数字和下划线，所以用「.」隔开 id 和用量、
+     用「-」隔开每一样材料，整串都是网址里能直接用的字符，粘到哪都不会坏。
+     --------------------------------------------------------- */
+  var CODE_VER = 'BM1';
+  var CODE_RE = /BM1(?:-[A-Za-z0-9_.]+)+/;
+
+  function makeRecipeCode() {
+    var parts = [];
+    state.cup.forEach(function (amt, id) {
+      if (!BY_ID[id] || !(amt > 0)) return;
+      parts.push(id + '.' + (Math.round(amt * 100) / 100));
+    });
+    if (!parts.length) return '';
+    return [CODE_VER, state.glass, state.iceLevel, state.method].concat(parts).join('-');
+  }
+
+  /* 不认识的杯子/冰量/做法一律拒绝——宁可报错，也不要装出一杯似是而非的酒。
+     材料不认识就跳过，但会在 missing 里报出来，让用户知道少了什么。 */
+  function parseRecipeCode(txt) {
+    var m = String(txt || '').match(CODE_RE);
+    if (!m) return { ok: false, why: '这看着不是配方码' };
+    var f = m[0].split('-');
+    if (f.length < 5) return { ok: false, why: '配方码不完整' };
+    var glass = f[1], ice = f[2], method = f[3];
+    if (!GLASSES.some(function (g) { return g.id === glass; }))
+      return { ok: false, why: '杯子认不出来：' + glass };
+    if (!ICE_LEVELS.some(function (x) { return x.id === ice; }))
+      return { ok: false, why: '冰量认不出来：' + ice };
+    if (!METHODS.some(function (x) { return x.id === method; }))
+      return { ok: false, why: '做法认不出来：' + method };
+    var cup = [], missing = [];
+    for (var i = 4; i < f.length; i++) {
+      var dot = f[i].indexOf('.');
+      if (dot <= 0) return { ok: false, why: '材料写坏了：' + f[i] };
+      var id = f[i].slice(0, dot), amt = parseFloat(f[i].slice(dot + 1));
+      if (!BY_ID[id]) { missing.push(id); continue; }
+      if (!isFinite(amt) || amt <= 0 || amt > 2000) return { ok: false, why: '用量不像话：' + f[i] };
+      cup.push([id, amt]);
+    }
+    if (!cup.length) return { ok: false, why: '这个码里没有本库认识的材料' };
+    return { ok: true, cup: cup, glass: glass, ice: ice, method: method, missing: missing };
+  }
+
+  /* 装进杯子：整杯替换，并把页面切到调酒台 */
+  function applyRecipeCode(txt) {
+    var p = parseRecipeCode(txt);
+    if (!p.ok) return p;
+    state.cup.clear();
+    p.cup.forEach(function (it) { state.cup.set(it[0], it[1]); });
+    state.glass = p.glass;
+    state.iceLevel = p.ice;
+    state.method = p.method;
+    /* 上一杯留下的展开状态和"换基酒"面板要清干净 */
+    state.open = {};
+    state.swapOpen = false;
+    renderAll();
+    setPage('bar', true);
+    return p;
+  }
+
+  /* 复制：先试剪贴板 API；本地双击打开（file://）常常不给用，退回老办法 */
+  function copyText(t) {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(t);
+        return true;
+      }
+    } catch (e) { /* 继续试下一种 */ }
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = t;
+      ta.setAttribute('readonly', 'readonly');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = !!(document.execCommand && document.execCommand('copy'));
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) { return false; }
+  }
+
+  /* 配方码弹层：上面是这杯的码，下面是粘贴别人的码 */
+  function closeCodeBox() {
+    var w = document.getElementById('codeWrap');
+    if (w) w.hidden = true;
+  }
+  function openCodeBox() {
+    var wrap = document.getElementById('codeWrap');
+    if (!wrap) return;
+    var out = document.getElementById('codeOut');
+    var inBox = document.getElementById('codeIn');
+    var msg = document.getElementById('codeMsg');
+    var code = makeRecipeCode();
+    wrap.hidden = false;
+    if (msg) msg.textContent = '';
+    if (inBox) inBox.value = '';
+    if (out) out.value = code;
+    if (code) {
+      /* 点一下按钮就把码复制好——这一步是用户要的"点一下就发得出去" */
+      var ok = copyText(code);
+      if (msg) msg.textContent = ok
+        ? '已复制 ✓　发给朋友，他打开这一页、把码粘到下面那格就能装出同一杯。'
+        : '没能自动复制——长按上面这串字手动复制。';
+    } else {
+      if (msg) msg.textContent = '杯子是空的。把朋友的配方码粘到下面，就能装出他那一杯。';
+      if (inBox && inBox.focus) inBox.focus();
+    }
+  }
 
   /* ---------------------------------------------------------
      启动
@@ -3268,6 +3421,18 @@
   /* 不预置任何基酒——谁来用都从自己手上的那瓶开始 */
   loadHave();       /* 上次勾的"手边有什么"还在 */
   renderAll();
+
+  /* 带 ?r=配方码 或 #r=配方码 打开，就直接把这杯装好（分享卡上的二维码扫出来就是它）。
+     本地双击打开时没有 location，这几句自然跳过。 */
+  (function () {
+    if (typeof location === 'undefined') return;
+    var m = String(location.search || '').match(/[?&]r=([^&]+)/)
+      || String(location.hash || '').match(/[#&]r=([^&]+)/);
+    if (!m) return;
+    var code = m[1];
+    try { code = decodeURIComponent(code); } catch (e) { /* 已经解码过就算了 */ }
+    applyRecipeCode(code);
+  })();
 
   /* 调试 / 二次开发用：在浏览器控制台可以访问 window.BarMix */
 
@@ -3621,6 +3786,14 @@
       fresh: isFresh
     },
     /* 分享卡：给自检和调试用 */
+    /* 配方码：给自检和调试用 */
+    code: {
+      make: makeRecipeCode,
+      parse: parseRecipeCode,
+      load: applyRecipeCode,
+      open: openCodeBox,
+      copy: copyText
+    },
     share: {
       specFromRef: shareSpecFromRef,
       specFromCup: shareSpecFromCup,

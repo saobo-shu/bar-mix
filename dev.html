@@ -124,6 +124,8 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
             <li>杯子那一行右边的 <b>− / +</b> 调分量（一次 5ml），<b>✕</b> 拿掉。</li>
             <li>点<b>材料名那一行</b>会展开完整说明：风味、在哪买、没冰箱能放多久。</li>
             <li>只有一瓶基酒也没关系——先倒进去，再用右上角的 <b>「换基酒」</b> 换成你手上那瓶。</li>
+            <li>想把这一杯发给朋友：点右上角 <b>「配方码」</b>——点一下就把这杯变成一串码复制好了。朋友打开同一页、把码粘进同一格，就能装出一模一样的一杯
+              （材料、分量、杯型、冰量、做法都会跟过来；<b>口味和评分方案</b>是你自己的设置，不跟着码走）。</li>
           </ul>
         </div>
       </details>
@@ -200,6 +202,7 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
       <div class="head-acts">
       <button type="button" class="ghost" id="saveBtn">保存这杯</button>
       <button type="button" class="ghost" id="shareCupBtn" title="把杯子里这一杯画成一张竖版图片">做成分享卡</button>
+      <button type="button" class="ghost" id="codeBtn" title="把这杯变成一串配方码：复制发给朋友，他粘到同一格就能装出同一杯">配方码</button>
       <button type="button" class="ghost" id="swapBtn">换基酒</button>
         <button type="button" class="ghost" id="clearBtn">清空</button>
       </div>
@@ -483,6 +486,27 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
     <img id="shareImg" alt="这一杯的分享卡">
     <p class="hint">手机上<b>长按图片</b>存到相册；电脑上点下面的按钮下载。</p>
     <a class="ghost sharedl" id="shareDl" download="调酒台.png">下载图片</a>
+  </div>
+</div>
+
+<!-- 配方码：一串文字带走一整杯（复制给别人 / 粘贴别人的） -->
+<div class="sharewrap" id="codeWrap" hidden>
+  <div class="sharebox" role="dialog" aria-label="配方码">
+    <div class="sharehead">
+      <b>配方码</b>
+      <button type="button" class="ghost" id="codeClose" data-code-close="1">关闭</button>
+    </div>
+    <p class="hint">这串字就是你这一杯：材料、分量、杯型、冰量、做法。发给朋友，他打开这一页、粘到下面那格，就能装出一模一样的。</p>
+    <input type="text" id="codeOut" class="codefield" readonly aria-label="这一杯的配方码">
+    <div class="coderow">
+      <button type="button" class="ghost" id="codeCopy">再复制一次</button>
+    </div>
+    <p class="hint">收到别人的码？粘到这里：</p>
+    <input type="text" id="codeIn" class="codefield" placeholder="把配方码粘进来（BM1- 开头那一串）" aria-label="粘贴配方码">
+    <div class="coderow">
+      <button type="button" class="ghost" id="codeLoad">装进杯子</button>
+    </div>
+    <p class="hint" id="codeMsg"></p>
   </div>
 </div>
 
