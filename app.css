@@ -236,6 +236,15 @@ main {
 .mc-tech.t-shake { color: var(--amber); }
 .mc-tech.t-stir  { color: var(--blue); }
 .mc-tech.t-build { color: var(--muted); }
+/* 「气泡后加」这一种情况单独给个颜色，扫列表时能跳出来 */
+.mc-tech.mc-tech-bub { color: var(--orange); }
+/* 带气配方的那条警告：新手照着做会炸壶，所以不能做成小灰字 */
+.bubwarn {
+  margin: 8px 0; padding: 8px 10px; border-radius: 10px;
+  background: rgba(217, 108, 92, .12); border: 1px solid rgba(217, 108, 92, .45);
+  color: #f0e2dc; font-size: 12.5px; line-height: 1.6;
+}
+.bubwarn b { color: var(--red); }
 .origbox { margin: 8px 0 0; }
 .origbox-plain { margin: 8px 0 0; }
 .origbox > summary { cursor: pointer; font-size: 12px; color: var(--amber); }

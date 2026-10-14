@@ -282,6 +282,15 @@ main {
 .mc-tech.t-shake { color: var(--amber); }
 .mc-tech.t-stir  { color: var(--blue); }
 .mc-tech.t-build { color: var(--muted); }
+/* 「气泡后加」这一种情况单独给个颜色，扫列表时能跳出来 */
+.mc-tech.mc-tech-bub { color: var(--orange); }
+/* 带气配方的那条警告：新手照着做会炸壶，所以不能做成小灰字 */
+.bubwarn {
+  margin: 8px 0; padding: 8px 10px; border-radius: 10px;
+  background: rgba(217, 108, 92, .12); border: 1px solid rgba(217, 108, 92, .45);
+  color: #f0e2dc; font-size: 12.5px; line-height: 1.6;
+}
+.bubwarn b { color: var(--red); }
 .origbox { margin: 8px 0 0; }
 .origbox-plain { margin: 8px 0 0; }
 .origbox > summary { cursor: pointer; font-size: 12px; color: var(--amber); }
@@ -5260,6 +5269,8 @@ var qrcode = function() {
     var acidLoad = 0, enzymes = [], dairyName = '';
     /* 每样材料的温度，用来算冰化掉多少（见 meltFrom） */
     var parts = [], tempMix = { frozen: 0, cold: 0, room: 0, hot: 0 };
+    /* 带气的材料不能进摇壶，所以摇和/搅拌的稀释只算"能摇的那部分" */
+    var shakableMl = 0, fizzNames = [];
     /* 谁是这杯的"主心骨"（贡献酒精最多的那样）——用来判断"基酒是不是冷冻的" */
     var baseG = null, baseAlc = 0;
 
@@ -5271,6 +5282,8 @@ var qrcode = function() {
 
       var ml = amt * (g.mlu || 0);
       if (ml > 0) liquid += ml;
+      if (ml > 0 && (g.f.fizz || 0) < GAS_MIN) shakableMl += ml;
+      if (ml > 0 && (g.f.fizz || 0) >= GAS_MIN && fizzNames.indexOf(g.name) < 0) fizzNames.push(g.name);
       if (ml > 0) acidLoad += ml * acidPerMl(phOf(g));
       if (g.abv) alcoholMl += ml * abvOf(g) / 100;
       if (g.abv && ml * abvOf(g) > baseAlc) { baseAlc = ml * abvOf(g); baseG = g; }
@@ -5335,9 +5348,10 @@ var qrcode = function() {
         看起来像温度那个按钮坏了。） */
     var dilBase = methodOf(state.method).dil;
     var qRatio = qRoom > 0 ? clamp(qNow / qRoom, 0.45, 1) : 1;
-    var prepDil = (neatPour || isHot) ? 0 : liquid * dilBase * qRatio;
+    /* 只稀释"能摇的那部分"：气泡材料是最后加的，没进过摇壶，不该跟着一起算水 */
+    var prepDil = (neatPour || isHot) ? 0 : shakableMl * dilBase * qRatio;
     /* 材料全是常温时摇壶要加多少水——用来对比"换成冷冻基酒能少加多少" */
-    var prepDilRoom = (neatPour || isHot) ? 0 : liquid * dilBase;
+    var prepDilRoom = (neatPour || isHot) ? 0 : shakableMl * dilBase;
 
     /* 材料平均"冷量"：0 = 全是常温 25℃，1 = 全都冻透了 -18℃。
        冷藏 5℃ 大约是 0.47。这是百分比，不是温度——
@@ -5389,6 +5403,8 @@ var qrcode = function() {
          以及"如果材料全是常温的"会化多少（用来对比，不参与打分） */
       iceMass: iceMass, meltIce: meltIce, meltRoom: meltRoom, tempMix: tempMix,
       prepDil: prepDil, prepDilRoom: prepDilRoom, parts: parts,
+      /* 杯里有没有带气的材料（名字列表）——摇和/搅拌时要拦一下，不能进摇壶 */
+      fizzNames: fizzNames, shakableMl: shakableMl,
       cold: cold, baseTemp: baseG ? tempIdOf(baseG) : '', baseName: baseG ? baseG.name : '',
       /* 纯饮：杯里只有一样含酒精的东西（加不加冰都算），没有任何配料。
          不限定"必须是基酒"——单喝金巴利、单喝咖啡利口酒同样是纯饮。 */
@@ -5744,6 +5760,14 @@ var qrcode = function() {
     var longDrink = f.fizz > 3;
 
     function add(p, tone, text) { out.push({ p: p, tone: tone, text: text }); }
+
+    /* 气泡进了摇壶会喷——安全提醒，放第一条，不扣分（不是好不好喝的问题） */
+    if (a.fizzNames.length && (state.method === 'shake' || state.method === 'stir')) {
+      var bn = a.fizzNames.join('、');
+      add(100, 'warn', '⚠️ ' + bn + '不能进摇壶：摇壶是密闭的，带气的材料一进去就会憋压喷出来。'
+        + '把' + bn + '留到最后——先' + (state.method === 'shake' ? '摇' : '搅') + '其余材料、滤进杯子，'
+        + '再把' + bn + '加满；或者把做法改成「兑和」。');
+    }
 
     if (!a.hasBase && a.nItems > 0)
       add(100, 'tip', '这杯里没有基酒，是无酒精特调。烈度项按宽松标准算了，风味图照样有效。');
@@ -6378,6 +6402,12 @@ var qrcode = function() {
   }
   /* 技法的中文名。酒单的筛选和卡片上的小标签都用它，只此一处，别各写各的。 */
   var TECH_NAME = { shake: '摇和', stir: '搅拌', build: '兑和' };
+  /* 两个不同的阈值，别混：
+     FIZZ_MIN —— 风味上算不算"有气泡"（气泡那一维、"带气泡"筛选用它）。可乐 5 分，算不太冲。
+     GAS_MIN  —— 材料本身带不带气，用来判断"能不能进摇壶"。可乐 5、芬达 5 也是带气的，
+                 进了摇壶照样喷。安全上的判断一律用这个更低的门槛。 */
+  var FIZZ_MIN = 6;
+  var GAS_MIN = 5;
   /* "45ml / 2dash / 3片 / 一个 / 15g" → 数字。单位对不上就用材料的默认量 */
   function parseAmount(txt, g) {
     var s = String(txt || '');
@@ -6979,8 +7009,11 @@ var qrcode = function() {
         + '<span class="mc-star' + (on ? ' on' : '') + '" data-fav="' + i + '" role="button" tabindex="0"'
         + ' title="' + (on ? '取消收藏' : '收藏') + '">' + (on ? '★' : '☆') + '</span></span>'
       + '<span class="mc-line">' + esc(use.slice(0, 4).join(' · ')) + (use.length > 4 ? ' 等' : '') + '</span>'
-      + '<span class="mc-meta"><i class="mc-tech t-' + methodFromRef(r.method) + '">'
-        + (TECH_NAME[methodFromRef(r.method)] || '兑和') + '</i>'
+      /* 带气又要摇的：标签上直接写「气泡后加」，扫一眼就知道汤力水不能进摇壶 */
+      + '<span class="mc-meta"><i class="mc-tech t-' + methodFromRef(r.method)
+        + (refFizz(r).length && methodFromRef(r.method) !== 'build' ? ' mc-tech-bub' : '') + '">'
+        + (TECH_NAME[methodFromRef(r.method)] || '兑和')
+        + (refFizz(r).length && methodFromRef(r.method) !== 'build' ? ' · 气泡后加' : '') + '</i>'
         + Math.round(st.abv) + '% · ' + r.needs.length + ' 样'
         + (d && d.hasDiff ? ' · <i class="mc-pick">本站配比</i>' : '')
         + (r.pick ? ' · <i class="mc-pick">推荐</i>' : '') + '</span>'
@@ -7183,6 +7216,16 @@ var qrcode = function() {
         + (d && d.hasDiff ? '　<b class="mc-pick">本站配比</b>' : '') + '</p>'
       /* 一句话定位：只有推荐的 51 款有（data.js 的 PICK_LINE） */
       + (PICK_LINE[recipeName(r)] ? '<p class="hint pickline">' + esc(PICK_LINE[recipeName(r)]) + '</p>' : '')
+      /* 带气的配方要把"气泡不能进摇壶"写在最显眼的地方——新手照着说明做，
+         把汤力水倒进摇壶是会喷的。参考本写 shake 没错，错的是不说清楚这件事。 */
+      + (function () {
+          var bub = refFizz(r);
+          var m = pre && PRESET_METHOD[pre.name] ? methodFromRef(PRESET_METHOD[pre.name]) : methodFromRef(r.method);
+          if (!bub.length || m === 'build') return '';
+          return '<p class="bubwarn"><b>⚠️ ' + esc(bub.join('、')) + '别进摇壶</b>：'
+            + '先把其余材料加冰' + (m === 'shake' ? '摇 15 秒' : '搅 20 秒') + '、滤进杯子，'
+            + '最后再把' + esc(bub.join('、')) + '加满。带气的材料一进摇壶就会憋压喷出来。</p>';
+        })()
       + '<ul class="menulist">' + rows + '</ul>'
       /* 参考数据里写了装饰（92 条有），一起显示出来——以前漏了这一栏 */
       + (r.garnish ? '<p class="hint">装饰：' + esc(r.garnish) + (r.ice ? '　冰：' + esc(r.ice) : '') + '</p>'
@@ -8085,19 +8128,46 @@ var qrcode = function() {
 
   /* 怎么倒：一句话，够用就行（细节去调酒台看） */
   /* 做法说成人话（分享卡也用它） */
-  function howText(m, gl, refMethod) {
+  /* 怎么倒。fizzNames 是这杯里带气的材料（汤力水、苏打水、香槟…）——
+     它们绝对不能进摇壶：摇壶是密闭的，气一憋就喷，这是新手最容易炸的一步。 */
+  /* 参考配方里哪些材料带气。写 shake 不代表参考本错了——长岛冰茶、金菲士、
+     法兰西 75 都是"其余材料先摇、气泡最后加"；要改的是我们的说明文字。 */
+  function refFizz(r) {
+    var out = [];
+    (r.needs || []).forEach(function (nd) {
+      if (nd.need.optional) return;
+      var id = resolveNeedId(nd.need);
+      var g = id && BY_ID[id];
+      if (g && (g.f.fizz || 0) >= GAS_MIN && out.indexOf(g.name) < 0) out.push(g.name);
+    });
+    return out;
+  }
+  /* 调酒台那杯里的气泡材料 */
+  function cupFizz() {
+    var out = [];
+    state.cup.forEach(function (amt, id) {
+      var g = BY_ID[id];
+      if (g && amt > 0 && (g.f.fizz || 0) >= GAS_MIN && out.indexOf(g.name) < 0) out.push(g.name);
+    });
+    return out;
+  }
+  function howText(m, gl, refMethod, fizzNames) {
     var glass = gl.name;
     /* 只有"冰留在杯里"那种杯型才提加冰；马天尼杯/香槟杯是冰镇后滤进去的 */
     var ice = gl.ice === 'inglass' ? '（杯里先放冰）' : '';
+    var bub = (fizzNames && fizzNames.length) ? fizzNames.join('、') : '';
+    var last = bub ? '，最后把' + bub + '加满' : '';
     if (refMethod === 'blended' || refMethod === 'blend') return '连冰一起打成冰沙，倒进' + glass;
     /* 捣压（莫吉托、凯匹林纳这一类）不能写成"直接倒进搅两下"——那样薄荷出不来味 */
     if (refMethod === 'smash') return '青柠和糖先在' + glass + '里捣两下出汁，再加冰、倒酒，搅两下';
-    if (m === 'shake') return '材料加冰摇 15 秒，滤进' + glass + ice;
-    if (m === 'stir') return '材料加冰搅 20 秒，滤进' + glass + ice;
-    return '材料直接倒进' + glass + '搅两下' + ice;
+    if (m === 'shake') return '材料' + (bub ? '（' + bub + '除外，别进摇壶）' : '')
+      + '加冰摇 15 秒，滤进' + glass + ice + last;
+    if (m === 'stir') return '材料' + (bub ? '（' + bub + '除外）' : '')
+      + '加冰搅 20 秒，滤进' + glass + ice + last;
+    return '材料直接倒进' + glass + '搅两下' + ice + last;
   }
   function tonightHow(r) {
-    return howText(methodFromRef(r.method), glassOf(glassFromRef(r)), r.method);
+    return howText(methodFromRef(r.method), glassOf(glassFromRef(r)), r.method, refFizz(r));
   }
 
   function tonightCard(i) {
@@ -8771,7 +8841,7 @@ var qrcode = function() {
       /* 定位只认"推荐款那句"；提示（recipeTip）放到下面的"小提示"，别重复两遍 */
       line: pickLineForCup(),
       items: items,
-      how: howText(state.method, glassOf(state.glass)),
+      how: howText(state.method, glassOf(state.glass), '', cupFizz()),
       note: state.recipeTip || '',
       keep: keepHintOf(items.map(function (x) { return x.id; })),
       glass: glassOf(state.glass).name,

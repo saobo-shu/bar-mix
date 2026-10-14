@@ -1280,6 +1280,45 @@ console.log('\n--- 酒单 ---');
     if (!okTag) bad('酒单', '卡片上没有技法标签');
     B.menu.reset();
 
+    /* 气泡不能进摇壶：这是安全事。参考本写 shake 不一定错（很多是"其余先摇、
+       气泡最后加"），但我们的说明必须写清楚——新手照着做把汤力水倒进摇壶是会喷的。 */
+    const FIZZ = id => { const g = B.BY_ID[id]; return g && (g.f.fizz || 0) >= 6; };
+    const noWarn = [], hasBub = [];
+    global.__REF.forEach(r => {
+      const m = /blended/.test(r.method) ? 'shake' : (/shake/.test(r.method) ? 'shake'
+        : (/stir|rolling/.test(r.method) ? 'stir' : 'build'));
+      const fz = (r.needs || []).filter(nd => !nd.need.optional && nd.need.id && FIZZ(nd.need.id));
+      if (!fz.length || m === 'build') return;
+      const how = B.share.specFromRef(global.__REF.indexOf(r)).how;
+      /* 摇和的：必须写"别进摇壶"；搅拌的：写清楚"最后加"就够（不会喷，只会把气搅没） */
+      const ok = how.indexOf('最后把') >= 0 && (m !== 'shake' || how.indexOf('别进摇壶') >= 0);
+      (ok ? hasBub : noWarn).push(r.zh + '：' + how);
+    });
+    console.log('  ' + (noWarn.length ? '❌' : '✅') + ' 含气泡又要摇/搅的配方，说明里都写了"别进摇壶、最后加"（'
+      + hasBub.length + ' 条）');
+    if (noWarn.length) { noWarn.slice(0, 3).forEach(x => console.log('      ⛔ ' + x)); }
+    if (noWarn.length) bad('气泡', '这些配方没写清楚气泡不能进摇壶：' + noWarn.length + ' 条');
+    console.log('      ' + hasBub.slice(0, 2).map(x => x.replace(/\n/g, ' ')).join('　/　'));
+
+    /* 具体到那几杯新手最可能做的 */
+    const ginFizz = global.__REF.findIndex(r => r.zh === '金菲士');
+    const gfHow = B.share.specFromRef(ginFizz).how;
+    const okGF = /摇/.test(gfHow) && /最后把苏打水加满/.test(gfHow);
+    console.log('  ' + (okGF ? '✅' : '❌') + ' 金菲士：' + gfHow);
+    if (!okGF) bad('气泡', '金菲士的说明没写清楚：' + gfHow);
+
+    /* 卡片上要能一眼看出来 */
+    B.menu.reset(); B.menu.setTech('shake');
+    const bubTag = els.menuList.innerHTML.indexOf('气泡后加') >= 0;
+    console.log('  ' + (bubTag ? '✅' : '❌') + ' 摇和那栏的卡片上标了「气泡后加」');
+    if (!bubTag) bad('气泡', '卡片上没标"气泡后加"');
+    B.menu.reset();
+
+    /* 金汤力是兑和，不是摇和——用户一开始就是被这个吓到的 */
+    const ginTonicOk = global.__PM['金汤力'] === 'build';
+    console.log('  ' + (ginTonicOk ? '✅' : '❌') + ' 金汤力是兑和（住处特调里写的就是 build）');
+    if (!ginTonicOk) bad('气泡', '金汤力的做法不是兑和');
+
     /* 香槟杯：参考本写"香槟杯"的那几款必须配到细长笛形 */
     const fluteBad = [];
     global.__REF.forEach(r => {
@@ -1977,6 +2016,48 @@ console.log('\n--- 访问统计 ---');
   const quiet = !/看匿名访问量/.test(html);
   console.log('  ' + (quiet ? '✅' : '❌') + ' 页面上不再提"统计"这件事（用户要求删掉那句）');
   if (!quiet) bad('统计', '页面上还留着统计的说明文字');
+})();
+
+/* ---- 气泡不能进摇壶：调酒台这边的拦截 ---- */
+console.log('\n--- 气泡不能进摇壶（调酒台）---');
+(function () {
+  const ginTonic = [['tanqueray', 45], ['tonic', 120], ['lime', 10]];
+  B.state.glass = 'highball'; B.state.iceLevel = 'full';
+  B.state.taste = 'normal'; B.state.scheme = 'balanced';
+
+  B.state.method = 'shake';
+  B.load(ginTonic);
+  const a = B.analyze();
+  const adv = B.advise(a);
+  const first = adv[0] || {};
+  const okWarn = first.tone === 'warn' && /不能进摇壶/.test(first.text) && /汤力水/.test(first.text);
+  console.log('  ' + (okWarn ? '✅' : '❌') + ' 选了摇和、杯里有汤力水：第一条就是拦阻（' + (first.text || '').slice(0, 28) + '…）');
+  if (!okWarn) bad('气泡', '选了摇和 + 有气泡，没有拦一下：' + JSON.stringify(first.text || ''));
+
+  /* 摇和/搅拌只稀释"能摇的那部分"，气泡不跟着算水 */
+  const okDil = a.shakableMl === 55 && a.prepDil <= 55 * 0.25 + 0.01 && a.prepDil > 0;
+  console.log('  ' + (okDil ? '✅' : '❌') + ' 稀释只算能摇的 ' + Math.round(a.shakableMl)
+    + 'ml（金酒 45 + 青柠 10），汤力水 120ml 没被算进摇壶：加了 ' + a.prepDil.toFixed(1) + 'ml 水');
+  if (!okDil) bad('气泡', '稀释把气泡材料也算进去了：shakable=' + a.shakableMl + ' prepDil=' + a.prepDil.toFixed(1));
+
+  B.state.method = 'build';
+  B.load(ginTonic);
+  const adv2 = B.advise(B.analyze());
+  const noWarn = !adv2.some(x => /不能进摇壶/.test(x.text));
+  console.log('  ' + (noWarn ? '✅' : '❌') + ' 改成兑和之后，这个警告就消失了');
+  if (!noWarn) bad('气泡', '兑和也报"不能进摇壶"');
+
+  /* 可乐也是带气的：自由古巴（朗姆 + 可乐）
+     —— 可乐的气泡值是 5，比苏打水低，但进摇壶一样会喷，所以门槛要按"带不带气"算 */
+  B.state.method = 'shake';
+  B.load([['havana3', 45], ['coke', 100], ['lime', 10]]);
+  const aCoke = B.analyze();
+  const okCoke = aCoke.fizzNames.some(n => /可乐/.test(n)) && aCoke.shakableMl === 55;
+  console.log('  ' + (okCoke ? '✅' : '❌') + ' 可乐也算带气（气泡值 5）：自由古巴能摇的只有 '
+    + Math.round(aCoke.shakableMl) + 'ml，识别到 ' + JSON.stringify(aCoke.fizzNames));
+  if (!okCoke) bad('气泡', '可乐没被当成带气材料：' + JSON.stringify(aCoke.fizzNames));
+
+  B.state.method = 'build'; B.load([]);
 })();
 
 /* ---- 配方码：一串文字带走一整杯 ---- */
