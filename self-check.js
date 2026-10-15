@@ -1319,6 +1319,37 @@ console.log('\n--- 酒单 ---');
     console.log('  ' + (ginTonicOk ? '✅' : '❌') + ' 金汤力是兑和（住处特调里写的就是 build）');
     if (!ginTonicOk) bad('气泡', '金汤力的做法不是兑和');
 
+    /* 别名搜索：用户问"青霉素怎么找不到了"——参考本叫盘尼西林，搜另一个名字也得找得到 */
+    function searchHits(q) {
+      B.menu.reset(); B.menu.setQuery(q);
+      return B.menu.listRefs().map(r => r.zh || r.en);
+    }
+    const aliasCases = [
+      ['青霉素', '盘尼西林'], ['盘尼西林', '盘尼西林'],
+      ['罗伯罗伊', '罗布罗伊'], ['罗布罗伊', '罗布罗伊'],
+      ['干马天尼', '马天尼'], ['八区', '8区'], ['锈钉', '生锈钉'],
+      ['老式', '古典鸡尾酒'], ['玛格丽塔', '玛格丽特']
+    ];
+    const aliasFail = aliasCases.filter(c => searchHits(c[0]).indexOf(c[1]) < 0);
+    console.log('  ' + (aliasFail.length ? '❌' : '✅') + ' 别名搜索 ' + aliasCases.length
+      + ' 例：搜"青霉素"能找到"盘尼西林"这类两个叫法都对得上'
+      + (aliasFail.length ? '；没找到：' + aliasFail.map(c => c[0] + '→' + c[1]).join('、') : ''));
+    if (aliasFail.length) bad('酒单', '别名搜不到：' + aliasFail.map(c => c[0] + '→' + c[1]).join('、'));
+
+    /* 反着也要能搜：拿参考本的名字搜到本站的写法 */
+    const aliasName = B.menu.alias('盘尼西林');
+    console.log('  ' + (aliasName.indexOf('青霉素') >= 0 ? '✅' : '❌')
+      + ' 盘尼西林的别名里带着"青霉素"：' + JSON.stringify(aliasName));
+    if (aliasName.indexOf('青霉素') < 0) bad('酒单', '别名表里没有青霉素');
+
+    /* 打开详情要能看到"也叫：青霉素"，不然用户还是不知道自己搜过的那杯在哪 */
+    B.menu.open(global.__REF.findIndex(r => r.zh === '盘尼西林'));
+    const detailTxt = strip(els.menuDetail.innerHTML);
+    const okAliasLine = /也叫：/.test(detailTxt) && /青霉素/.test(detailTxt);
+    console.log('  ' + (okAliasLine ? '✅' : '❌') + ' 盘尼西林详情里写了「也叫：青霉素」');
+    if (!okAliasLine) bad('酒单', '详情里没写别名：' + detailTxt.slice(0, 60));
+    B.menu.reset();
+
     /* 香槟杯：参考本写"香槟杯"的那几款必须配到细长笛形 */
     const fluteBad = [];
     global.__REF.forEach(r => {

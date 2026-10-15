@@ -1385,6 +1385,27 @@
                  进了摇壶照样喷。安全上的判断一律用这个更低的门槛。 */
   var FIZZ_MIN = 6;
   var GAS_MIN = 5;
+
+  /* 同一杯酒在两处叫法不一样：参考本写「盘尼西林」「罗布罗伊」，我们写「青霉素」「罗伯罗伊」。
+     两边都要能搜到——用户凭什么知道参考本管它叫什么。
+     前六对自动从 REF_PRESET_MAP 生成（名字不一样才算），下面再补几个口头叫法。 */
+  var NAME_ALIAS = {};
+  (function () {
+    function add(a, b) {
+      if (!a || !b || a === b) return;
+      (NAME_ALIAS[a] = NAME_ALIAS[a] || []).push(b);
+    }
+    Object.keys(REF_PRESET_MAP).forEach(function (refName) {
+      var myName = REF_PRESET_MAP[refName];
+      if (!myName || myName === refName) return;
+      add(refName, myName);       /* 搜青霉素 → 找到盘尼西林 */
+      add(myName, refName);       /* 搜盘尼西林 → 找到它 */
+    });
+    /* 参考本里查不到、但大家嘴上常那么叫的 */
+    ['老式', '老式鸡尾酒'].forEach(function (n) { add('古典鸡尾酒', n); });
+    ['玛格丽塔'].forEach(function (n) { add('玛格丽特', n); });
+  })();
+  function aliasText(name) { return (NAME_ALIAS[name] || []).join(' '); }
   /* "45ml / 2dash / 3片 / 一个 / 15g" → 数字。单位对不上就用材料的默认量 */
   function parseAmount(txt, g) {
     var s = String(txt || '');
@@ -2059,7 +2080,9 @@
     REF_RECIPES.forEach(function (r, i) {
       if (menuTab === 'favs' && !isFav(recipeName(r))) return;
       if (q) {
-        var hay = (r.zh + ' ' + (r.en || '') + ' ' + r.needs.map(function (nd) { return nd.n; }).join(' ')).toLowerCase();
+        /* 别名一起搜：搜"青霉素"要能找到"盘尼西林"（同一杯酒的两个叫法） */
+        var hay = (r.zh + ' ' + (r.en || '') + ' ' + aliasText(r.zh) + ' '
+          + r.needs.map(function (nd) { return nd.n; }).join(' ')).toLowerCase();
         if (hay.indexOf(q) < 0) return;
       }
       var st = refStat(i);
@@ -2108,7 +2131,8 @@
       HOUSE_PRESETS.forEach(function (name) {
         var i = presetIndexByName(name);
         if (i < 0) return;
-        if (q2 && (name + ' ' + compLine(PRESETS[i])).toLowerCase().indexOf(q2) < 0) return;
+        /* 住处特调这一栏也一样：别名一起搜（青霉素 ↔ 盘尼西林 这种） */
+        if (q2 && (name + ' ' + aliasText(name) + ' ' + compLine(PRESETS[i])).toLowerCase().indexOf(q2) < 0) return;
         hits.push(i);
       });
       box.className = 'presets';
@@ -2193,6 +2217,9 @@
         + (d && d.hasDiff ? '　<b class="mc-pick">本站配比</b>' : '') + '</p>'
       /* 一句话定位：只有推荐的 51 款有（data.js 的 PICK_LINE） */
       + (PICK_LINE[recipeName(r)] ? '<p class="hint pickline">' + esc(PICK_LINE[recipeName(r)]) + '</p>' : '')
+      /* 两个叫法都告诉用户：搜过"青霉素"找不到"盘尼西林"的人，打开就明白了 */
+      + (aliasText(recipeName(r)) ? '<p class="hint">也叫：'
+          + esc((NAME_ALIAS[recipeName(r)] || []).join('、')) + '</p>' : '')
       /* 带气的配方要把"气泡不能进摇壶"写在最显眼的地方——新手照着说明做，
          把汤力水倒进摇壶是会喷的。参考本写 shake 没错，错的是不说清楚这件事。 */
       + (function () {
@@ -3918,8 +3945,11 @@
       setTaste: function (t) { menuTaste = t; menuShow = MENU_PAGE; renderMenu(); },
       setStr: function (s) { menuStr = s; menuShow = MENU_PAGE; renderMenu(); },
       setTech: function (t) { menuTech = t; menuShow = MENU_PAGE; renderMenu(); },
+      setQuery: function (q) { menuQuery = String(q || ''); menuShow = MENU_PAGE; renderMenu(); },
+      alias: function (name) { return (NAME_ALIAS[name] || []).slice(); },
       reset: function () {
-        menuTab = 'classic'; menuFam = ''; menuTaste = ''; menuStr = ''; menuTech = '';
+        /* 搜索词也要清——之前 reset 不清它，自检里搜过一次之后，后面的用例全被它卡住 */
+        menuTab = 'classic'; menuFam = ''; menuTaste = ''; menuStr = ''; menuTech = ''; menuQuery = '';
         openRecipe = -1; renderMenu();
       },
       open: function (i) { openRecipe = i; renderMenuDetail(); },
