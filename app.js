@@ -683,11 +683,31 @@
     if (a.isHot) s += 40;
     else if (a.hasIce || g.ice === 'chilled') s += 34 + 6 * (a.cold || 0);
     else s += 22;
-    /* ② 气泡（26）：长饮有气泡更清爽，但"没有气泡"不等于结构不合格。
-       以前长饮没气泡直接 0/26——同一杯酒只因为加了苏打水就白拿 26 分（≈总分 5.7），
-       "有气泡的更容易拿高分"就是这么来的。现在长饮打底 16 分，气泡明显再往上加。 */
-    var wantsFizz = a.liquid > 130 || a.abv < 13;
-    s += wantsFizz ? (16 + Math.min(10, a.fd.fizz * 2)) : 26;
+    /* ② 气泡（26）：该不该有气泡，取决于**这杯是什么骨架**，不是"液体够不够长"。
+       马天尼加苏打水是毁酒，螺丝刀加苏打水是变好喝——同一滴气泡水，方向相反。
+
+       判据用"不算气泡那几样之后的酒体"，否则加了苏打水会让这杯换个家族、逃掉惩罚：
+         coreAbv = 非气泡部分的酒精度（酒体里酒占多少）
+         acidLed = 有没有真酸（柠檬青柠这类，≥6 才算）
+       · 酒体为主 + 无酸（马天尼、曼哈顿、尼格罗尼、古典）→ 气泡是破坏结构，扣分
+       · 有酸（sour / collins / fizz 家族）→ 加不加都正当，加了只算那一点清爽
+       · 其余（无酸、低度的长饮：高球类）→ 气泡就是它的定义
+       两个阈值（酸 ≥6、coreAbv ≥20%）是标定值，改这两个数就能调松紧。 */
+    var coreAbv = a.shakableMl > 0 ? a.alcoholMl / a.shakableMl * 100 : 0;
+    var acidLed = (a.f.acid || 0) >= 6;
+    var spiritLed = coreAbv >= 20;
+    var fizzPart;                       /* 0-26 分 */
+    if (!acidLed && spiritLed) {
+      /* 这类酒本来就不该有气泡：有气泡扣到最低 12，没有则满分 */
+      fizzPart = 26 - 14 * Math.min(1, a.fd.fizz / 6);
+    } else if (acidLed) {
+      /* 酸酒：不加气泡完全正当（24），加了最多到 26 */
+      fizzPart = 24 + 2 * Math.min(1, a.fd.fizz / 6);
+    } else {
+      /* 无酸的长饮：气泡撑起它的骨架 */
+      fizzPart = 16 + 10 * Math.min(1, a.fd.fizz / 6);
+    }
+    s += clamp(fizzPart, 0, 26);
     /* ③ 杯型和这杯浓度搭不搭 */
     if (a.isHot) {
       /* 热饮：杯型和浓度那套是照冷饮标定的，对热饮不适用；
