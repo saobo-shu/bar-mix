@@ -5476,16 +5476,25 @@ var qrcode = function() {
   }
 
   function balanceRatio(S, A, cw) {
-    /* 既不甜也基本不酸 → 干型（高球、纯饮），按中性处理 */
-    if (S < 2.5 && A < 2.5) return 82;
-    /* 有甜但几乎没有酸：糖浆、蜂蜜利口酒这一类，靠"能容纳多少甜"来判断 */
-    if (A < 2.5) return clamp(92 - Math.max(0, S - 13) * 1.6, 32, 94);
-    /* 有酸但几乎没有甜：非常冲 */
-    if (S < 2.5) return clamp(90 - Math.max(0, A - 2.5) * 5, 28, 90);
-    var r = S / cw;
-    if (r >= 0.8 && r <= 1.9) return 100;
-    if (r > 1.9) return clamp(100 - (r - 1.9) * 30, 30, 100);
-    return clamp(100 - (0.8 - r) * 95, 30, 100);
+    /* 这把尺子有四段：干型 / 只有甜 / 只有酸 / 甜酸都有。
+       原来段与段之间是 2.5 的硬切口——稀释把数值压到 2.5 以下就整段跳，
+       "干马天尼加苏打水 57 → 82"就是这么来的（同一类悬崖，第三次遇到）。
+       现在每段各算一个分，再按"甜/酸信号有多强"做加权平均；跨过 2.5 不会有台阶。 */
+    var wS = clamp(S / 2.5, 0, 1);          /* 甜的存在程度 */
+    var wA = clamp(A / 2.5, 0, 1);          /* 酸的存在程度 */
+    var dry = 82;                            /* 都不明显：干型（马天尼、高球、纯饮） */
+    var sweetOnly = clamp(92 - Math.max(0, S - 13) * 1.6, 32, 94);
+    var acidOnly = clamp(90 - Math.max(0, A - 2.5) * 5, 28, 90);
+    var r = cw > 0 ? S / cw : 99;
+    var both = (r >= 0.8 && r <= 1.9) ? 100
+      : (r > 1.9 ? clamp(100 - (r - 1.9) * 30, 30, 100)
+                 : clamp(100 - (0.8 - r) * 95, 30, 100));
+    /* 四个权重从 (1-wS)(1-wA) 展开，和恒为 1 */
+    var wDry = (1 - wS) * (1 - wA);
+    var wSweet = wS * (1 - wA);
+    var wAcid = (1 - wS) * wA;
+    var wBoth = wS * wA;
+    return clamp(wDry * dry + wSweet * sweetOnly + wAcid * acidOnly + wBoth * both, 0, 100);
   }
 
   /* 「该多浓」是口味问题，不是客观事实——所以由你选，不由我猜。
