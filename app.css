@@ -247,6 +247,20 @@ main {
 .bubwarn b { color: var(--red); }
 .origbox { margin: 8px 0 0; }
 .origbox-plain { margin: 8px 0 0; }
+
+/* ---------------- 第三个版本：IBA 官方规格 ----------------
+   三份来源（本站调校 / 参考本 / IBA 官方）要一眼看得出是并列的，所以给它自己的边框。 */
+.ibabox {
+  margin: 10px 0 0; padding: 9px 11px; border-radius: 11px;
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .035);
+}
+.ibah { margin: 0 0 4px; font-size: 12.5px; font-weight: 600; color: var(--text); }
+.ibah .hint { font-weight: 400; }
+.ibabox .hint { margin: 6px 0 0; line-height: 1.6; }
+.ibalist { margin: 6px 0 2px; }
+.ibalist li { font-size: 12.5px; }
+.ibatech { color: var(--amber); font-weight: 600; }
+.ibabox a { color: var(--amber); }
 .origbox > summary { cursor: pointer; font-size: 12px; color: var(--amber); }
 .origbox > summary::-webkit-details-marker { display: none; }
 .origbox > summary::before { content: '▸ '; }
@@ -317,6 +331,7 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .hint { font-size: 11.5px; color: var(--muted); }
 /* 和参考本不一样这件事要显眼：常驻在材料表下面，不用点开折叠就能看到 */
 .hint.warnline { color: var(--amber); margin: 8px 0 0; }
+.hint.whyline { margin: 8px 0 0; color: var(--muted); }
 /* 推荐款的一句话定位：比普通提示亮一点，读起来像副标题 */
 .hint.pickline { color: var(--text); opacity: .82; margin: 3px 0 0; }
 

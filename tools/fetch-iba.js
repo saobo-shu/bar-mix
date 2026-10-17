@@ -25,10 +25,21 @@ function strip(html) {
   return String(html)
     .replace(/<script[\s\S]*?<\/script>/g, ' ')
     .replace(/<style[\s\S]*?<\/style>/g, ' ')
+    /* 页面上每样材料、每个步骤都各自成行（<li> / <p> / <br>）。
+       以前直接把标签压成空格，行就没了：材料里"20 ml Sugar Syrup"后面那行
+       "Few Drops of Egg White (Optional)" 会被当成糖浆名字的一部分吞掉。
+       所以块级标签先换成换行，让 parseIngredients 能一行一行读。 */
+    .replace(/<\/?(?:li|p|div|br|tr|h[1-6])[^>]*>/gi, '\n')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/g, ' ').replace(/&#8211;/g, '-').replace(/&amp;/g, '&')
     .replace(/&#8217;/g, "'").replace(/&quot;/g, '"')
-    .replace(/\s+/g, ' ').trim();
+    /* 数字实体（&#8220; 这种弯引号）统一解码——不然后面渲染时会被再转义一次，
+       页面上出现的是字面的 &#8220; */
+    .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(+d))
+    .replace(/[ \t]+/g, ' ')
+    .replace(/ *\n */g, '\n')
+    .replace(/\n{2,}/g, '\n')
+    .trim();
 }
 
 async function get(url) {
@@ -37,15 +48,28 @@ async function get(url) {
   return await r.text();
 }
 
-/* "60 ml White Cuban Ron 20 ml Lime 2 Bar Spoons Sugar" → [{am, unit, name}] */
+/* 一行一样材料："60 ml White Cuban Ron" → {am:60, unit:'ml', name:'White Cuban Ron'}
+   没写量的那行（"Few Drops of Egg White (Optional)"、"2-3 quarter size sliced fresh ginger"）
+   整行当名字存下来，am 记 null——不许猜它等于几毫升。 */
 function parseIngredients(t) {
-  const re = /(\d+(?:[.,]\d+)?)\s*(ml|cl|bar spoons?|dash(?:es)?|drops?|pieces?|slices?|twists?|cubes?|g|grams?)\s*([^]*?)(?=(?:\d+(?:[.,]\d+)?\s*(?:ml|cl|bar spoons?|dash(?:es)?|drops?|pieces?|slices?|twists?|cubes?|g|grams?))|$)/gi;
+  const U = 'ml|cl|bar spoons?|dash(?:es)?|drops?|pieces?|pcs|slices?|twists?|cubes?|'
+    + 'tsp|teaspoons?|tbsp|tablespoons?|sprigs?|g|grams?';
+  const re = new RegExp('^(\\d+(?:[.,]\\d+)?)\\s*(' + U + ')\\s*([\\s\\S]*)$', 'i');
   const out = [];
-  let m;
-  while ((m = re.exec(t)) !== null) {
-    const name = m[3].replace(/\s+/g, ' ').trim().replace(/[.,;]$/, '');
-    out.push({ am: parseFloat(m[1].replace(',', '.')), unit: m[2].toLowerCase(), name: name });
-  }
+  String(t).split('\n').forEach(function (line) {
+    const s = line.replace(/\s+/g, ' ').trim();
+    if (!s) return;
+    const m = s.match(re);
+    if (m) {
+      out.push({
+        am: parseFloat(m[1].replace(',', '.')),
+        unit: m[2].toLowerCase(),
+        name: m[3].replace(/\s+/g, ' ').trim().replace(/[.,;]$/, '')
+      });
+    } else {
+      out.push({ am: null, unit: '', name: s });   /* 没写量：整行就是它的名字 */
+    }
+  });
   return out;
 }
 
@@ -60,7 +84,14 @@ function parseRecipe(html, slug) {
   const garnish = g > 0 ? t.slice(g + 'Garnish'.length, g + 200).split('MOST VIEWED')[0].trim() : '';
   const head = t.slice(0, i);
   const parts = head.split('/').map(s => s.trim()).filter(Boolean);
-  const name = parts.length ? parts[parts.length - 1] : slug;
+  /* H1 后面会粘上"186628 views""Play Video"这类杂质，得剪掉，否则和我们的名字对不上。
+     注意：strip() 现在保留换行，这些杂质各自占一行，所以 `.` 系的正则跨不过去——
+     必须用 [\s\S]，而且要从"views"一路吃到结尾。 */
+  const name = (parts.length ? parts[parts.length - 1] : slug)
+    .replace(/\s*\d[\d,]*\s*views[\s\S]*$/i, '')
+    .replace(/\s*Play Video[\s\S]*$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   const cat = parts.length > 1 ? parts[parts.length - 2] : '';
   const ingredients = parseIngredients(ingTxt);
   if (!ingredients.length) return null;
@@ -97,6 +128,30 @@ async function main() {
     } catch (e) { /* 单个子图失败不影响整体 */ }
   }
   console.log('   sitemap ' + maps.length + ' 个，候选配方 ' + slugs.size + ' 个');
+
+  /* 拿不到 IBA 的完整清单（配方页是 JS 渲染的，也不在 sitemap 里），所以反过来：
+     用我们那 191 条自带的英文名去猜地址（Daiquiri → /daiquiri/）。
+     能抓到才算这一杯有官方规格；404 / 解析不出就跳过。
+     ——只在页面真实存在且解析成功时才收录，绝不靠记忆往数据里补。 */
+  const refTxt = fs.readFileSync(path.join(ROOT, 'ref-recipes.js'), 'utf8');
+  const refAll = JSON.parse(refTxt.slice(refTxt.indexOf('['), refTxt.lastIndexOf(']') + 1));
+  /* 英文名和 IBA 地址不一致的特例：只写"名字 → 地址"，不写任何配方内容 */
+  const EXTRA = {
+    'Whiskey Sour': ['whisky-sour'], 'Dry Martini': ['martini'],
+    'Long Island Ice Tea': ['long-island-iced-tea'], 'Pina Colada': ['pina-colada'],
+    'Mai Tai': ['mai-tai'], "Bee's Knees": ['bees-knees'], 'French 75': ['french-75'],
+    'Corpse Reviver #2': ['corpse-reviver-no-2'], "Tommy's Margarita": ['tommys-margarita']
+  };
+  /* 撇号要先去掉再连字符化：Bee's Knees → bees-knees（不是 bee-s-knees） */
+  const slugify = s => String(s || '').toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').replace(/['’`]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  refAll.forEach(r => {
+    const base = slugify(r.en);
+    if (base) slugs.add(base);
+    (EXTRA[r.en] || []).forEach(a => slugs.add(a));
+  });
+  console.log('   加上按名字猜的地址，候选共 ' + slugs.size + ' 个');
 
   console.log('2/3 逐杯抓（这一趟要几分钟）…');
   const list = [];

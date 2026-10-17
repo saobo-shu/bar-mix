@@ -2292,6 +2292,8 @@
       + (r.garnish ? '<p class="hint">装饰：' + esc(r.garnish) + (r.ice ? '　冰：' + esc(r.ice) : '') + '</p>'
           : (r.ice ? '<p class="hint">冰：' + esc(r.ice) + '</p>' : ''))
       + swapBox(r)
+      /* 第三个版本：IBA 官方规格（能对上就并列，对不上就明说不在官方名单里） */
+      + ibaBox(r)
       + ((pre && pre.tip) ? '<p class="hint">' + esc(pre.tip) + '</p>'
           : (r.note ? '<p class="hint">' + esc(r.note) + '</p>' : ''))
       + originLine(r)
@@ -2412,6 +2414,11 @@
   /* 有本站配比的这 33 款：拿预设的材料和参考本比一遍，看这杯到底差在哪。
      菜单卡片角标、详情角标、差别栏三处都要用，算一次就缓存住。
      凡是写出来的材料名，都必须是这份预设真有的东西——自检会盯着这一条。 */
+  /* 参考本里的大类写法：它没指定哪一种，本库从这一类里挑一瓶，不算改配方。
+     只列真出现过的（见 tools/reference-recipes.json）；金酒 / 朗姆酒 / 威士忌
+     在数据里是 need.family，走的是另一个分支。 */
+  var GENERIC_REF = { '白兰地': 1, '金酒': 1, '朗姆酒': 1, '威士忌': 1 };
+
   var PRESET_DIFF_CACHE = {};
   function presetDiffOf(r) {
     var key = recipeName(r);
@@ -2424,6 +2431,9 @@
     });
     var ids = items.map(function (it) { return it[0]; });
     var swapped = [], loose = [], missing = [], matched = {}, hitCount = {}, stat = [];
+    /* 参考本只写大类、本库落成一瓶的（白兰地 → 干邑）单独放：
+       它不算"和参考本不一样"，只是一句话说明"本库用的是哪一瓶"。 */
+    var specific = [];
     r.needs.forEach(function (nd) {
       var st = needStatusWith(nd.need, ids);
       stat.push(st);
@@ -2436,9 +2446,13 @@
         /* 参考本要的是泥煤威士忌 / 爱尔兰威士忌这种，杯里是同一大类的另一瓶 */
         loose.push(nd.n + (nd.a ? ' ' + nd.a : '') + '｜'
           + st.hits.map(function (id) { return shortName(BY_ID[id]); }).join(' / '));
+      } else if (nd.need.family) {
+        /* 参考本写"金酒 / 朗姆酒 / 威士忌"这种大类时，本库拿该大类里的一瓶来用，
+           正是它要的东西——跟"换了一瓶酒做同一杯"不是一回事。 */
       } else if (nd.need.approx && SWAP_NOTE[nd.n] && lab !== nd.n && !justSpelling(nd)) {
         /* 换过、而且换来的东西真在这杯里——这条理由才站得住 */
-        swapped.push(nd);
+        if (GENERIC_REF[nd.n]) specific.push(nd);
+        else swapped.push(nd);
       }
     });
     var added = items.filter(function (it) { return !matched[it[0]]; });
@@ -2455,7 +2469,7 @@
       if (mine && Math.abs(mine[1] - want) >= 0.5) amountDiff = true;
     });
     return (PRESET_DIFF_CACHE[key] = {
-      pre: pre, swapped: swapped, loose: loose, missing: missing, added: added,
+      pre: pre, swapped: swapped, loose: loose, missing: missing, added: added, specific: specific,
       amountDiff: amountDiff,
       hasDiff: !!(swapped.length || loose.length || missing.length || added.length || amountDiff)
     });
@@ -2463,9 +2477,14 @@
 
   function presetSwapBox(r) {
     var d = presetDiffOf(r);
+    /* "参考本只写大类、本库落成一瓶"的那几句（白兰地 → 干邑） */
+    var specLine = d.specific.map(function (nd) {
+      return '参考本只写「' + esc(nd.n) + '」，本库用的是「' + esc(needLabel(nd)) + '」';
+    }).join('；');
     /* 跟参考本一模一样（材料、用量都照它）：那就别把同样的内容再抄一遍 */
     if (!d.hasDiff) {
-      return '<p class="hint origbox-plain">这份和参考配方本一致：材料、用量都照它（名字按本库的叫法写）。</p>';
+      return '<p class="hint origbox-plain">这份和参考配方本一致：材料、用量都照它（名字按本库的叫法写）。'
+        + (specLine ? ' ' + specLine + '——同一类，只是落成一瓶，不算改配方。' : '') + '</p>';
     }
     var lines = '';
     d.swapped.forEach(function (nd) {
@@ -2492,13 +2511,121 @@
       return esc(nd.n) + (nd.a ? ' ' + esc(String(nd.a)) : '');
     }).join(' · ');
     /* 差别常驻显示，折叠里只留参考原文——用户明确要求"和他的不一致的要确保用户知道" */
-    return (lines
+    /* 用户 2026-10-17 定的规矩：本站配比默认必须等于参考本；
+       保留不一样的地方，就得在数据里写一句"为什么"。 */
+    return (d.pre && d.pre.why ? '<p class="hint whyline">为什么这样改：' + esc(d.pre.why) + '</p>' : '')
+      + (lines
         ? '<p class="hint warnline">⚠️ 这杯和参考本不一样：</p><ul class="menulist swapnote">' + lines + '</ul>'
           + (d.amountDiff ? '<p class="hint">量也不一样：上面是本站的量，这里是参考本的量。</p>' : '')
         : '<p class="hint warnline">⚠️ 材料跟参考本一样，但量不一样（上面是本站的，这里是参考本的量）。</p>')
       + '<details class="origbox"><summary>原方长什么样（参考配方本原文）</summary>'
       + '<p class="hint">' + orig + '</p>'
       + '</details>';
+  }
+
+  /* ---------------------------------------------------------
+     第三个版本：IBA 官方规格
+
+     数据来自 tools/fetch-iba.js 抓的 iba-world.com 官方页面（78 杯），
+     内联在 iba-recipes.js 里。和我们 191 条按英文名对，有三种情况要写明白：
+
+       · 75 条英文名完全一样（归一化大小写、撇号、重音之后）
+       · 2 条是我们这边的拼写少了一个字母（IBA 官方写作 Iced / Cobbler）
+       · 1 条是 IBA 官网自己把同一杯放在两个地址下（/new-york/ 和 /new-york-sour/
+         内容一模一样，都是 New York Sour）
+
+     这三条特例必须显式登记，不许靠"猜名字"糊过去——数据集哪天变了，
+     自检会直接把漏掉的列出来（见 self-check.js 的「IBA 官方规格」一节）。
+     --------------------------------------------------------- */
+  /* 我们的英文名 → IBA 的英文名（我们这边拼错的那两条） */
+  var IBA_ALIAS = {
+    'Long Island Ice Tea': 'Long Island Iced Tea',
+    'Sherry Cobble': 'Sherry Cobbler'
+  };
+  /* IBA 自己的重复页：slug → 保留哪一条（key 是被丢掉的那个） */
+  var IBA_DUPE_SLUGS = { 'new-york': 'new-york-sour' };
+
+  /* 英文名归一：大小写、撇号、重音、连字符都不算差别
+     （Piña Colada / Pina Colada、Bee's Knees / Bees Knees 要能对上） */
+  function normEn(s) {
+    return String(s || '').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[’'`]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  }
+
+  var IBA_INDEX = null;
+  function ibaIndex() {
+    if (IBA_INDEX) return IBA_INDEX;
+    IBA_INDEX = {};
+    var all = (typeof IBA_RECIPES !== 'undefined' && IBA_RECIPES) || [];
+    all.forEach(function (x) {
+      if (IBA_DUPE_SLUGS[x.slug]) return;            /* 重复页丢掉 */
+      var k = normEn(x.en);
+      if (!(k in IBA_INDEX)) IBA_INDEX[k] = x;
+    });
+    return IBA_INDEX;
+  }
+  /* 给酒单里那一条（REF_RECIPES[i]）找它的 IBA 官方规格 */
+  function ibaOf(r) {
+    if (!r) return null;
+    return ibaIndex()[normEn(IBA_ALIAS[r.en] || r.en)] || null;
+  }
+
+  /* 官方说明是英文整句。这里只做"关键词 → 中文技法"的机械映射，
+     而且把命中的英文原文一起显示出来——不替官方补话，也不翻译整句。
+     顺序有讲究：Pour…shake… 这种句子里 shake 才算数，所以 shake 排在 pour 前面。 */
+  var IBA_TECH = [
+    ['shake', '摇和'],
+    ['stir', '搅拌'],
+    ['blend', '打成冰沙'],
+    ['muddle', '捣压'],
+    ['layer', '分层'],
+    ['pour', '兑和'],
+    ['build', '兑和']
+  ];
+  function ibaTech(method) {
+    var s = String(method || '').toLowerCase();
+    for (var i = 0; i < IBA_TECH.length; i++) {
+      if (s.indexOf(IBA_TECH[i][0]) >= 0)
+        return '官方原文用了 ' + IBA_TECH[i][0] + ' → ' + IBA_TECH[i][1];
+    }
+    return '';
+  }
+  /* 官方用量：ml 就写 30ml，其余按原文单位写（dash / drops / bar spoon）。
+     官方有少数几行压根没写量（"Few Drops of Egg White (Optional)"），
+     那行的 am 是 null —— 那就只显示原文，不许替它编一个数字。 */
+  function ibaAmt(it) {
+    if (it.am === null || it.am === undefined) return '';
+    if (it.unit === 'ml') return it.am + 'ml';
+    return it.am + ' ' + (it.unit || '');
+  }
+
+  function ibaBox(r) {
+    var x = ibaOf(r);
+    if (!x) {
+      /* 没有官方规格也要说清楚——这是"这一杯不在 IBA 名单里"，
+         不是"我们没做这一块"。默认展开，因为它是一句事实而不是补充材料。 */
+      return '<div class="ibabox"><p class="ibah">IBA 官方规格</p>'
+        + '<p class="hint">IBA 官方只公布 78 杯（The Unforgettables / Contemporary Classics / '
+        + 'New Era 三批），这一杯不在名单里。所以它没有可以并列的官方规格——'
+        + '上面那份是本站的调校版和参考配方本，来源不同。</p></div>';
+    }
+    var list = x.ingredients.map(function (it) {
+      return '<li><span>' + esc(it.name) + '</span><b>' + esc(ibaAmt(it)) + '</b></li>';
+    }).join('');
+    var tech = ibaTech(x.method);
+    var gar = (!x.garnish || /^n\/?a$/i.test(x.garnish.trim())) ? '官方没写' : x.garnish;
+    return '<div class="ibabox">'
+      + '<p class="ibah">IBA 官方规格　<span class="hint">' + esc(x.cat) + '｜英文原文</span></p>'
+      + '<ul class="menulist ibalist">' + list + '</ul>'
+      + '<p class="hint">官方做法：' + esc(x.method)
+      + (tech ? '　<b class="ibatech">' + esc(tech) + '</b>' : '') + '</p>'
+      + '<p class="hint">官方装饰：' + esc(gar) + '</p>'
+      + '<p class="hint">出处：<a href="' + esc(x.url) + '" target="_blank" rel="noopener">'
+      + 'iba-world.com／' + esc(x.slug) + '</a>（抓取日期 2026-10-16）</p>'
+      + '</div>';
   }
 
   function renderMenu() {
@@ -3949,6 +4076,17 @@
       close: closeShareCard,
       last: function () { return lastShareSpec; }
     },
+    /* IBA 官方规格：给自检和调试用 */
+    iba: {
+      all: function () { return (typeof IBA_RECIPES !== 'undefined' && IBA_RECIPES) || []; },
+      index: ibaIndex,
+      of: ibaOf,
+      box: ibaBox,
+      alias: IBA_ALIAS,
+      dupes: IBA_DUPE_SLUGS,
+      tech: ibaTech,
+      norm: normEn
+    },
     tempIdOf: tempIdOf, tempOf: tempOf,
     hasTemp: hasTemp,
     /* ④ 手边有什么：给自检和调试用 */
@@ -4010,6 +4148,8 @@
         openRecipe = -1; renderMenu();
       },
       open: function (i) { openRecipe = i; renderMenuDetail(); },
+      /* 给自检用：看某杯的"跟参考本差在哪"是怎么判的 */
+      diff: function (i) { return presetDiffOf(REF_RECIPES[i]); },
       fav: function (name) { return toggleFav(name); },
       favs: function () { return favs.slice(); },
       save: saveCurrent,

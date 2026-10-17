@@ -53,11 +53,13 @@ global.localStorage = {
 
 const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
             fs.readFileSync(path.join(dir, 'ref-recipes.js'), 'utf8') + '\n' +
+            fs.readFileSync(path.join(dir, 'iba-recipes.js'), 'utf8') + '\n' +
             fs.readFileSync(path.join(dir, 'qrcode.js'), 'utf8') + '\n' +
             fs.readFileSync(path.join(dir, 'app.js'), 'utf8') + '\n' +
             'global.__PRESETS = PRESETS; global.__I = INGREDIENTS; global.__PH = PH; global.__SCHEMES = SCORING_SCHEMES; global.__G = GLASSES; global.__PM = PRESET_METHOD;'
             + ' global.__TEMPS = TEMPS; global.__TD = TEMP_DEFAULT; global.__TF = TEMP; global.__TC = TEMP_CYCLE;'
             + ' global.__METHODS = METHODS; global.__REF = REF_RECIPES; global.__CATS = CATS;'
+            + ' global.__IBA = IBA_RECIPES;'
             + ' global.__OPT = OPTIONAL_ING; global.__HOUSE = HOUSE_PRESETS;'
             + ' global.__MAP = REF_PRESET_MAP; global.__SWAP = SWAP_NOTE;'
             + ' global.__ORIGIN = ORIGIN; global.__PICKLINE = PICK_LINE;';
@@ -334,6 +336,7 @@ console.log('\n--- 温度 / 化水（热量平衡）---');
 console.log('\n--- 化水文案（用户拿两张截图问"这是不是冲突的"）---');
 (function () {
   const strip = s => String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  /* 官方用量在页面上的写法（跟 app.js 的 ibaAmt 一致） */
 
   /* 摇和 + 古典杯满冰：以前这里说"「古典杯」里的冰全化开（约 +25ml）"，
      可 128g 冰全化开是 +128ml，25ml 只是室温十几分钟化的量——自相矛盾。 */
@@ -1583,6 +1586,42 @@ console.log('\n--- 酒单 ---');
     + ' 预设跟参考本一样的（青霉素 / 爱尔兰咖啡）不再挂"本站配比"；该用正主的用正主');
   if (!okSame) bad('酒单', '预设和参考本的关系标错了（青霉素 / 爱尔兰咖啡 / 椰林飘香）');
 
+  /* 用户 2026-10-17 定的规矩：酒单对外写着"配方来自 BoyanSHI"，
+     那本站配比默认就必须等于参考本——能对齐的一律对齐；
+     剩下不一样的，数据里必须写一句「为什么这样改」。 */
+  const aligned = ['马颈', '教父', '自由古巴', '血与沙', '玛格丽特', '萨泽拉克', '罗布罗伊', '蜂之膝'];
+  const stillBadge = [];
+  aligned.forEach(function (zh) {
+    const i = global.__REF.findIndex(r => r.zh === zh);
+    if (i < 0) { stillBadge.push(zh + '（参考本里找不到）'); return; }
+    B.menu.open(i);
+    if (els.menuDetail.innerHTML.indexOf('本站配比') >= 0) stillBadge.push(zh);
+  });
+  console.log('  ' + (stillBadge.length ? '❌' : '✅') + ' 能对齐参考本的都对齐了，不再挂「本站配比」（'
+    + aligned.length + ' 款）' + (stillBadge.length ? '：' + stillBadge.join('、') : ''));
+  if (stillBadge.length) bad('酒单', '这些能对齐参考本的还挂着本站配比：' + stillBadge.join('、'));
+
+  /* 剩下"和参考本不一样"的，每一杯都必须有一句为什么 */
+  const noWhy = [];
+  global.__REF.forEach(function (r, i) {
+    B.menu.open(i);
+    const html = els.menuDetail.innerHTML;
+    if (html.indexOf('本站配比') < 0) return;
+    if (html.indexOf('为什么这样改') < 0) noWhy.push(r.zh);
+  });
+  console.log('  ' + (noWhy.length ? '❌' : '✅') + ' 和参考本不一样的，都写了「为什么这样改」'
+    + (noWhy.length ? '：缺 ' + noWhy.join('、') : ''));
+  if (noWhy.length) bad('酒单', '这些和参考本不一样，却没说为什么：' + noWhy.join('、'));
+
+  /* 参考本只写大类（白兰地）的：不挂角标，但要有一句中性说明，别让用户以为改过配方 */
+  const horse = global.__REF.findIndex(r => r.zh === '马颈');
+  B.menu.open(horse);
+  const horseTxt = strip(els.menuDetail.innerHTML);
+  const okHorse = horseTxt.indexOf('本站配比') < 0
+    && horseTxt.indexOf('参考本只写「白兰地」') >= 0 && horseTxt.indexOf('干邑') >= 0;
+  console.log('  ' + (okHorse ? '✅' : '❌') + ' 马颈：不挂角标，但说清了「参考本只写白兰地、本库用干邑」');
+  if (!okHorse) bad('酒单', '马颈的"具体化"说明没渲染对：' + horseTxt.slice(0, 220));
+
   /* 用户说"按人家的酒单挑出来的一定比咱们配的好喝"——那"不一样"就必须一眼看到，
      不能只藏在折叠里。这里把 <details> 整段抠掉，剩下的部分仍然要写清楚。 */
   const visible = i => {
@@ -2164,6 +2203,138 @@ console.log('\n--- 配方码 ---');
   console.log('  ' + (okEmpty ? '✅' : '❌') + ' 空杯子时提示"把别人的码粘进来"');
   if (!okEmpty) bad('配方码', '空杯子时的提示不对：' + emptyMsg);
   B.code.load(code); B.load([]);
+})();
+
+/* ---- IBA 官方规格：第三个版本，映射不许静默漏 ---- */
+console.log('\n--- IBA 官方规格（第三个版本）---');
+(function () {
+  const IBA = global.__IBA;
+  const REF = global.__REF;
+  const A = B.iba;
+  const esc2 = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const strip = s => String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  /* 官方用量在页面上的写法（跟 app.js 的 ibaAmt 一致）。
+     官方有少数几行压根没写量，那些整行是名字、没有数字，渲染出来就不带量。 */
+  const ibaAmtText = it => (it.am === null || it.am === undefined) ? ''
+    : (it.unit === 'ml' ? it.am + 'ml' : it.am + ' ' + (it.unit || ''));
+
+  console.log('  官方数据集 ' + IBA.length + ' 条，我们 ' + REF.length + ' 条');
+
+  /* ① 每一条官方配方都要能落到我们 191 里的某一条。
+        落不下的只有一种合法情况：IBA 官网自己把同一杯放在两个地址下，
+        那个重复页必须在 B.iba.dupes 里登记过。否则就是静默漏了。 */
+  const oursKeys = {};
+  REF.forEach(r => { oursKeys[A.norm(A.alias[r.en] || r.en)] = r; });
+  const lost = [];
+  IBA.forEach(x => {
+    if (A.dupes[x.slug]) return;
+    if (!oursKeys[A.norm(x.en)]) lost.push(x.en + '（slug ' + x.slug + '）');
+  });
+  console.log('  ' + (lost.length ? '❌' : '✅') + ' 官方 ' + IBA.length + ' 条全部有归属'
+    + '（其中 ' + Object.keys(A.dupes).length + ' 条是登记过的官网重复页）');
+  if (lost.length) bad('IBA 映射', '这些官方配方没对上我们任何一条，也没登记成重复页：' + lost.join('、'));
+
+  /* ② 登记的重复页必须真的存在，而且内容真的和保留的那条一样——
+        哪天 IBA 把 /new-york/ 换成别的酒，这条会红，提醒我们重新对。 */
+  /* 先反过来查一遍：官方数据里凡是同名出现两条以上的，除了留一条，其余必须登记。
+     只登记、不检查数据的话，哪天抓回来多一个重复页，就悄悄少一杯。 */
+  const byName = {};
+  IBA.forEach(x => { const k = A.norm(x.en); (byName[k] = byName[k] || []).push(x.slug); });
+  const unreg = [];
+  Object.keys(byName).forEach(function (k) {
+    const slugs = byName[k];
+    if (slugs.length < 2) return;
+    const dropped = slugs.filter(s => A.dupes[s]);
+    if (dropped.length !== slugs.length - 1) unreg.push(slugs.join(' / '));
+  });
+  console.log('  ' + (unreg.length ? '❌' : '✅') + ' 官方数据里的同名重复页都登记了（'
+    + Object.keys(byName).filter(k => byName[k].length > 1).join('、') + '）');
+  if (unreg.length) bad('IBA 映射', '官方数据里有没登记的重复页：' + unreg.join('、'));
+
+  Object.keys(A.dupes).forEach(function (from) {
+    const a = IBA.filter(x => x.slug === from)[0];
+    const b = IBA.filter(x => x.slug === A.dupes[from])[0];
+    if (!a) { bad('IBA 映射', '登记为重复页的 ' + from + ' 在官方数据里不存在了'); return; }
+    if (!b) { bad('IBA 映射', '重复页 ' + from + ' 指向的 ' + A.dupes[from] + ' 不存在'); return; }
+    const same = JSON.stringify(a.ingredients) === JSON.stringify(b.ingredients) && a.method === b.method;
+    console.log('  ' + (same ? '✅' : '❌') + ' 重复页 ' + from + ' 与 ' + b.slug + ' 内容一致（都是 ' + a.en + '）');
+    if (!same) bad('IBA 映射', '重复页 ' + from + ' 的内容和 ' + b.slug + ' 不一样了，得重新对一遍');
+  });
+
+  /* ③ 别名表里每一条都得真的用上。官网页名改了 / 我们这边改回正确拼写之后，
+        过期的别名要清掉，否则它会一直盖着真名字。 */
+  const stale = [];
+  Object.keys(A.alias).forEach(function (ourEn) {
+    const oursHas = REF.some(r => r.en === ourEn);
+    const ibaHas = IBA.some(x => A.norm(x.en) === A.norm(A.alias[ourEn]));
+    if (!oursHas || !ibaHas) stale.push(ourEn + ' → ' + A.alias[ourEn]
+      + (oursHas ? '' : '（我们这边已经没有这个英文名了）')
+      + (ibaHas ? '' : '（官方数据里没有这个名字）'));
+  });
+  console.log('  ' + (stale.length ? '❌' : '✅') + ' 别名表 ' + Object.keys(A.alias).length + ' 条都在用');
+  if (stale.length) bad('IBA 映射', '别名表里有失效条目：' + stale.join('、'));
+
+  /* ④ 渲染：能对上的，官方材料名、做法、出处必须都出现在详情里 */
+  let matched = 0, noSpec = 0;
+  const renderMiss = [];
+  REF.forEach(function (r, i) {
+    const x = A.of(r);
+    B.menu.open(i);
+    const html = els['menuDetail'].innerHTML;
+    if (!x) {
+      noSpec++;
+      /* 对不上的要"明示"，不许悄悄少一块 */
+      if (html.indexOf('IBA 官方规格') < 0 || html.indexOf('不在名单里') < 0)
+        renderMiss.push(r.zh + '（没有官方规格，但详情里没说明）');
+      return;
+    }
+    matched++;
+    if (html.indexOf('IBA 官方规格') < 0) { renderMiss.push(r.zh + '（没画出 IBA 框）'); return; }
+    if (html.indexOf(esc2(x.url)) < 0) renderMiss.push(r.zh + '（没写出处链接）');
+    x.ingredients.forEach(function (it) {
+      if (html.indexOf(esc2(it.name)) < 0) renderMiss.push(r.zh + '（少了官方材料 ' + it.name + '）');
+      else if (ibaAmtText(it) && html.indexOf(esc2(ibaAmtText(it))) < 0)
+        renderMiss.push(r.zh + '（官方材料 ' + it.name + ' 少了用量 ' + ibaAmtText(it) + '）');
+    });
+  });
+  console.log('  我们能对上的 ' + matched + ' 杯：官方材料与出处都渲染出来了');
+  console.log('  对不上的 ' + noSpec + ' 杯：详情里明说"不在名单里"（不是静默留空）');
+  if (renderMiss.length) bad('IBA 映射', '详情页渲染不对：' + renderMiss.slice(0, 5).join('；'));
+
+  /* ⑤ 抽样盯一句人话：马天尼的官方规格（Gin 60 / Dry Vermouth 10，Stir well）
+        必须原样出现——包括"官方原文用了 stir"这个机械映射出来的技法标签。 */
+  const martini = REF.findIndex(r => r.zh === '马天尼');
+  B.menu.open(martini);
+  const mt = strip(els['menuDetail'].innerHTML);
+  const mx = A.of(REF[martini]);
+  const okM = !!mx && mt.indexOf('官方原文用了 stir') >= 0
+    && mx.ingredients.every(it => mt.indexOf(it.name) >= 0 && mt.indexOf(ibaAmtText(it)) >= 0)
+    && mt.indexOf('官方装饰') >= 0;
+  console.log('  ' + (okM ? '✅' : '❌') + ' 马天尼：官方规格（Gin 60ml / Dry Vermouth 10ml / stir / 装饰）都在');
+  if (!okM) bad('IBA 映射', '马天尼的官方规格没渲染对：' + mt.slice(-300));
+
+  /* ⑥ 官方材料表不许"吞行"。
+        IBA 页面上有整行没写量的材料（"Few Drops of Egg White (Optional)"、
+        "1 Sugar Cube"、"2-3 quarter size sliced fresh ginger"）。
+        抓取脚本以前把标签压成空格、按"下一个数字"切段，于是这些行被并进
+        上一样材料的名字里——页面上就出现"Sugar Syrup Few Drops of Egg White (Optional) 20ml"
+        这种读不通的东西。这条规则盯着那个 bug。 */
+  const SWALLOW = /(\d+(?:\.\d+)?\s*(?:ml|cl|tsp|teaspoons?|tbsp|tablespoons?|dash(?:es)?|drops?|cubes?|bar spoons?|slices?|sprigs?|pcs))|few drops|few dashes|optional\)|quarter size/i;
+  const swallow = [];
+  IBA.forEach(function (r) {
+    r.ingredients.forEach(function (it) {
+      if (it.am === null || it.am === undefined) return;   /* 没写量的行，整行本来就是名字 */
+      if (SWALLOW.test(it.name)) swallow.push(r.slug + '：' + it.name);
+    });
+  });
+  console.log('  ' + (swallow.length ? '❌' : '✅') + ' 官方材料没有"吞行"（名字里不再混进下一行的量）');
+  if (swallow.length) bad('IBA 解析', '官方材料被并到上一行了：' + swallow.slice(0, 6).join('；'));
+  /* 规则自己也得有牙齿：拿一条真出过问题的名字试一下，必须能被认出来 */
+  if (!SWALLOW.test('Sugar Syrup Few Drops of Egg White (Optional)')
+      || !SWALLOW.test('Honey syrup 2-3 quarter size sliced fresh ginger')) {
+    bad('IBA 解析', '吞行检测规则自己失效了——那两条老 bug 都没认出来');
+  }
 })();
 
 console.log('\n================ 自检结果 ================');

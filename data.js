@@ -675,8 +675,10 @@ var PRESETS = [
   { name:'威士忌高球', family:'highball', glass:'highball', sub:'Whisky Highball · 最该先做的一杯', items:[['kakubin',45],['soda',120],['lemon_peel',1]],
     tip:'全世界通用的一杯：先放冰，倒威士忌，再沿杯壁慢慢倒苏打水，只用勺子提两下。这里用的是日式高球标配的角瓶，换成波本、苏格兰调和，或者任何你手上的威士忌都成立，风味各不相同。' },
   { name:'威士忌酸', family:'sour', glass:'rocks', sub:'Whisky Sour · 平衡的教科书', items:[['bourbon',45],['lemon',20],['syrup',15],['egg_white',15],['angostura',2],['salt_water',3]],
+    why:'参考本用柠檬酸溶液；住处用现挤柠檬汁（酸度不如它稳，但更像真柠檬）。蛋清是经典酸酒的一部分，本站加上（可省）。',
     tip:'没有摇酒器就用保温杯：先不加冰摇 15 秒，再加冰摇 15 秒，泡沫会漂亮很多。最后 3 滴盐水是专业配方里容易被忽略的一步，它会让酸和果味都往前站。' },
   { name:'古典', family:'spirit', glass:'rocks', sub:'Old Fashioned · 只放糖和苦精', items:[['bourbon',60],['syrup',7.5],['angostura',2],['orange_peel',1]],
+    why:'参考本这杯是「黑麦 40 + 烧酒 40」的日式版本；本站保留标准古典（波本 + 苦精），想照书做点「按参考本装杯」。',
     tip:'冰要够大，摇匀后静置一分钟再喝，前半杯和后半杯味道会不一样。' },
   { name:'维他柠檬茶微醺', family:'highball', glass:'icecup', sub:'便利店特调 · 楼下就能买齐', items:[['bourbon',30],['vitale',100],['lemon',5]],
     tip:'维他柠檬茶本身很甜，加 5ml 鲜柠檬就已经很平衡。这个比例适合边看剧边喝。' },
@@ -690,14 +692,14 @@ var PRESETS = [
     tip:'那 10ml 拉弗格不能省：这杯的灵魂就是最后浮上来的那层泥煤味，拿基底酒顶就不是青霉素了。生姜在杯里压几下。蜂蜜糖浆用 3:1 更接近原版。' },
   { name:'锈钉', family:'spirit', glass:'rocks', sub:'Rusty Nail · 两样东西就成立', items:[['jw_black',45],['drambuie',20]],
     tip:'蜂蜜香草利口酒 + 威士忌，几乎是作弊的简单。适合冬天。' },
-  { name:'教父', family:'spirit', glass:'rocks', sub:'Godfather', items:[['jw_black',45],['disaronno',20]],
+  { name:'教父', family:'spirit', glass:'rocks', sub:'Godfather', items:[['jw_black',45],['disaronno',15]],
     tip:'杏仁香和威士忌的麦芽香会合在一起，慢慢喝。' },
   { name:'爱尔兰咖啡', family:'hot', glass:'mug', sub:'Irish Coffee · 热着喝', items:[['jameson',40],['coffee_hot',120],['demerara',15],['cream',30]],
     tip:'就得用爱尔兰威士忌——苏格兰的泥煤味会跟咖啡打架。奶油沿勺背浮在最上层，别搅；第一口穿过奶油喝到酒，是它的全部意义。' },
-  { name:'罗伯罗伊', family:'spirit', glass:'coupe', sub:'Rob Roy · 苏格兰版的曼哈顿', items:[['jw_black',60],['vermouth',20],['angostura',2],['cherry',1]],
+  { name:'罗伯罗伊', family:'spirit', glass:'coupe', sub:'Rob Roy · 苏格兰版的曼哈顿', items:[['jw_black',70],['vermouth',20],['angostura',2]],
     tip:'味美思开瓶就要尽快用完，没冰箱的话这一杯要趁新鲜。' },
-  { name:'血与沙', family:'sour', glass:'coupe', sub:'Blood & Sand · 四样等量好记', items:[['jw_black',25],['cherry_brandy',20],['vermouth',20],['orange_juice',20]],
-    tip:'经典版本就是 20/20/20/20，威士忌可以稍多。橙汁建议现榨，瓶装的太甜。' },
+  { name:'血与沙', family:'sour', glass:'coupe', sub:'Blood & Sand · 四样等量好记', items:[['jw_black',20],['cherry_brandy',20],['vermouth',20],['orange_juice',20]],
+    tip:'经典版本就是 20/20/20/20。橙汁建议现榨，瓶装的太甜。' },
   { name:'花花公子', family:'spirit', glass:'rocks', sub:'Boulevardier · 三等份，最好记', items:[['bourbon',30],['vermouth',30],['campari',30]],
     tip:'尼格罗尼的威士忌版，三样各 30ml。苦味重，适合慢慢喝。换成更清瘦的苏格兰调和，橙皮香会更突出。' },
   { name:'淘金热', family:'sour', glass:'rocks', sub:'Gold Rush · 三样材料，新手最不容易失手', items:[['bourbon',45],['lemon',15],['honey_syrup',15]],
@@ -710,7 +712,7 @@ var PRESETS = [
     tip:'红石榴糖浆只要 1 把勺（5ml）就够，多了整杯会变成糖水。' },
   { name:'榛子酸', family:'sour', glass:'coupe', sub:'Frangelico Sour · 威士忌配榛子', items:[['bourbon',30],['frangelico',30],['lemon',20],['syrup',10],['egg_white',20]],
     tip:'榛子和麦芽香几乎是天然的一对。蛋清先干摇再加冰，泡沫会立起来。' },
-  { name:'萨泽拉克', family:'spirit', glass:'rocks', sub:'Sazerac · 苦艾酒只用来洗杯', items:[['cognac',60],['demerara',5],['peychaud',5],['absinthe',3]],
+  { name:'萨泽拉克', family:'spirit', glass:'rocks', sub:'Sazerac · 苦艾酒只用来洗杯', items:[['cognac',60],['demerara',5],['peychaud',5],['absinthe',5]],
     tip:'冰块只用来搅拌降温，倒出来的时候滤掉，成品不加冰。苦艾酒倒进冰过的杯子里转一圈，把多余的倒掉，再倒入酒液。' },
   { name:'威士忌可乐', family:'highball', glass:'icecup', sub:'Whisky Coke · 最简单的一杯', items:[['jack',45],['coke',100],['lime',5]],
     tip:'挤 5ml 青柠，整杯会从「甜」变成「有味道」。' }
@@ -721,14 +723,17 @@ var PRESETS = [
   { name:'干马天尼', family:'spirit', glass:'coupe', sub:'Dry Martini · 几乎全是酒', items:[['tanqueray',60],['dry_vermouth',10],['orange_bitters',1]],
     tip:'搅拌 30 秒就够，别摇。味美思只放 10ml——它开瓶后必须冷藏，没冰箱的话这杯要趁新鲜。' },
   { name:'尼格罗尼', family:'spirit', glass:'rocks', sub:'Negroni · 三等份，最不容易失手', items:[['gin',30],['campari',30],['vermouth',30]],
+    why:'参考本用自制味美思和自制阿马罗；本库用现成的红味美思 + 金巴利（参考本自己也说，那款自制阿马罗是金巴利风格）。',
     tip:'有史以来最好记的比例：三样各 30ml。橙皮一定要有，它负责把苦味收干净。' },
-  { name:'莫吉托', family:'highball', glass:'highball', sub:'Mojito · 薄荷只拍不捣', items:[['havana3',45],['lime',20],['syrup',15],['mint',8],['soda',60]],
+  { name:'莫吉托', family:'highball', glass:'highball', sub:'Mojito · 薄荷只拍不捣', items:[['havana3',60],['lime',15],['syrup',15],['mint',8],['soda',60]],
+    why:'基础用量照参考本（朗姆 60、青柠 15）；参考本没写苏打水，莫吉托要有气泡，这里补 60ml。',
     tip:'薄荷用手拍一下就好，捣碎了会出草腥味。先放薄荷、青柠、糖浆轻轻压两下，再加冰和酒。' },
-  { name:'自由古巴', family:'highball', glass:'icecup', sub:'Cuba Libre · 可乐、朗姆、青柠', items:[['havana3',45],['coke',100],['lime',10]],
+  { name:'自由古巴', family:'highball', glass:'icecup', sub:'Cuba Libre · 可乐、朗姆、青柠', items:[['havana3',50],['coke',120],['lime',10]],
     tip:'关键全在那 10ml 青柠。不加就是朗姆可乐，加了才是自由古巴。' },
-  { name:'玛格丽特', family:'sour', glass:'coupe', sub:'Margarita · 盐边是灵魂', items:[['patron',45],['cointreau',20],['lime',20]],
+  { name:'玛格丽特', family:'sour', glass:'coupe', sub:'Margarita · 盐边是灵魂', items:[['patron',50],['cointreau',20],['lime',20],['syrup',5]],
     tip:'用青柠角把杯口抹一圈，再倒扣进盐里蘸一圈。换成便宜龙舌兰会明显差一档。' },
   { name:'大都会', family:'sour', glass:'coupe', sub:'Cosmopolitan · 蔓越莓的酸甜', items:[['vodka',40],['cointreau',15],['cranberry',30],['lime',15]],
+    why:'本库没有柠檬伏特加和蔓越莓糖浆：用普通伏特加 + 一条柠檬皮，蔓越莓汁多加 10ml 补甜。',
     tip:'摇到杯子外壁起霜。蔓越莓汁本身够甜，不用再加糖浆。' }
 
   /* ===== 极简示例：两样材料 ===== */
@@ -736,7 +741,7 @@ var PRESETS = [
     tip:'伏特加和咖啡利口酒 3:1，就这样。这两瓶都是常温久放，是住处里最省事的一杯，也是最好的"两样材料也能叫鸡尾酒"的证明。' }
   ,{ name:'法国情怀', family:'spirit', glass:'rocks', sub:'French Connection · 教父的干邑版', items:[['cognac',45],['disaronno',20]],
     tip:'和教父只差基酒：威士忌换成干邑，杏仁香就从"麦芽"变成了"葡萄干"。两样材料就能听出区别。' }
-  ,{ name:'马颈', family:'highball', glass:'highball', sub:'Horse\'s Neck · 白兰地加干姜水', items:[['cognac',40],['ginger_ale',90]],
+  ,{ name:'马颈', family:'highball', glass:'highball', sub:'Horse\'s Neck · 白兰地加干姜水', items:[['cognac',45],['ginger_ale',90]],
     tip:'最老的两样配方之一。姜的辣会把白兰地的木头味抬起来，比听起来好喝很多。' }
   ,{ name:'加里波利', family:'highball', glass:'highball', sub:'Garibaldi · 金巴利的苦配橙汁的甜', items:[['campari',45],['orange_juice',90]],
     tip:'靠橙汁的果甜把金巴利的苦包住。麻烦之处在于橙汁最好是现榨的——瓶装的会变成一杯甜水，这杯就废了。' }
@@ -745,6 +750,7 @@ var PRESETS = [
 
   /* ===== 极简示例：三样材料 ===== */
   ,{ name:'黛绮莉', family:'sour', glass:'coupe', sub:'Daiquiri · 三样材料，考的全是配比', items:[['rum',60],['lime',20],['syrup',15]],
+    why:'参考本用砂糖；冷饮里糖化不开，这里用糖浆（甜度相当）。',
     tip:'朗姆、青柠、糖，就这三样。做不好通常是酸甜没配平——这杯最适合拿来练手，也是所有"酸"类鸡尾酒的原型。' }
   ,{ name:'蜂之膝', family:'sour', glass:'coupe', sub:'Bee\'s Knees · 金酒、蜂蜜、柠檬', items:[['gin',45],['honey_syrup',15],['lemon',15]],
     tip:'禁酒令时期的配方，当年蜂蜜是用来盖住劣质酒的杂味的。把金酒换成威士忌或苹果白兰地，同样成立。' }
@@ -755,6 +761,7 @@ var PRESETS = [
   ,{ name:'美国佬', family:'highball', glass:'highball', sub:'Americano · 尼格罗尼减掉金酒', items:[['campari',30],['vermouth',30],['soda',60]],
     tip:'把尼格罗尼的金酒换成一截苏打水，度数直接砍半，适合下午慢慢喝。味美思开瓶后要尽快用完。' }
   ,{ name:'汤米家的玛格丽特', family:'sour', glass:'coupe', sub:'Tommy\'s Margarita · 用糖浆换掉君度', items:[['tequila',45],['lime',20],['syrup',10]],
+    why:'本库没有龙舌兰糖浆，用白糖浆替——会少一点龙舌兰的土味。',
     tip:'比经典玛格丽特少一样材料，龙舌兰的味道反而更清楚。糖浆用龙舌兰糖浆最正宗。' }
   ,{ name:'养乐多烧酒', family:'highball', glass:'icecup', sub:'韩国便利店喝法 · 三样材料', items:[['soju',60],['yakult',1],['sprite',60]],
     tip:'烧酒、养乐多、雪碧大概 1:1:1，搅一下就行。养乐多本身又酸又甜，所以不用糖也不用柠檬，是零门槛的一杯。' }
@@ -763,6 +770,7 @@ var PRESETS = [
   ,{ name:'芒果朗姆', family:'sour', glass:'highball', sub:'Rum & Mango · 便利店热带风', items:[['rum',45],['mango_mix',90],['lime',10]],
     tip:'芒果混合汁很稠、很甜，所以那 10ml 青柠不能省——没有它整杯会腻。想更像热带，再加 15ml 椰浆。' }
   ,{ name:'椰林飘香', family:'highball', glass:'hurricane', sub:'Piña Colada · 顺便看看它为什么容易失败', items:[['rum',45],['pineapple',90],['coconut_milk',30],['lime',20]],
+    why:'本库没有椰子和菠萝糖浆；多出来的甜用菠萝汁补（90ml），所以比参考本稠一点。',
     tip:'青柠不能省：朗姆 + 菠萝 + 椰浆之外，就靠它把甜压住，少了它是一杯甜果昔。这一杯我特意放进来当反面教材：菠萝汁里的菠萝蛋白酶会把椰浆的乳化结构拆开，倒下去那一刻就可能起絮分层，和 pH 无关。想稳定出品，用罐装/超高温灭菌的菠萝汁，或者把鲜菠萝汁煮开一分钟灭酶再放凉。' }
 ];
 

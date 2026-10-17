@@ -15,6 +15,7 @@ let html = read('dev.html');
 const css = read('app.css');
 const dataJs = read('data.js');
 const refJs = read('ref-recipes.js');
+const ibaJs = read('iba-recipes.js');    /* IBA 官方配方，tools/fetch-iba.js 生成 */
 const qrJs = read('qrcode.js');          /* 二维码生成（MIT，见文件头的版权声明） */
 const appJs = read('app.js');
 
@@ -33,6 +34,7 @@ const favicon = 'data:image/svg+xml,' + encodeURIComponent(
 html = html.replace(/<link rel="stylesheet" href="app\.css">\s*/, '');
 html = html.replace(/<script src="data\.js"><\/script>\s*/, '');
 html = html.replace(/<script src="ref-recipes\.js"><\/script>\s*/, '');
+html = html.replace(/<script src="iba-recipes\.js"><\/script>\s*/, '');
 html = html.replace(/<script src="qrcode\.js"><\/script>\s*/, '');
 html = html.replace(/<script src="app\.js"><\/script>\s*/, '');
 
@@ -52,6 +54,7 @@ html = html.replace('</head>', () =>
 html = html.replace('</body>', () =>
   '<script>\n' + safe(dataJs) + '\n</script>\n' +
   '<script>\n' + safe(refJs) + '\n</script>\n' +
+  '<script>\n' + safe(ibaJs) + '\n</script>\n' +
   '<script>\n' + safe(qrJs) + '\n</script>\n' +
   '<script>\n' + safe(appJs) + '\n</script>\n</body>');
 
@@ -70,7 +73,7 @@ const closes = (html.match(/<\/script>/g) || []).length;
 console.log('产物：dist/index.html 和 dist/调酒台.html');
 const kb = (s) => (Buffer.byteLength(s, 'utf8') / 1024).toFixed(1);
 console.log('  大小 ' + kb(html) + ' KB　（原始文件合计 '
-+ kb(css + dataJs + refJs + qrJs + appJs) + ' KB）');
++ kb(css + dataJs + refJs + ibaJs + qrJs + appJs) + ' KB）');
 console.log('  <script> ' + scripts + ' 个，</script> ' + closes + ' 个' + (scripts === closes ? '　配平 ✓' : '　⚠ 不配平'));
 console.log('  残留的本地文件引用：' + (leftovers.length ? leftovers.join('、') + ' ⚠' : '无 ✓'));
 /* 外部请求：只允许百度统计那一处（文件里其它 http 都是 XML 命名空间之类的死字符串）。
@@ -79,6 +82,8 @@ console.log('  残留的本地文件引用：' + (leftovers.length ? leftovers.j
 const extUrls = (html.replace(/https?:\/\/www\.w3\.org\/[^"'\s)]*/g, '')
   .match(/https?:\/\/[^"'\s)]+/g) || [])
   .filter(u => u.indexOf('https://hm.baidu.com/hm.js?') !== 0)
+  /* IBA 配方的来源 URL 是署名用的字符串（数据里每杯都带一条），不是请求 */
+  .filter(u => u.indexOf('https://iba-world.com/') !== 0)
   .filter(u => u.indexOf('https://saobo-shu.github.io/bar-mix/') !== 0)
   .filter(u => u.indexOf('www.d-project.com') < 0 && u.indexOf('opensource.org') < 0
     && u.indexOf('www.denso-wave.com') < 0 && u.indexOf('stackoverflow.com') < 0);
