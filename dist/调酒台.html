@@ -723,6 +723,9 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .v-text { margin: 0 0 10px; font-size: 12.5px; color: var(--muted); }
 
 .top-flavor { font-size: 12px; color: var(--muted); text-align: center; margin: 0 0 12px; }
+/* 家族那一行：自己配的酒也要知道"这是什么骨架、平衡拿什么尺子量" */
+.famline { font-size: 12px; color: var(--muted); text-align: center; margin: -6px 0 12px; }
+.famline:empty { display: none; }
 
 .subs { display: grid; gap: 9px; margin-bottom: 12px; }
 .sub { display: grid; gap: 2px; }
@@ -1072,6 +1075,7 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
       </div>
     </div>
     <p class="top-flavor" id="topFlavor">还没有风味数据</p>
+    <p class="famline" id="famLine"></p>
     <div class="subs" id="subScores"></div>
     <ul class="advice" id="advice"></ul>
     <div class="dilute" id="diluteBox"></div>
@@ -6612,6 +6616,26 @@ var qrcode = function() {
     document.getElementById('topFlavor').textContent = tops.length
       ? '主导风味：' + tops.join(' · ')
       : '还没有风味数据';
+
+    /* 这杯属于哪个家族——自己配的酒也要说，不然用户不知道这把尺子是哪来的 */
+    var famLine = document.getElementById('famLine');
+    if (famLine) {
+      var famTxt = '';
+      if (!empty && !single && !neat) {
+        var fam = familyOf(a);
+        var ruler = (fam.id === 'highball' || fam.id === 'long'
+          || fam.id === 'rickey' || fam.id === 'mule') ? '酒体 : 稀释物'
+          : ((fam.id === 'sour' || fam.id === 'fizz') ? 'Brix/TA（糖度与可滴定酸）'
+          : (fam.id === 'hot' ? '温度与浓度' : '甜酸与浓度'));
+        famTxt = '这杯属于「' + fam.name + '」 · 平衡看 ' + ruler;
+        if (state.recipeName && state.recipeFamily && fam.id !== state.recipeFamily) {
+          famTxt += '　（原来是「' + (FAMILY_LABEL[state.recipeFamily] || state.recipeFamily) + '」）';
+        }
+      } else if (neat) {
+        famTxt = '这杯属于「纯饮」——不评分，只看味道';
+      }
+      famLine.textContent = famTxt;
+    }
 
     /* 建议 */
     var list = empty ? [] : advise(a);

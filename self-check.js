@@ -1735,6 +1735,36 @@ console.log('\n--- 酒单 ---');
   if (!okMojitoFilter) bad('酒单', '菲士筛选没包含莫吉托');
   B.menu.reset();
 
+  /* 自己配的酒也要在结果区写出"这杯属于哪一类、平衡看什么" */
+  const famLineOf = items => {
+    B.state.glass = 'rocks'; B.state.iceLevel = 'full'; B.state.method = 'build';
+    B.state.taste = 'normal'; B.state.scheme = 'balanced';
+    B.state.recipeName = ''; B.state.recipeFamily = '';
+    B.load(items);
+    return (els['famLine'].textContent || '');
+  };
+  const lineDuo = famLineOf([['gin', 30], ['campari', 30], ['vermouth', 30]]);
+  const lineSour = famLineOf([['bourbon', 45], ['lemon', 20], ['syrup', 15]]);
+  const lineHb = famLineOf([['gin', 45], ['tonic', 120], ['lime', 10]]);
+  const okDuoLine = lineDuo.indexOf('双料') >= 0 && lineDuo.indexOf('甜酸与浓度') >= 0;
+  const okSourLine = lineSour.indexOf('酸类') >= 0 && lineSour.indexOf('Brix/TA') >= 0;
+  const okHbLine = lineHb.indexOf('高球') >= 0 && lineHb.indexOf('酒体 : 稀释物') >= 0;
+  console.log('  ' + (okDuoLine ? '✅' : '❌') + ' 自己配的双料：' + lineDuo);
+  console.log('  ' + (okSourLine ? '✅' : '❌') + ' 自己配的酸类：' + lineSour);
+  console.log('  ' + (okHbLine ? '✅' : '❌') + ' 自己配的高球：' + lineHb);
+  if (!okDuoLine || !okSourLine || !okHbLine) bad('家族', '自己配的酒没写家族/尺子');
+
+  /* 纯饮不评分；空杯不显示 */
+  B.state.glass = 'shot'; B.state.iceLevel = 'none'; B.state.method = 'build';
+  B.state.recipeName = ''; B.state.recipeFamily = '';
+  B.load([['macallan', 45]]);
+  const lineNeat = els['famLine'].textContent || '';
+  B.load([]);
+  const lineEmpty = els['famLine'].textContent || '';
+  const okNeatLine = lineNeat.indexOf('纯饮') >= 0 && lineNeat.indexOf('不评分') >= 0 && lineEmpty === '';
+  console.log('  ' + (okNeatLine ? '✅' : '❌') + ' 纯饮写"不评分"、空杯不显示：' + lineNeat);
+  if (!okNeatLine) bad('家族', '纯饮/空杯的家族行不对');
+
   /* Rickey / 骡子：都"没加糖的酸 + 气泡"，区别只在苏打还是姜汁 */
   const rickeyIdx = global.__PRESETS.findIndex(p => p.name === 'Gin Rickey');
   const rickeyP = global.__PRESETS[rickeyIdx];

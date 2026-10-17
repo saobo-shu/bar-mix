@@ -1400,6 +1400,26 @@
       ? '主导风味：' + tops.join(' · ')
       : '还没有风味数据';
 
+    /* 这杯属于哪个家族——自己配的酒也要说，不然用户不知道这把尺子是哪来的 */
+    var famLine = document.getElementById('famLine');
+    if (famLine) {
+      var famTxt = '';
+      if (!empty && !single && !neat) {
+        var fam = familyOf(a);
+        var ruler = (fam.id === 'highball' || fam.id === 'long'
+          || fam.id === 'rickey' || fam.id === 'mule') ? '酒体 : 稀释物'
+          : ((fam.id === 'sour' || fam.id === 'fizz') ? 'Brix/TA（糖度与可滴定酸）'
+          : (fam.id === 'hot' ? '温度与浓度' : '甜酸与浓度'));
+        famTxt = '这杯属于「' + fam.name + '」 · 平衡看 ' + ruler;
+        if (state.recipeName && state.recipeFamily && fam.id !== state.recipeFamily) {
+          famTxt += '　（原来是「' + (FAMILY_LABEL[state.recipeFamily] || state.recipeFamily) + '」）';
+        }
+      } else if (neat) {
+        famTxt = '这杯属于「纯饮」——不评分，只看味道';
+      }
+      famLine.textContent = famTxt;
+    }
+
     /* 建议 */
     var list = empty ? [] : advise(a);
     document.getElementById('advice').innerHTML = list.length

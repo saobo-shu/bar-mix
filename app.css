@@ -677,6 +677,9 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .v-text { margin: 0 0 10px; font-size: 12.5px; color: var(--muted); }
 
 .top-flavor { font-size: 12px; color: var(--muted); text-align: center; margin: 0 0 12px; }
+/* 家族那一行：自己配的酒也要知道"这是什么骨架、平衡拿什么尺子量" */
+.famline { font-size: 12px; color: var(--muted); text-align: center; margin: -6px 0 12px; }
+.famline:empty { display: none; }
 
 .subs { display: grid; gap: 9px; margin-bottom: 12px; }
 .sub { display: grid; gap: 2px; }
