@@ -7435,6 +7435,24 @@ var qrcode = function() {
     return REF_STAT[i];
   }
 
+  /* 本站预设的家族 + 酒精度（酒单详情里如果摆的是本站配比，这两个数都要跟它走，
+     不能拿参考本的数去套——莫吉托：参考本没苏打 24%，本站加了苏打 14.9%） */
+  var PRESET_STAT = {};
+  function presetStat(p) {
+    if (PRESET_STAT[p.name]) return PRESET_STAT[p.name];
+    var keep = { cup: state.cup, glass: state.glass, ice: state.iceLevel, method: state.method };
+    var cup = new Map();
+    p.items.forEach(function (it) { cup.set(it[0], it[1]); });
+    state.cup = cup;
+    if (p.glass) state.glass = p.glass;
+    state.iceLevel = glassOf(state.glass).ice === 'inglass' ? 'full' : 'none';
+    state.method = PRESET_METHOD[p.name] || 'build';
+    var a = analyze();
+    state.cup = keep.cup; state.glass = keep.glass;
+    state.iceLevel = keep.ice; state.method = keep.method;
+    return (PRESET_STAT[p.name] = { family: familyOf(a), abv: a.abv });
+  }
+
   /* 酒单的一杯：只写名字、用到什么、怎么做——点开才看细节 */
   /* 参考数据里有两条没有中文名（B&B、XYZ），退回用英文名——不然卡片是空标题，
      而且收藏会互相顶掉（两条都叫空字符串） */
@@ -7459,7 +7477,9 @@ var qrcode = function() {
         + (refFizz(r).length && methodFromRef(r.method) !== 'build' ? ' mc-tech-bub' : '') + '">'
         + (TECH_NAME[methodFromRef(r.method)] || '兑和')
         + (refFizz(r).length && methodFromRef(r.method) !== 'build' ? ' · 气泡后加' : '') + '</i>'
-        + Math.round(st.abv) + '% · ' + r.needs.length + ' 样'
+        /* 卡片上的材料行用的是本站配比（有的话），酒精度和样数也得跟它一致 */
+        + Math.round(d ? presetStat(d.pre).abv : st.abv) + '% · '
+        + (d ? d.pre.items.length : r.needs.length) + ' 样'
         + (d && d.hasDiff ? ' · <i class="mc-pick">本站配比</i>' : '')
         + (r.pick ? ' · <i class="mc-pick">推荐</i>' : '') + '</span>'
       + '</button>';
@@ -7551,7 +7571,10 @@ var qrcode = function() {
         if (menuTech === 'noshaker') { if (tech === 'shake') return; }
         else if (tech !== menuTech) return;
       }
-      if (menuFamily && st.family !== menuFamily) return;
+      /* 卡片上摆的是本站配比时，家族筛选也得按本站配比判（莫吉托：参考本酸类、本站菲士） */
+      var pd = presetDiffOf(r);
+      var famId = pd ? presetStat(pd.pre).family.id : st.family;
+      if (menuFamily && famId !== menuFamily) return;
       if (menuFam && st.fams.indexOf(menuFam) < 0) return;
       if (menuTaste === 'sweet' && st.sugar < 8) return;
       if (menuTaste === 'sour' && st.acid < 5) return;
@@ -7671,14 +7694,20 @@ var qrcode = function() {
       + '<button type="button" class="ghost" data-menu-close="1">关闭</button></div>'
       + '<p class="hint">' + esc(pre ? (PRESET_METHOD[pre.name] ? methodName({ method: PRESET_METHOD[pre.name] }) : methodName(r)) : methodName(r))
         + ' · ' + esc(pre ? glassOf(pre.glass).name : glassOf(glassFromRef(r)).name)
-        + ' · ' + Math.round(st.abv) + '% · ' + (pre ? pre.items.length : r.needs.length) + ' 样材料'
+        + ' · ' + Math.round(pre ? presetStat(pre).abv : st.abv) + '% · '
+        + (pre ? pre.items.length : r.needs.length) + ' 样材料'
         + (d && d.hasDiff ? '　<b class="mc-pick">本站配比</b>' : '') + '</p>'
-      /* 家族：这杯的骨架决定平衡拿什么量。按参考本的材料自动判，不用用户自己选。 */
-      + '<p class="hint">家族：<b>' + esc(st.familyName) + '</b>'
-        + (st.family === 'highball' || st.family === 'long'
-            || st.family === 'rickey' || st.family === 'mule'
-            ? '　平衡看「酒体 : 稀释物」' : (st.family === 'sour' || st.family === 'fizz'
-            ? '　平衡看 Brix/TA' : '')) + '</p>'
+      /* 家族：这杯的骨架决定平衡拿什么量。摆的是本站配比就跟本站配比走，
+         摆的是参考本就跟参考本走——两边可能不同（莫吉托：酸类 vs 菲士）。 */
+      + (function () {
+          var fam = pre ? presetStat(pre).family : { id: st.family, name: st.familyName };
+          return '<p class="hint">家族：<b>' + esc(fam.name) + '</b>'
+            + (fam.id === 'highball' || fam.id === 'long'
+                || fam.id === 'rickey' || fam.id === 'mule'
+                ? '　平衡看「酒体 : 稀释物」' : (fam.id === 'sour' || fam.id === 'fizz'
+                ? '　平衡看 Brix/TA' : ''))
+            + (pre ? '（按本站这一份）' : '（按参考本）') + '</p>';
+        })()
       /* 一句话定位：只有推荐的 51 款有（data.js 的 PICK_LINE） */
       + (PICK_LINE[recipeName(r)] ? '<p class="hint pickline">' + esc(PICK_LINE[recipeName(r)]) + '</p>' : '')
       /* 两个叫法都告诉用户：搜过"青霉素"找不到"盘尼西林"的人，打开就明白了 */

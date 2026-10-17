@@ -1613,7 +1613,9 @@ console.log('\n--- 酒单 ---');
   const sameCase = (name, wantText, wantPick) => {
     B.menu.open(global.__REF.findIndex(r => r.zh === name));
     const txt = strip(els.menuDetail.innerHTML);
-    return txt.indexOf(wantText) >= 0 && (txt.indexOf('本站配比') >= 0) === wantPick;
+    /* 角标看 class，不看文案——家族那行也带"本站"两个字，按文本查会误报 */
+    return txt.indexOf(wantText) >= 0
+      && (els.menuDetail.innerHTML.indexOf('mc-pick') >= 0) === wantPick;
   };
   const okSame = sameCase('盘尼西林', '拉弗格', false)
     && sameCase('爱尔兰咖啡', '爱尔兰威士忌', false)
@@ -1632,7 +1634,7 @@ console.log('\n--- 酒单 ---');
     const i = global.__REF.findIndex(r => r.zh === zh);
     if (i < 0) { stillBadge.push(zh + '（参考本里找不到）'); return; }
     B.menu.open(i);
-    if (els.menuDetail.innerHTML.indexOf('本站配比') >= 0) stillBadge.push(zh);
+    if (els.menuDetail.innerHTML.indexOf('mc-pick') >= 0) stillBadge.push(zh);
   });
   console.log('  ' + (stillBadge.length ? '❌' : '✅') + ' 能对齐参考本的都对齐了，不再挂「本站配比」（'
     + aligned.length + ' 款）' + (stillBadge.length ? '：' + stillBadge.join('、') : ''));
@@ -1643,7 +1645,7 @@ console.log('\n--- 酒单 ---');
   global.__REF.forEach(function (r, i) {
     B.menu.open(i);
     const html = els.menuDetail.innerHTML;
-    if (html.indexOf('本站配比') < 0) return;
+    if (html.indexOf('mc-pick') < 0) return;
     if (html.indexOf('为什么这样改') < 0) noWhy.push(r.zh);
   });
   console.log('  ' + (noWhy.length ? '❌' : '✅') + ' 和参考本不一样的，都写了「为什么这样改」'
@@ -1654,7 +1656,7 @@ console.log('\n--- 酒单 ---');
   const horse = global.__REF.findIndex(r => r.zh === '马颈');
   B.menu.open(horse);
   const horseTxt = strip(els.menuDetail.innerHTML);
-  const okHorse = horseTxt.indexOf('本站配比') < 0
+  const okHorse = els.menuDetail.innerHTML.indexOf('mc-pick') < 0
     && horseTxt.indexOf('参考本只写「白兰地」') >= 0 && horseTxt.indexOf('干邑') >= 0;
   console.log('  ' + (okHorse ? '✅' : '❌') + ' 马颈：不挂角标，但说清了「参考本只写白兰地、本库用干邑」');
   if (!okHorse) bad('酒单', '马颈的"具体化"说明没渲染对：' + horseTxt.slice(0, 220));
@@ -1681,6 +1683,33 @@ console.log('\n--- 酒单 ---');
   const okFamLine = /家族：\s*双料/.test(famTxt);
   console.log('  ' + (okFamLine ? '✅' : '❌') + ' 马天尼详情里写着「家族：双料」');
   if (!okFamLine) bad('酒单', '详情里没有家族那一行');
+
+  /* 莫吉托：参考本没苏打（酸类），本站配比加了苏打（菲士）——详情摆的是本站材料，
+  家族就必须跟本站走，并在后面注明"按本站配比" */
+  B.menu.open(global.__REF.findIndex(r => r.zh === '莫吉托'));
+  const mojitoTxt = strip(els.menuDetail.innerHTML);
+  const okMojitoFam = /家族：\s*菲士/.test(mojitoTxt) && mojitoTxt.indexOf('按本站这一份') >= 0
+    && /15%/.test(mojitoTxt) && mojitoTxt.indexOf('24%') < 0;
+  console.log('  ' + (okMojitoFam ? '✅' : '❌') + ' 莫吉托详情：家族和酒精度都跟本站配比走（菲士 / 15%），不是参考本的 24%');
+  if (!okMojitoFam) bad('酒单', '莫吉托的家族行跟材料表不一致：' + mojitoTxt.slice(0, 80));
+
+  /* 卡片上也一样：材料行是本站配比，酒精度/样数就不能还是参考本的 */
+  B.menu.reset();
+  /* 列表是分页的，先搜到这一杯再看它的卡片 */
+  B.menu.setQuery('莫吉托');
+  const mojitoCard = els['menuList'].innerHTML;
+  const okMojitoCard = mojitoCard.indexOf('15%') >= 0 && mojitoCard.indexOf('24%') < 0;
+  console.log('  ' + (okMojitoCard ? '✅' : '❌') + ' 莫吉托卡片写的是本站的 15%，不是参考本的 24%');
+  if (!okMojitoCard) bad('酒单', '莫吉托卡片酒精度和材料行不一致：' + mojitoCard.slice(0, 120));
+  B.menu.reset();
+
+  /* 家族筛选也要按卡片上摆的那一份判：莫吉托在本站配比里是菲士 */
+  B.menu.setFamily('fizz');
+  const fizzNames = B.menu.listRefs().map(r => r.zh);
+  const okMojitoFilter = fizzNames.indexOf('莫吉托') >= 0;
+  console.log('  ' + (okMojitoFilter ? '✅' : '❌') + ' 按「菲士」筛，莫吉托在列表里');
+  if (!okMojitoFilter) bad('酒单', '菲士筛选没包含莫吉托');
+  B.menu.reset();
 
   /* Rickey / 骡子：都"没加糖的酸 + 气泡"，区别只在苏打还是姜汁 */
   const rickeyIdx = global.__PRESETS.findIndex(p => p.name === 'Gin Rickey');
@@ -1742,7 +1771,7 @@ console.log('\n--- 酒单 ---');
   [['蜂之膝', '蜂之膝'], ['盘尼西林', '青霉素'], ['淘金热', '淘金热']].forEach(function (pair) {
     const i = global.__REF.findIndex(r => r.zh === pair[0]);
     B.menu.open(i);
-    if (els.menuDetail.innerHTML.indexOf('本站配比') >= 0) hsBadge.push(pair[1]);
+    if (els.menuDetail.innerHTML.indexOf('mc-pick') >= 0) hsBadge.push(pair[1]);
   });
   console.log('  ' + (hsBadge.length ? '❌' : '✅') + ' 这两边的蜂蜜浓度对齐后，不再挂「本站配比」'
     + (hsBadge.length ? '：' + hsBadge.join('、') : ''));
