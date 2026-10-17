@@ -873,6 +873,24 @@ console.log('\n--- 结块 / 分层的判定（看 pH 和蛋白酶） ---');
   if (!ok) bad('结块', c[0] + '：预期' + (c[2] ? '有' : '没有') + '结块类警告，实际' + (hit ? '有' : '没有'));
 });
 
+/* 建议不能让人做破坏性操作：
+   ① 曼哈顿没加糖浆，不能让人"减 5ml 糖浆"
+   ② 有奶/椰浆的甜酒，不能让人"加 15ml 柠檬"（会结块） */
+console.log('\n--- 建议的可执行性（不能教人做坏一杯酒）---');
+(function () {
+  B.load([['bourbon', 60], ['vermouth', 20]]);
+  const advM = B.advise(B.analyze()).map(x => x.text).join(' ');
+  const okM = advM.indexOf('糖浆减 5ml') < 0 && (advM.indexOf('没加糖浆') >= 0 || advM.indexOf('味美思') >= 0);
+  console.log('  ' + (okM ? '✅' : '❌') + ' 曼哈顿：不会让用户去减一杯里没有的糖浆');
+  if (!okM) bad('建议', '曼哈顿的建议提到了不存在的糖浆');
+
+  B.load([['rum', 45], ['coconut_milk', 60], ['cream', 30]]);
+  const advD = B.advise(B.analyze()).map(x => x.text).join(' ');
+  const okD = advD.indexOf('加 15ml 鲜柠檬汁') < 0 && advD.indexOf('结块') >= 0;
+  console.log('  ' + (okD ? '✅' : '❌') + ' 奶油椰浆：不会让用户加柠檬（会结块），而是减甜或加苦精');
+  if (!okD) bad('建议', '奶油酒的建议让用户加酸');
+})();
+
 /* ---- pH 模型的标定检查 ---- */
 console.log('\n--- pH 估算的标定 ---');
 [
