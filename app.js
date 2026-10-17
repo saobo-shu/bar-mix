@@ -250,7 +250,7 @@
     var modMl = 0, mixerMl = 0;
     /* 家族判断还看"加了酸 / 加了甜 / 有蛋 / 有薄荷"这几种角色 */
     var sourMl = 0, sweetMl = 0, eggMl = 0, hasMint = false;
-    /* 瑞基 / 骡子要靠"哪种气泡"区分：苏打 vs 姜汁 */
+    /* Rickey / 骡子要靠"哪种气泡"区分：苏打 vs 姜汁 */
     var sodaMl = 0, gingerMl = 0;
     /* 判家族看的是"有没有加"，不是"加了多少毫升"——
        方糖、白砂糖这类块状材料 mlu 是 0，但它们是货真价实的甜味来源。 */
@@ -464,7 +464,7 @@
     hot: '热饮', neat: '纯饮', flip: '蛋类 Flip', cream: '奶类',
     fizz: '菲士 / 柯林斯', sour: '酸类', highball: '高球', long: '长饮',
     old_fashioned: '古典型', duo: '双料', spirit: '烈酒向',
-    rickey: '瑞基 Rickey', mule: '骡子 Mule'
+    rickey: 'Rickey', mule: '骡子 Mule'
   };
   function familyOf(a) {
     if (a.isHot) return { id: 'hot', name: FAMILY_LABEL.hot };
@@ -481,7 +481,7 @@
       return a.hasFizzIng
         ? { id: 'fizz', name: FAMILY_LABEL.fizz }
         : { id: 'sour', name: FAMILY_LABEL.sour };
-    /* 没加糖的酸 + 气泡：瑞基（苏打）和骡子（姜汁）是高球的两个有名字的子类。
+    /* 没加糖的酸 + 气泡：Rickey（苏打）和骡子（姜汁）是高球的两个有名字的子类。
        区分它们只看气泡是哪一种——这是配方里的固定角色，不用猜。 */
     if (a.hasFizzIng) {
       if (a.hasSourAdd && !a.hasSweetAdd && modShare < 0.12) {
@@ -2293,7 +2293,7 @@
     var families = [
       ['', '全部家族'],
       ['sour', '酸类'], ['fizz', '菲士/柯林斯'], ['highball', '高球'], ['long', '长饮'],
-      ['rickey', '瑞基'], ['mule', '骡子'],
+      ['rickey', 'Rickey'], ['mule', '骡子'],
       ['old_fashioned', '古典型'], ['duo', '双料'], ['flip', '蛋类'], ['cream', '奶类'],
       ['spirit', '烈酒向']
     ];

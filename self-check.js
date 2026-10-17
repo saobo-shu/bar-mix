@@ -1682,8 +1682,8 @@ console.log('\n--- 酒单 ---');
   console.log('  ' + (okFamLine ? '✅' : '❌') + ' 马天尼详情里写着「家族：双料」');
   if (!okFamLine) bad('酒单', '详情里没有家族那一行');
 
-  /* 瑞基 / 骡子：都"没加糖的酸 + 气泡"，区别只在苏打还是姜汁 */
-  const rickeyIdx = global.__PRESETS.findIndex(p => p.name === '金瑞基');
+  /* Rickey / 骡子：都"没加糖的酸 + 气泡"，区别只在苏打还是姜汁 */
+  const rickeyIdx = global.__PRESETS.findIndex(p => p.name === 'Gin Rickey');
   const rickeyP = global.__PRESETS[rickeyIdx];
   B.preset(rickeyIdx);
   const rickeyA = B.analyze();
@@ -1692,9 +1692,9 @@ console.log('\n--- 酒单 ---');
     && rickeyP.items.some(it => it[0] === 'lime' && it[1] === 10)
     && rickeyP.items.some(it => it[0] === 'soda' && it[1] === 120)
     && B.familyOf(rickeyA).id === 'rickey';
-  console.log('  ' + (okRickey ? '✅' : '❌') + ' 金瑞基：金酒 45 / 青柠 10 / 苏打 120，判成 '
+  console.log('  ' + (okRickey ? '✅' : '❌') + ' Gin Rickey：金酒 45 / 青柠 10 / 苏打 120，判成 '
     + B.familyOf(rickeyA).name + '（不加糖）');
-  if (!okRickey) bad('家族', '金瑞基缺了或家族判错');
+  if (!okRickey) bad('家族', 'Gin Rickey 缺了或家族判错');
 
   const muleIdx = global.__PRESETS.findIndex(p => p.name === '姜味骡子');
   B.preset(muleIdx);
@@ -1706,14 +1706,14 @@ console.log('\n--- 酒单 ---');
   B.menu.setFamily('rickey');
   const rickeyRefs = B.menu.listRefs().map(r => r.zh);
   const okRickeyFilter = rickeyRefs.indexOf('金Ricky') >= 0;
-  console.log('  ' + (okRickeyFilter ? '✅' : '❌') + ' 酒单按「瑞基」筛出金Ricky');
-  if (!okRickeyFilter) bad('家族', '酒单的瑞基筛选没有金Ricky');
+  console.log('  ' + (okRickeyFilter ? '✅' : '❌') + ' 酒单按「Rickey」筛出金Ricky');
+  if (!okRickeyFilter) bad('家族', '酒单的 Rickey 筛选没有金Ricky');
   B.menu.reset();
 
   /* Tips 里的家族对照表 */
   const tipsHtml = fs.readFileSync(path.join(dir, 'dev.html'), 'utf8');
   const okTips = tipsHtml.indexOf('家族对照表') >= 0 && tipsHtml.indexOf('酒体 : 稀释物') >= 0
-    && tipsHtml.indexOf('Brix/TA') >= 0 && tipsHtml.indexOf('瑞基') >= 0 && tipsHtml.indexOf('骡子') >= 0;
+    && tipsHtml.indexOf('Brix/TA') >= 0 && tipsHtml.indexOf('Rickey') >= 0 && tipsHtml.indexOf('骡子') >= 0;
   console.log('  ' + (okTips ? '✅' : '❌') + ' Tips 里有家族对照表（含两种平衡尺子）');
   if (!okTips) bad('酒单', 'Tips 里缺家族对照表');
 

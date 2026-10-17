@@ -1164,7 +1164,7 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
                 <tr><td>菲士 / 柯林斯</td><td>酸酒骨架 + 气泡</td><td>金菲士、莫吉托、蜂之膝</td><td>Brix/TA</td></tr>
                 <tr><td>高球</td><td>酒 + 气泡，酸糖都可无</td><td>金汤力、威士忌高球、自由古巴</td><td>酒体 : 稀释物</td></tr>
                 <tr><td>长饮</td><td>酒 + 大杯果汁，没气泡</td><td>螺丝刀、灰狗</td><td>酒体 : 稀释物</td></tr>
-                <tr><td>瑞基</td><td>酒 + 青柠 + 苏打，<b>不加糖</b></td><td>金瑞基</td><td>酒体 : 稀释物</td></tr>
+                <tr><td>Rickey</td><td>酒 + 青柠 + 苏打，<b>不加糖</b></td><td>Gin Rickey</td><td>酒体 : 稀释物</td></tr>
                 <tr><td>骡子</td><td>酒 + 青柠 + 姜汁啤酒</td><td>莫斯科骡子、姜味骡子</td><td>酒体 : 稀释物</td></tr>
                 <tr><td>双料</td><td>酒 + 加强酒 / 利口酒，不加酸</td><td>干马天尼、曼哈顿、尼格罗尼</td><td>甜酸 / 浓度</td></tr>
                 <tr><td>古典型</td><td>烈酒 + 少量糖 + 苦精</td><td>古典、萨泽拉克</td><td>甜酸 / 浓度</td></tr>
@@ -2085,8 +2085,8 @@ var PRESETS = [
     tip:'薄荷用手拍一下就好，捣碎了会出草腥味。先放薄荷、青柠、糖浆轻轻压两下，再加冰和酒。' },
   { name:'自由古巴', family:'highball', glass:'icecup', sub:'Cuba Libre · 可乐、朗姆、青柠', items:[['havana3',50],['coke',120],['lime',10]],
     tip:'关键全在那 10ml 青柠。不加就是朗姆可乐，加了才是自由古巴。' },
-  { name:'金瑞基', family:'highball', glass:'highball', sub:'Gin Rickey · 不加糖的酸', items:[['gin',45],['lime',10],['soda',120]],
-    tip:'瑞基跟别的酸酒不一样：不加糖。喝的是青柠和杜松子的干爽——觉得太酸，就把挤过的青柠角丢进杯里。' },
+  { name:'Gin Rickey', family:'highball', glass:'highball', sub:'金酒 + 青柠 + 苏打 · 不加糖', items:[['gin',45],['lime',10],['soda',120]],
+    tip:'Rickey 跟别的酸酒不一样：不加糖。喝的是青柠和杜松子的干爽——觉得太酸，就把挤过的青柠角丢进杯里。' },
   { name:'玛格丽特', family:'sour', glass:'coupe', sub:'Margarita · 盐边是灵魂', items:[['patron',50],['cointreau',20],['lime',20],['syrup',5]],
     tip:'用青柠角把杯口抹一圈，再倒扣进盐里蘸一圈。换成便宜龙舌兰会明显差一档。' },
   { name:'大都会', family:'sour', glass:'coupe', sub:'Cosmopolitan · 蔓越莓的酸甜', items:[['vodka',40],['cointreau',15],['cranberry',30],['lime',15]],
@@ -2444,7 +2444,7 @@ var PRESET_METHOD = {
   '威士忌高球': 'build', '维他柠檬茶微醺': 'build', '威士忌乌龙': 'build',
   '姜味骡子': 'build', '威士忌可乐': 'build', '浓缩柠檬高球': 'build',
   '金汤力': 'build', '莫吉托': 'build', '自由古巴': 'build',
-  '金瑞基': 'build',
+  'Gin Rickey': 'build',
   '马颈': 'build', '加里波利': 'build', '螺丝刀': 'build',
   '美国佬': 'build', '可尔必思沙瓦': 'build', '养乐多烧酒': 'build',
   '椰林飘香': 'shake',
@@ -2869,7 +2869,7 @@ var REF_PRESET_MAP = {
   '教父': '教父', '爱尔兰咖啡': '爱尔兰咖啡', '罗布罗伊': '罗伯罗伊', '血与沙': '血与沙',
   '花花公子': '花花公子', '淘金热': '淘金热', '薄荷朱丽普': '薄荷朱丽普', '纽约': '纽约',
   '8区': '八区', '榛子酸': '榛子酸', '萨泽拉克': '萨泽拉克', '马天尼': '干马天尼',
-  '尼格罗尼': '尼格罗尼', '莫吉托': '莫吉托', '自由古巴': '自由古巴', '金Ricky': '金瑞基',
+  '尼格罗尼': '尼格罗尼', '莫吉托': '莫吉托', '自由古巴': '自由古巴', '金Ricky': 'Gin Rickey',
   '玛格丽特': '玛格丽特',
   '大都会': '大都会', '黑俄罗斯': '黑俄罗斯', '法国情怀': '法国情怀', '马颈': '马颈',
   '加里波利': '加里波利', '螺丝刀': '螺丝刀', '黛绮莉': '黛绮莉', '蜂之膝': '蜂之膝',
@@ -5461,7 +5461,7 @@ var qrcode = function() {
     var modMl = 0, mixerMl = 0;
     /* 家族判断还看"加了酸 / 加了甜 / 有蛋 / 有薄荷"这几种角色 */
     var sourMl = 0, sweetMl = 0, eggMl = 0, hasMint = false;
-    /* 瑞基 / 骡子要靠"哪种气泡"区分：苏打 vs 姜汁 */
+    /* Rickey / 骡子要靠"哪种气泡"区分：苏打 vs 姜汁 */
     var sodaMl = 0, gingerMl = 0;
     /* 判家族看的是"有没有加"，不是"加了多少毫升"——
        方糖、白砂糖这类块状材料 mlu 是 0，但它们是货真价实的甜味来源。 */
@@ -5675,7 +5675,7 @@ var qrcode = function() {
     hot: '热饮', neat: '纯饮', flip: '蛋类 Flip', cream: '奶类',
     fizz: '菲士 / 柯林斯', sour: '酸类', highball: '高球', long: '长饮',
     old_fashioned: '古典型', duo: '双料', spirit: '烈酒向',
-    rickey: '瑞基 Rickey', mule: '骡子 Mule'
+    rickey: 'Rickey', mule: '骡子 Mule'
   };
   function familyOf(a) {
     if (a.isHot) return { id: 'hot', name: FAMILY_LABEL.hot };
@@ -5692,7 +5692,7 @@ var qrcode = function() {
       return a.hasFizzIng
         ? { id: 'fizz', name: FAMILY_LABEL.fizz }
         : { id: 'sour', name: FAMILY_LABEL.sour };
-    /* 没加糖的酸 + 气泡：瑞基（苏打）和骡子（姜汁）是高球的两个有名字的子类。
+    /* 没加糖的酸 + 气泡：Rickey（苏打）和骡子（姜汁）是高球的两个有名字的子类。
        区分它们只看气泡是哪一种——这是配方里的固定角色，不用猜。 */
     if (a.hasFizzIng) {
       if (a.hasSourAdd && !a.hasSweetAdd && modShare < 0.12) {
@@ -7504,7 +7504,7 @@ var qrcode = function() {
     var families = [
       ['', '全部家族'],
       ['sour', '酸类'], ['fizz', '菲士/柯林斯'], ['highball', '高球'], ['long', '长饮'],
-      ['rickey', '瑞基'], ['mule', '骡子'],
+      ['rickey', 'Rickey'], ['mule', '骡子'],
       ['old_fashioned', '古典型'], ['duo', '双料'], ['flip', '蛋类'], ['cream', '奶类'],
       ['spirit', '烈酒向']
     ];
