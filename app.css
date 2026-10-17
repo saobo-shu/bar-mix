@@ -261,6 +261,24 @@ main {
 .ibalist li { font-size: 12.5px; }
 .ibatech { color: var(--amber); font-weight: 600; }
 .ibabox a { color: var(--amber); }
+
+/* 三份来源：BoyanSHI 参考本 / IBA 官方 —— 两张等重的卡片，都能折叠，默认收起 */
+.srccard {
+  margin: 10px 0 0; border-radius: 11px;
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .035);
+}
+.srccard > summary {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;
+  cursor: pointer; list-style: none; padding: 9px 11px;
+}
+.srccard > summary::-webkit-details-marker { display: none; }
+.srccard > summary::marker { content: ''; }
+.srccard > summary .fold::before { content: '▸'; color: var(--amber); }
+.srccard[open] > summary .fold::before { content: '▾'; }
+.srccard > summary .hint { margin-left: auto; }
+.srct { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.srcbody { padding: 0 11px 10px; }
+.srcbody .hint { margin: 6px 0 0; line-height: 1.6; }
 .origbox > summary { cursor: pointer; font-size: 12px; color: var(--amber); }
 .origbox > summary::-webkit-details-marker { display: none; }
 .origbox > summary::before { content: '▸ '; }

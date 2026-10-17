@@ -1466,10 +1466,47 @@ console.log('\n--- 酒单 ---');
   const hit = global.__REF.findIndex(r => r.needs.some(nd => nd.need.approx));
   B.menu.open(hit);
   const dbg = strip(els.menuDetail.innerHTML);
-  const okOrig = dbg.indexOf('原方长什么样') >= 0 && dbg.indexOf('我改过的地方') >= 0;
+  /* 原方现在在「BoyanSHI 参考本」卡片里（可折叠），不再是一行折起来的文字 */
+  const okOrig = els.menuDetail.innerHTML.indexOf('data-src="ref"') >= 0
+    && dbg.indexOf('BoyanSHI 参考本') >= 0
+    && global.__REF[hit].needs.every(nd => dbg.indexOf(nd.n) >= 0)
+    && dbg.indexOf('我改过的地方') >= 0;
   console.log('  ' + (okOrig ? '✅' : '❌') + ' 有替换的那杯：详情里能展开看「原方」和「我改过的地方」（'
     + global.__REF[hit].zh + '）');
   if (!okOrig) bad('酒单', '详情里没有"原方 / 替换说明"');
+
+  /* 三份来源平权：参考本和 IBA 都是卡片、都能折叠、默认收起；
+     "这杯不一样"的警告必须留在折叠外面。 */
+  const srcI = global.__REF.findIndex(r => r.zh === '大都会');
+  B.state.srcOpen = { ref: false, iba: false };
+  B.menu.open(srcI);
+  const srcHtml = els.menuDetail.innerHTML;
+  const bothCards = /<details class="srccard"[^>]*data-src="ref">/.test(srcHtml)
+    && /<details class="srccard"[^>]*data-src="iba">/.test(srcHtml);
+  const collapsed = !/<details class="srccard" open[^>]*data-src="(?:ref|iba)">/.test(srcHtml);
+  const warnAt = srcHtml.indexOf('这杯和参考本不一样');
+  const warnOutside = warnAt >= 0 && warnAt < srcHtml.indexOf('<details class="srccard"');
+  const refSeg = (srcHtml.match(/<details class="srccard"[^>]*data-src="ref">([\s\S]*?)<\/details>/) || [])[1] || '';
+  const refBody = refSeg.indexOf('柠檬伏特加') >= 0 && refSeg.indexOf('45ml') >= 0;
+  console.log('  ' + (bothCards ? '✅' : '❌') + ' 参考本和 IBA 都是卡片');
+  console.log('  ' + (collapsed ? '✅' : '❌') + ' 两张卡片默认收起');
+  console.log('  ' + (warnOutside ? '✅' : '❌') + ' 「和参考本不一样」留在折叠外面');
+  console.log('  ' + (refBody ? '✅' : '❌') + ' 参考本卡片里是逐行材料：柠檬伏特加 45ml');
+  if (!bothCards) bad('酒单', '参考本 / IBA 没有都做成卡片');
+  if (!collapsed) bad('酒单', '来源卡片默认没有收起');
+  if (!warnOutside) bad('酒单', '"和参考本不一样"被折进卡片里了');
+  if (!refBody) bad('酒单', '参考本卡片里没写出逐行材料');
+
+  /* 展开状态要全局记住（不是每杯一份）：切到另一杯，卡片仍然是展开的 */
+  const onToggle = global.document._handlers.toggle;
+  if (onToggle) onToggle({ target: { dataset: { src: 'ref' }, open: true } });
+  B.menu.open(global.__REF.findIndex(r => r.zh === '马颈'));
+  const stillOpen = /<details class="srccard" open[^>]*data-src="ref">/.test(els.menuDetail.innerHTML);
+  const savedOpen = JSON.parse(global.localStorage.getItem('barmix.srcOpen') || '{}').ref === true;
+  console.log('  ' + (stillOpen && savedOpen ? '✅' : '❌') + ' 换了另一杯，参考本卡片仍然是展开的（全局记住）');
+  if (!stillOpen || !savedOpen) bad('酒单', '来源卡片的展开状态没有全局记住');
+  B.state.srcOpen = { ref: false, iba: false };
+  global.localStorage.removeItem('barmix.srcOpen');
 
   /* 真换了东西的（原方和替换名没有共同词）必须写理由 */
   const noNote = [];

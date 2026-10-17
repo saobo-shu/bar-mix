@@ -307,6 +307,24 @@ main {
 .ibalist li { font-size: 12.5px; }
 .ibatech { color: var(--amber); font-weight: 600; }
 .ibabox a { color: var(--amber); }
+
+/* 三份来源：BoyanSHI 参考本 / IBA 官方 —— 两张等重的卡片，都能折叠，默认收起 */
+.srccard {
+  margin: 10px 0 0; border-radius: 11px;
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .035);
+}
+.srccard > summary {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;
+  cursor: pointer; list-style: none; padding: 9px 11px;
+}
+.srccard > summary::-webkit-details-marker { display: none; }
+.srccard > summary::marker { content: ''; }
+.srccard > summary .fold::before { content: '▸'; color: var(--amber); }
+.srccard[open] > summary .fold::before { content: '▾'; }
+.srccard > summary .hint { margin-left: auto; }
+.srct { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.srcbody { padding: 0 11px 10px; }
+.srcbody .hint { margin: 6px 0 0; line-height: 1.6; }
 .origbox > summary { cursor: pointer; font-size: 12px; color: var(--amber); }
 .origbox > summary::-webkit-details-marker { display: none; }
 .origbox > summary::before { content: '▸ '; }
@@ -5231,6 +5249,9 @@ var qrcode = function() {
       abv: {},
       /* 杯子里哪几行说明展开了（点一下切换） */
       open: {},
+      /* 酒单详情里两张来源卡片（BoyanSHI 参考本 / IBA 官方）是展开还是收起。
+         全局一份、跟主题一样存本地——不要每杯各记一份。 */
+      srcOpen: { ref: false, iba: false },
       /* ④ 手边有什么：勾了的材料（id → 1）、以及这杯是从哪条配方来的（备注显示在杯子下面） */
       have: {},
       haveCat: 'gin',
@@ -6634,6 +6655,21 @@ var qrcode = function() {
     } catch (e) {}
   }
 
+  /* 酒单详情里两张来源卡片的展开状态：全局一份，跟主题一样存本地 */
+  var SRC_KEY = 'barmix.srcOpen';
+  function loadSrcOpen() {
+    try {
+      var s = localStorage.getItem(SRC_KEY);
+      if (!s) return;
+      var o = JSON.parse(s) || {};
+      if (typeof o.ref === 'boolean') state.srcOpen.ref = o.ref;
+      if (typeof o.iba === 'boolean') state.srcOpen.iba = o.iba;
+    } catch (e) { /* 无痕 / 本地文件存不了，默认收起也能用 */ }
+  }
+  function saveSrcOpen() {
+    try { localStorage.setItem(SRC_KEY, JSON.stringify(state.srcOpen)); } catch (e) {}
+  }
+
   function needOk(need, mine) { return needStatus(need, mine).ok; }
 
   /* 硬缺口：真缺的东西（点缀和"可选"不算） */
@@ -7344,6 +7380,8 @@ var qrcode = function() {
       + (r.garnish ? '<p class="hint">装饰：' + esc(r.garnish) + (r.ice ? '　冰：' + esc(r.ice) : '') + '</p>'
           : (r.ice ? '<p class="hint">冰：' + esc(r.ice) + '</p>' : ''))
       + swapBox(r)
+      /* 第二个版本：BoyanSHI 参考本（和 IBA 同款卡片，可折叠） */
+      + refSourceCard(r)
       /* 第三个版本：IBA 官方规格（能对上就并列，对不上就明说不在官方名单里） */
       + ibaBox(r)
       + ((pre && pre.tip) ? '<p class="hint">' + esc(pre.tip) + '</p>'
@@ -7410,23 +7448,17 @@ var qrcode = function() {
       }
       return '<p class="hint origbox-plain">这份和参考配方本一致：材料、用量、做法都照它，没改动。</p>';
     }
-    var orig = r.needs.map(function (nd) {
-      return esc(nd.n) + (nd.a ? ' ' + esc(String(nd.a)) : '');
-    }).join(' · ');
     /* 换了东西这件事必须一眼看到，不能藏在折叠里——用户说过"按人家的酒单挑出来的
        一定比咱们配的好喝"，那就得让人知道我们哪儿没照人家的来 */
     return '<p class="hint warnline">⚠️ 这杯和参考本不一样。参考本写的是 '
       + real.map(function (nd) { return esc(nd.n); }).join('、')
-      + '；这杯用的是材料表里带「替」的那几样。点开下面看原文和理由。</p>'
-      + '<details class="origbox"><summary>原方长什么样（参考配方本原文）</summary>'
-      + '<p class="hint">' + orig + '</p>'
+      + '；这杯用的是材料表里带「替」的那几样。原文在下面「BoyanSHI 参考本」卡片里。</p>'
       + (notStocked.length
           ? '<p class="hint">本库没有收录：<b>' + esc(notStocked.join('、'))
             + '</b>。点「装进杯子」装的是下面的替换版；想按原方做，这几样要另外买。' + '</p>'
           : '')
       + (notes.length ? '<p class="hint"><b>我改过的地方：</b></p><ul class="menulist swapnote">'
-        + notes.join('') + '</ul>' : '')
-      + '</details>';
+        + notes.join('') + '</ul>' : '');
   }
 
   /* 参考本写了这个名字，本库到底有没有这样东西？
@@ -7559,20 +7591,14 @@ var qrcode = function() {
         return '<b>' + esc(shortName(g)) + ' ' + esc(fmtAmt(g, it[1])) + '</b>';
       }).join('、') + '</li>';
     }
-    var orig = r.needs.map(function (nd) {
-      return esc(nd.n) + (nd.a ? ' ' + esc(String(nd.a)) : '');
-    }).join(' · ');
-    /* 差别常驻显示，折叠里只留参考原文——用户明确要求"和他的不一致的要确保用户知道" */
+    /* 差别常驻显示；参考原文在下面「BoyanSHI 参考本」卡片里（可折叠，但那条警告不折） */
     /* 用户 2026-10-17 定的规矩：本站配比默认必须等于参考本；
        保留不一样的地方，就得在数据里写一句"为什么"。 */
     return (d.pre && d.pre.why ? '<p class="hint whyline">为什么这样改：' + esc(d.pre.why) + '</p>' : '')
       + (lines
         ? '<p class="hint warnline">⚠️ 这杯和参考本不一样：</p><ul class="menulist swapnote">' + lines + '</ul>'
           + (d.amountDiff ? '<p class="hint">量也不一样：上面是本站的量，这里是参考本的量。</p>' : '')
-        : '<p class="hint warnline">⚠️ 材料跟参考本一样，但量不一样（上面是本站的，这里是参考本的量）。</p>')
-      + '<details class="origbox"><summary>原方长什么样（参考配方本原文）</summary>'
-      + '<p class="hint">' + orig + '</p>'
-      + '</details>';
+        : '<p class="hint warnline">⚠️ 材料跟参考本一样，但量不一样（上面是本站的，这里是参考本的量）。</p>');
   }
 
   /* ---------------------------------------------------------
@@ -7654,11 +7680,38 @@ var qrcode = function() {
     return it.am + ' ' + (it.unit || '');
   }
 
+  /* 三份来源里的"另一份配方"卡片：BoyanSHI 参考本和 IBA 官方同款、都能折叠、默认收起。
+     折叠状态全局记一份（state.srcOpen），不跟某一杯走——
+     看马颈时展开了，看别的酒也一样展开，不用每杯重新点。 */
+  function srcCard(kind, title, sub, body) {
+    return '<details class="srccard"' + (state.srcOpen[kind] ? ' open' : '')
+      + ' data-src="' + kind + '">'
+      + '<summary><span class="srct">' + esc(title) + '</span>'
+      + '<span class="hint">' + esc(sub) + '</span><b class="fold"></b></summary>'
+      + '<div class="srcbody">' + body + '</div>'
+      + '</details>';
+  }
+
+  /* 参考本原方：材料/用量逐行写（跟 IBA 卡片一样的材料表），不是挤成一行字。
+     名字别叫 refCard —— 「手边有什么」页已经有一个同名函数，会互相盖掉。 */
+  function refSourceCard(r) {
+    var rows = (r.needs || []).map(function (nd) {
+      return '<li><span>' + esc(nd.n) + '</span><b>' + esc(String(nd.a || '')) + '</b></li>';
+    }).join('');
+    var meta = methodName(r) + (r.ice ? ' · 冰：' + r.ice : '')
+      + (r.garnish ? ' · 装饰：' + r.garnish : '');
+    return srcCard('ref', 'BoyanSHI 参考本',
+      (r.needs || []).length + ' 样 · ' + methodName(r),
+      '<ul class="menulist ibalist">' + rows + '</ul>'
+      + '<p class="hint">' + esc(meta) + '</p>'
+      + (r.note ? '<p class="hint">' + esc(r.note) + '</p>' : ''));
+  }
+
   function ibaBox(r) {
     var x = ibaOf(r);
     if (!x) {
       /* 没有官方规格也要说清楚——这是"这一杯不在 IBA 名单里"，
-         不是"我们没做这一块"。默认展开，因为它是一句事实而不是补充材料。 */
+         不是"我们没做这一块"。它是一句事实，不折起来。 */
       return '<div class="ibabox"><p class="ibah">IBA 官方规格</p>'
         + '<p class="hint">IBA 官方只公布 78 杯（The Unforgettables / Contemporary Classics / '
         + 'New Era 三批），这一杯不在名单里。所以它没有可以并列的官方规格——'
@@ -7669,15 +7722,13 @@ var qrcode = function() {
     }).join('');
     var tech = ibaTech(x.method);
     var gar = (!x.garnish || /^n\/?a$/i.test(x.garnish.trim())) ? '官方没写' : x.garnish;
-    return '<div class="ibabox">'
-      + '<p class="ibah">IBA 官方规格　<span class="hint">' + esc(x.cat) + '｜英文原文</span></p>'
-      + '<ul class="menulist ibalist">' + list + '</ul>'
+    return srcCard('iba', 'IBA 官方规格', x.cat + '｜英文原文',
+      '<ul class="menulist ibalist">' + list + '</ul>'
       + '<p class="hint">官方做法：' + esc(x.method)
       + (tech ? '　<b class="ibatech">' + esc(tech) + '</b>' : '') + '</p>'
       + '<p class="hint">官方装饰：' + esc(gar) + '</p>'
       + '<p class="hint">出处：<a href="' + esc(x.url) + '" target="_blank" rel="noopener">'
-      + 'iba-world.com／' + esc(x.slug) + '</a>（抓取日期 2026-10-16）</p>'
-      + '</div>';
+      + 'iba-world.com／' + esc(x.slug) + '</a>（抓取日期 2026-10-16）</p>');
   }
 
   function renderMenu() {
@@ -8744,6 +8795,14 @@ var qrcode = function() {
      --------------------------------------------------------- */
   /* 不预置任何基酒——谁来用都从自己手上的那瓶开始 */
   loadHave();       /* 上次勾的"手边有什么"还在 */
+  loadSrcOpen();    /* 上次是展开还是收起两张来源卡片 */
+  /* toggle 事件不冒泡，所以在捕获阶段听；记的是一张卡片的开合，不是某一杯 */
+  document.addEventListener('toggle', function (e) {
+    var t = e.target;
+    if (!t || !t.dataset || !t.dataset.src) return;
+    state.srcOpen[t.dataset.src] = !!t.open;
+    saveSrcOpen();
+  }, true);
   renderAll();
 
   /* 带 ?r=配方码 或 #r=配方码 打开，就直接把这杯装好（分享卡上的二维码扫出来就是它）。
