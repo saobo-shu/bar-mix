@@ -534,7 +534,7 @@ var INGREDIENTS = [
     note:'甜度高，用了它就少放糖浆。' },
   { id:'coffee_hot', cat:'teacoffee', name:'挂耳咖啡（热）', unit:'ml', mlu:1, def:120, step:5, abv:0, src:'rt',
     f:{sugar:0,acid:1,bitter:7,booze:0,fruit:0,spice:6,fizz:0,body:4},
-    note:'现冲的比速溶香太多，热饮不需要冰。' },
+    note:'现冲的比速溶香太多。热饮直接用；做冷咖啡酒就放凉或冷藏后再用——意式浓缩马天尼是摇冷的，不是热饮。' },
   { id:'cold_brew', cat:'teacoffee', name:'冷萃咖啡', unit:'ml', mlu:1, def:90, step:5, abv:0, src:'near',
     f:{sugar:0,acid:1,bitter:6,booze:0,fruit:0,spice:6,fizz:0,body:4},
     note:'便利店冷柜通常有，苦味柔和，配威士忌和糖浆很顺。' },
@@ -1057,7 +1057,7 @@ var GLASSES = [
     note: '大肚高脚杯，热带长饮专用，装得下也喝得久。' },
   { id: 'shot', name: '一口杯', cap: 60, liquidMax: 55, ice: 'chilled', melt: 0, lo: 28, hi: 60,
     note: '纯饮和分层用。' },
-  { id: 'mug', name: '马克杯（热饮）', cap: 350, liquidMax: 300, ice: 'chilled', melt: 0, lo: 3, hi: 30,
+  { id: 'mug', name: '马克杯（热饮）', cap: 350, liquidMax: 300, ice: 'chilled', melt: 0, hot: true, lo: 3, hi: 30,
     note: '热饮用。热托蒂、爱尔兰咖啡这类热酒只能用它——热酒倒进放冰的杯子里，冰会瞬间化光。' }
 ];
 
@@ -1148,8 +1148,9 @@ var TEMP_DEFAULT = {
 var TEMP = {
   hot_water: 'hot', coffee_hot: 'hot', cold_brew: 'cold'
 };
-/* 只能热的材料：不给它们"冷冻"这个选项 */
-var TEMP_FIXED = { hot_water: 1, coffee_hot: 1 };
+/* 只能热的材料：热水就是现烧现用。咖啡不在里面——
+   现冲是热的，但放凉、冷藏甚至冻一下都能用（意式浓缩马天尼就是摇冷的）。 */
+var TEMP_FIXED = { hot_water: 1 };
 
 /* 热量常数（初中物理）：冰化开要从液体里吸热，材料越凉，冰化得越少 */
 var THERMO = {

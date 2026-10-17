@@ -245,13 +245,13 @@
     var liquid = 0, alcoholMl = 0, hasIce = false, hasBase = false;
     var nItems = 0, nBase = 0, nNonIce = 0, hasFizzIng = false, baseMl = 0;
     var nOthers = 0;   /* 除基酒和冰以外的材料（配料） */
-    var juiceMl = 0, hasDairy = false, dairyFat = false, isHot = false;
+    var juiceMl = 0, hasDairy = false, dairyFat = false, isHot = false, hotMl = 0;
     /* 家族判断要用的体积：加强酒/利口酒（"辅料酒"）和气泡饮料 */
     var modMl = 0, mixerMl = 0;
     /* 家族判断还看"加了酸 / 加了甜 / 有蛋 / 有薄荷"这几种角色 */
     var sourMl = 0, sweetMl = 0, eggMl = 0, hasMint = false;
     /* Rickey / 骡子要靠"哪种气泡"区分：苏打 vs 姜汁 */
-    var sodaMl = 0, gingerMl = 0;
+    var sodaMl = 0, gingerMl = 0, coffeeMl = 0;
     /* 判家族看的是"有没有加"，不是"加了多少毫升"——
        方糖、白砂糖这类块状材料 mlu 是 0，但它们是货真价实的甜味来源。 */
     var hasSourAdd = false, hasSweetAdd = false;
@@ -286,6 +286,7 @@
       if (g.cat === 'mixer') mixerMl += ml;
       if (g.id === 'soda') sodaMl += ml;
       if (g.id === 'ginger_ale' || g.id === 'ginger_beer') gingerMl += ml;
+      if (g.id === 'coffee_hot' || g.id === 'cold_brew') coffeeMl += ml;
       if (g.cat === 'sour') sourMl += ml;
       if (g.cat === 'sweet') sweetMl += ml;
       if (g.cat === 'sour') hasSourAdd = true;
@@ -307,7 +308,8 @@
       if (DAIRY_FAT[g.id] || LACTIC[g.id]) hasDairy = true;
       if (DAIRY_FAT[g.id]) { dairyFat = true; if (!dairyName) dairyName = g.name; }
       if (ENZYMES[g.id] && ml > 0) enzymes.push(ENZYMES[g.id]);
-      if (isHotIng(g)) isHot = true;
+      /* 记下热材料的体积——"有热材料"不等于"这是热饮"（意式浓缩马天尼） */
+      if (isHotIng(g)) hotMl += ml;
       if (ml > 0 && g.cat !== 'ice') parts.push({ g: g, ml: ml, abv: abvOf(g), c: tempOf(g).c });
       /* "冷藏 2 样、常温 1 样"只数真有温度的材料，装饰和苦精不算 */
       if (hasTemp(g)) tempMix[tempIdOf(g)]++;
@@ -324,6 +326,12 @@
        两种都有"准备时化掉的水"（摇和/搅拌），所以都算 15% 稀释；
        只有 inglass 才额外加"放置期间继续化开"的那部分（见 melt）。 */
     var gsel0 = glassOf(state.glass);
+    /* 热饮看的是"这杯怎么出品"：用马克杯，或者热材料占了一半以上、又只是兑和。
+       意式浓缩马天尼用热咖啡，但它是摇和、滤进冰过的杯子的冷酒（2026-10-17 修）。 */
+    /* 必须有热材料才算热饮——把冷饮倒进马克杯不会把它变成热酒（审计抓到过：
+       美国佬在马克杯里反而高 16 分）。热材料 + 马克杯，或者热材料占一半以上又只是兑和。 */
+    isHot = hotMl > 0 && (!!gsel0.hot
+      || (state.method === 'build' && hotMl / Math.max(liquid, 1) >= 0.5));
     /* 热饮不放冰——冰在热酒里只会瞬间化掉、把整杯冲淡 */
     hasIce = !isHot && iceNow(gsel0).id !== 'none';
 
@@ -419,6 +427,7 @@
       sourMl: sourMl, sweetMl: sweetMl, eggMl: eggMl, hasMint: hasMint,
       hasSourAdd: hasSourAdd, hasSweetAdd: hasSweetAdd,
       sodaMl: sodaMl, gingerMl: gingerMl,
+      coffeeMl: coffeeMl,
       sugarG: sugarG, acidG: acidG, brix: brix, ta: taG, chemCoverage: chemCoverage,
       ph: ph, acidLoad: acidLoad, enzymes: enzymes, dairyName: dairyName, taste: state.taste,
       fd: fd, nOthers: nOthers,
@@ -464,7 +473,7 @@
     hot: '热饮', neat: '纯饮', flip: '蛋类 Flip', cream: '奶类',
     fizz: '菲士 / 柯林斯', sour: '酸类', highball: '高球', long: '长饮',
     old_fashioned: '古典型', duo: '双料', spirit: '烈酒向',
-    rickey: 'Rickey', mule: '骡子 Mule'
+    rickey: 'Rickey', mule: '骡子 Mule', coffee: '咖啡'
   };
   function familyOf(a) {
     if (a.isHot) return { id: 'hot', name: FAMILY_LABEL.hot };
@@ -490,6 +499,9 @@
       }
       return { id: 'highball', name: FAMILY_LABEL.highball };
     }
+    /* 咖啡占两成以上：咖啡鸡尾酒（意式浓缩马天尼这类冷咖啡酒） */
+    if (a.coffeeMl > 0 && a.liquid > 0 && a.coffeeMl / a.liquid >= 0.2)
+      return { id: 'coffee', name: FAMILY_LABEL.coffee };
     if (a.liquid > 0 && a.juiceMl / a.liquid >= 0.35) return { id: 'long', name: FAMILY_LABEL.long };
     if (a.sweetMl > 0 && a.fd.bitter > 0.5) return { id: 'old_fashioned', name: FAMILY_LABEL.old_fashioned };
     if (a.modMl > 0) return { id: 'duo', name: FAMILY_LABEL.duo };
@@ -2387,6 +2399,7 @@
     var families = [['', '全部家族']].concat([
       ['sour', '酸类'], ['fizz', '菲士/柯林斯'], ['highball', '高球'], ['long', '长饮'],
       ['rickey', 'Rickey'], ['mule', '骡子'],
+      ['coffee', '咖啡'],
       ['old_fashioned', '古典型'], ['duo', '双料'], ['flip', '蛋类'], ['cream', '奶类'],
       ['spirit', '烈酒向']
     ].filter(function (x) { return counts[x[0]] > 0; }));
@@ -3315,7 +3328,10 @@
     if (t.dataset.temp) {
       var tg = BY_ID[t.dataset.temp];
       if (tg && hasTemp(tg)) {
-        var cyc = TEMP_FIXED[tg.id] ? ['hot', 'room'] : TEMP_CYCLE;
+        /* 默认是"热"的材料（现冲咖啡）走四档循环：热 → 常温 → 冷藏 → 冷冻。
+           热水除外，它只在水温和常温之间换。 */
+        var cyc = TEMP_FIXED[tg.id] ? ['hot', 'room']
+          : (TEMP[tg.id] === 'hot' ? ['hot', 'room', 'cold', 'frozen'] : TEMP_CYCLE);
         var now = tempIdOf(tg), at = cyc.indexOf(now);
         var next = cyc[(at + 1) % cyc.length];
         var fallback = TEMP[tg.id] || TEMP_DEFAULT[tg.cat] || 'room';

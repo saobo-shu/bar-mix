@@ -451,6 +451,18 @@ console.log('\n--- 点温度标签 ---');
   const okH = before === 'hot' && next === 'room';
   console.log('  ' + (okH ? '✅' : '❌') + ' 热水：' + before + ' → ' + next + '（只在水温和常温之间换）');
   if (!okH) bad('温度', '热水的温度切换不对：' + before + ' → ' + next);
+
+  /* 现冲咖啡：热 → 常温 → 冷藏 → 冷冻（用户会把它放凉） */
+  B.state.temps = {};
+  B.load([['coffee_hot', 90]]);
+  const cseq = [B.tempIdOf(B.BY_ID['coffee_hot'])];
+  for (let k = 0; k < 3; k++) {
+    fire({ temp: 'coffee_hot' }, 'span');
+    cseq.push(B.tempIdOf(B.BY_ID['coffee_hot']));
+  }
+  const okC = cseq.join('>') === 'hot>room>cold>frozen';
+  console.log('  ' + (okC ? '✅' : '❌') + ' 现冲咖啡：' + cseq.join(' → ') + '（可以放凉/冷藏）');
+  if (!okC) bad('温度', '咖啡的温度切换不对：' + cseq.join('>'));
   B.state.temps = {};
 })();
 
@@ -1801,6 +1813,29 @@ console.log('\n--- 酒单 ---');
   const okDuoCap = duoCap.indexOf('按「双料」量') >= 0 && duoCap.indexOf('酒体') >= 0;
   console.log('  ' + (okDuoCap ? '✅' : '❌') + ' 双料的平衡说明写的是「酒体 : 辅料」');
   if (!okDuoCap) bad('家族', '双料的平衡说明没换过来');
+
+  /* 热材料 ≠ 热饮：意式浓缩马天尼用现冲咖啡，但摇和、滤冰出品是冷的 */
+  const esp = global.__REF.findIndex(r => r.zh === '意式浓缩马天尼');
+  B.have.load(esp);
+  const espA = B.analyze();
+  const okEsp = !espA.isHot && B.familyOf(espA).id === 'coffee'
+    && B.state.glass === 'coupe' && espA.abv < 25;
+  console.log('  ' + (okEsp ? '✅' : '❌') + ' 意式浓缩马天尼：isHot=' + espA.isHot
+    + ' · 家族 ' + B.familyOf(espA).name + ' · ' + espA.abv.toFixed(1) + '%（摇和、冰杯）');
+  if (!okEsp) bad('家族', '意式浓缩马天尼被当成热饮或家族判错');
+  const irish = global.__REF.findIndex(r => r.zh === '爱尔兰咖啡');
+  B.have.load(irish);
+  const okIrish = B.analyze().isHot;
+  console.log('  ' + (okIrish ? '✅' : '❌') + ' 爱尔兰咖啡（马克杯）仍然是热饮');
+  if (!okIrish) bad('家族', '爱尔兰咖啡不再是热饮');
+
+  /* 反过来也不行：冷饮倒进马克杯不能变成热饮（审计抓到过：美国佬在马克杯里高 16 分） */
+  B.state.glass = 'mug'; B.state.iceLevel = 'none'; B.state.method = 'build';
+  B.state.recipeName = ''; B.state.recipeFamily = '';
+  B.load([['gin', 30], ['campari', 30], ['vermouth', 30]]);
+  const okMugCold = !B.analyze().isHot;
+  console.log('  ' + (okMugCold ? '✅' : '❌') + ' 冷饮倒进马克杯，仍然不是热饮');
+  if (!okMugCold) bad('家族', '倒进马克杯就被判成热饮了');
 
   /* 纯饮不评分；空杯不显示 */
   B.state.glass = 'shot'; B.state.iceLevel = 'none'; B.state.method = 'build';
