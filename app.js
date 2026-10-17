@@ -489,6 +489,18 @@
     return interp((r - 0.6) / 0.6, [[0, 100], [0.25, 82], [0.55, 64], [1, 48]]);
   }
 
+  /* 酸类 / 菲士的平衡：用 Brix/TA（果汁行业的成熟判据），不再用 0-10 的主观刻度。
+     窗口来自 80 杯经典酸类（191 份参考本 + 44 个预设，覆盖率 ≥85%）的实际分布：
+     25% ~ 75% = 0.68 ~ 1.05，中位 0.86。窗口外平滑下降。
+     数据覆盖不够时返回 null，调用方退回原来的估值判据。 */
+  function sourBalance(a) {
+    if (!(a.ta > 1 && a.chemCoverage >= 0.85)) return null;
+    var r = a.brix / a.ta;
+    if (r >= 0.68 && r <= 1.05) return 100;
+    if (r < 0.68) return interp(r / 0.68, [[0, 35], [0.5, 70], [0.8, 90], [1, 100]]);
+    return interp((r - 1.05) / 1.95, [[0, 100], [0.3, 85], [0.6, 70], [1, 55]]);
+  }
+
   function scoreBalance(a) {
     var S = a.fd.sugar, A = a.fd.acid, B = a.fd.bitter;
     var cw = A + 0.4 * B;
@@ -500,14 +512,20 @@
     /* 高球 / 长饮换尺子：量的是"酒体 : 稀释物"，不是甜酸比 */
     var fam = familyOf(a);
     if (fam.id === 'highball' || fam.id === 'long') return highballBalance(a);
+    var load = S + A;
+    var over = Math.max(0, load - 42);
+    var cap = clamp(1 - over / 22, 0.35, 1);
+    /* 酸类 / 菲士：有物量数据就用 Brix/TA；没有就退回估值 */
+    if (fam.id === 'sour' || fam.id === 'fizz') {
+      var sb = sourBalance(a);
+      if (sb !== null) return sb * cap;
+    }
     /* 先算"比例"分，再乘一个"浓度"系数。
        比例对不代表能喝：一杯 45ml 波本 + 15ml 糖浆 + 65ml 浓缩柠檬汁，
        甜酸比恰好落进理想区间，但「糖+酸」总量 45 是全部经典配方的上限（41）之外——
        喝起来又浓又齁。光看比例的版本给这种配法打了满分。 */
     var ratio = balanceRatio(S, A, cw);
-    var load = S + A;
-    var over = Math.max(0, load - 42);
-    return ratio * clamp(1 - over / 22, 0.35, 1);
+    return ratio * cap;
   }
 
   function neatBalance(a) {
@@ -1325,9 +1343,13 @@
       ratioCap = '按「' + famNow.name + '」量：酒体 ' + Math.round(a.baseMl + a.modMl)
         + 'ml : 稀释物 ' + Math.round(a.mixerMl + a.juiceMl + a.sourMl + a.sweetMl) + 'ml';
     }
-    /* 物量化：有来源的数据覆盖过半时，把糖度 / 可滴定酸也写出来。
+    /* 酸类 / 菲士的平衡已经改用 Brix/TA，说明也要跟着换；
+       其余家族在覆盖率过半时把糖度/酸度附在后面。
        覆盖率不够就不写——宁可不显示，也不拿一堆估值装成实测。 */
-    if (a.chemCoverage > 0.5) {
+    if ((famNow.id === 'sour' || famNow.id === 'fizz') && a.ta > 1 && a.chemCoverage >= 0.85) {
+      ratioCap = '糖度 ' + a.brix.toFixed(1) + ' °Bx · 可滴定酸 ' + a.ta.toFixed(1)
+        + ' g/L　→ Brix/TA ' + (a.brix / a.ta).toFixed(2) + '（80 杯经典中位 0.86）';
+    } else if (a.chemCoverage > 0.5) {
       ratioCap += '　｜糖度 ' + a.brix.toFixed(1) + ' °Bx · 可滴定酸 ' + a.ta.toFixed(1) + ' g/L'
         + (a.chemCoverage < 0.85 ? '（部分估值）' : '');
     }

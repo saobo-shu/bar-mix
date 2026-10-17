@@ -2323,6 +2323,34 @@ console.log('\n--- 物量化（°Bx / 可滴定酸 g/L）---');
     + med.ratio.toFixed(2) + '（' + med.name + '）· 最高 '
     + rows[rows.length - 1].ratio.toFixed(2) + '（' + rows[rows.length - 1].name + '）');
   console.log('  覆盖率不足 85% 的：' + (lowCov.length ? lowCov.map(x => x.name).join('、') : '无'));
+
+  /* 第二步：酸类的平衡真的改用 Brix/TA 了——糖浆 5 / 15 / 30ml 应该是一座山 */
+  const ws = sy => [['bourbon', 45], ['lemon', 20], ['syrup', sy], ['egg_white', 15]];
+  const s5 = run(ws(5), 'rocks', 'full');
+  const c5 = B.scores().balance;
+  const s15 = run(ws(15), 'rocks', 'full');
+  const c15 = B.scores().balance;
+  const s30 = run(ws(30), 'rocks', 'full');
+  const c30 = B.scores().balance;
+  const okPeak = c5 < c15 && c30 < c15 && c15 >= 99;
+  console.log('  ' + (okPeak ? '✅' : '❌') + ' 酸类平衡改用 Brix/TA：糖浆 5/15/30ml → '
+    + c5.toFixed(1) + ' / ' + c15.toFixed(1) + ' / ' + c30.toFixed(1) + '（中间最高）');
+  if (!okPeak) bad('物量化', '酸类平衡没有按 Brix/TA 走：' + c5.toFixed(1) + '/' + c15.toFixed(1) + '/' + c30.toFixed(1));
+
+  const capSour = els['subScores'].innerHTML;
+  const okSourCap = capSour.indexOf('Brix/TA') >= 0 && capSour.indexOf('经典中位') >= 0;
+  console.log('  ' + (okSourCap ? '✅' : '❌') + ' 酸类的平衡说明写出了 Brix/TA 和经典中位');
+  if (!okSourCap) bad('物量化', '酸类的平衡说明没换过来');
+
+  /* 数据覆盖不够时退回旧判据（不显示 Brix/TA 的结论） */
+  run([['bourbon', 45], ['lemon', 20], ['syrup', 15], ['malibu', 30]], 'rocks', 'full');
+  const fb = B.analyze();
+  const fbCap = els['subScores'].innerHTML;
+  const okFallback = fb.chemCoverage < 0.85 && fbCap.indexOf('Brix/TA') < 0
+    && isFinite(B.scores().balance);
+  console.log('  ' + (okFallback ? '✅' : '❌') + ' 数据覆盖不足时退回估值判据（覆盖率 '
+    + Math.round(fb.chemCoverage * 100) + '%，不写 Brix/TA）');
+  if (!okFallback) bad('物量化', '覆盖不足时没有退回旧判据');
 })();
 
 /* ---- 家族口径：不同家族用不同的平衡尺子 ---- */
