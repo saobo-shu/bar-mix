@@ -2134,6 +2134,8 @@
   var FAV_KEY = 'barmix.favs', MINE_KEY = 'barmix.mine';
   var favs = storeGet(FAV_KEY), myRecipes = storeGet(MINE_KEY);
   var menuTab = 'classic', menuFam = '', menuTaste = '', menuStr = '', menuQuery = '', menuTech = '';
+  /* 家族筛选（酸类 / 高球 / 双料…）——跟 menuFam（基酒）是两回事 */
+  var menuFamily = '';
   var MENU_PAGE = 12, menuShow = MENU_PAGE;
   var openRecipe = -1;                 /* 详情面板里正在看的那一杯 */
 
@@ -2192,6 +2194,9 @@
       if (cat) fams[cat] = 1;
     });
     REF_STAT[i] = {
+      /* 家族：按材料角色自动判（见 familyOf）。筛选和详情里都用这份缓存。 */
+      family: familyOf(a).id,
+      familyName: familyOf(a).name,
       abv: a.abv, sugar: a.fd.sugar, acid: a.fd.acid, fizz: a.fd.fizz, bitter: a.fd.bitter,
       body: a.fd.body, fruit: a.fd.fruit, spice: a.fd.spice,
       bubbly: a.hasFizzIng,        /* 杯里到底有没有带气的材料（跟气泡分是两回事） */
@@ -2267,6 +2272,14 @@
       ['shake', '摇和 ' + METHODS[2].en],
       ['noshaker', '不用摇壶', '没有摇壶？只剩兑和和搅拌这两种做法']
     ];
+    /* 家族：跟"基酒"不同——它说的是这杯的骨架（酸酒 / 高球 / 双料…），
+       直接决定平衡分拿什么尺子量。 */
+    var families = [
+      ['', '全部家族'],
+      ['sour', '酸类'], ['fizz', '菲士/柯林斯'], ['highball', '高球'], ['long', '长饮'],
+      ['old_fashioned', '古典型'], ['duo', '双料'], ['flip', '蛋类'], ['cream', '奶类'],
+      ['spirit', '烈酒向']
+    ];
     function row(list, cur, attr) {
       return list.map(function (x) {
         return '<button type="button" class="ghost' + (x[0] === cur ? ' on' : '') + '" '
@@ -2275,6 +2288,7 @@
       }).join('');
     }
     box.innerHTML = '<span class="mf-row">' + row(techs, menuTech, 'data-menu-tech') + '</span>'
+      + '<span class="mf-row">' + row(families, menuFamily, 'data-menu-family') + '</span>'
       + '<span class="mf-row">' + row(fams, menuFam, 'data-menu-fam') + '</span>'
       + '<span class="mf-row">' + row(tastes, menuTaste, 'data-menu-taste') + '</span>'
       + '<span class="mf-row">' + row(strs, menuStr, 'data-menu-str') + '</span>';
@@ -2307,6 +2321,7 @@
         if (menuTech === 'noshaker') { if (tech === 'shake') return; }
         else if (tech !== menuTech) return;
       }
+      if (menuFamily && st.family !== menuFamily) return;
       if (menuFam && st.fams.indexOf(menuFam) < 0) return;
       if (menuTaste === 'sweet' && st.sugar < 8) return;
       if (menuTaste === 'sour' && st.acid < 5) return;
@@ -2428,6 +2443,11 @@
         + ' · ' + esc(pre ? glassOf(pre.glass).name : glassOf(glassFromRef(r)).name)
         + ' · ' + Math.round(st.abv) + '% · ' + (pre ? pre.items.length : r.needs.length) + ' 样材料'
         + (d && d.hasDiff ? '　<b class="mc-pick">本站配比</b>' : '') + '</p>'
+      /* 家族：这杯的骨架决定平衡拿什么量。按参考本的材料自动判，不用用户自己选。 */
+      + '<p class="hint">家族：<b>' + esc(st.familyName) + '</b>'
+        + (st.family === 'highball' || st.family === 'long'
+            ? '　平衡看「酒体 : 稀释物」' : (st.family === 'sour' || st.family === 'fizz'
+            ? '　平衡看 Brix/TA' : '')) + '</p>'
       /* 一句话定位：只有推荐的 51 款有（data.js 的 PICK_LINE） */
       + (PICK_LINE[recipeName(r)] ? '<p class="hint pickline">' + esc(PICK_LINE[recipeName(r)]) + '</p>' : '')
       /* 两个叫法都告诉用户：搜过"青霉素"找不到"盘尼西林"的人，打开就明白了 */
@@ -3057,6 +3077,7 @@
     if (t.dataset.menuTab) { menuTab = t.dataset.menuTab; menuShow = MENU_PAGE; renderMenu(); return; }
     if (t.dataset.menuFam !== undefined) { menuFam = t.dataset.menuFam; menuShow = MENU_PAGE; renderMenu(); return; }
     if (t.dataset.menuTech !== undefined) { menuTech = t.dataset.menuTech; menuShow = MENU_PAGE; renderMenu(); return; }
+    if (t.dataset.menuFamily !== undefined) { menuFamily = t.dataset.menuFamily; menuShow = MENU_PAGE; renderMenu(); return; }
     if (t.dataset.menuTaste !== undefined) { menuTaste = t.dataset.menuTaste; menuShow = MENU_PAGE; renderMenu(); return; }
     if (t.dataset.menuStr !== undefined) { menuStr = t.dataset.menuStr; menuShow = MENU_PAGE; renderMenu(); return; }
     if (t.dataset.menuMore) { menuShow += MENU_PAGE; renderMenuList(); return; }
@@ -4325,11 +4346,14 @@
       setTaste: function (t) { menuTaste = t; menuShow = MENU_PAGE; renderMenu(); },
       setStr: function (s) { menuStr = s; menuShow = MENU_PAGE; renderMenu(); },
       setTech: function (t) { menuTech = t; menuShow = MENU_PAGE; renderMenu(); },
+      setFamily: function (f) { menuFamily = f; menuShow = MENU_PAGE; renderMenu(); },
+      stat: function (i) { return refStat(i); },
       setQuery: function (q) { menuQuery = String(q || ''); menuShow = MENU_PAGE; renderMenu(); },
       alias: function (name) { return (NAME_ALIAS[name] || []).slice(); },
       reset: function () {
         /* 搜索词也要清——之前 reset 不清它，自检里搜过一次之后，后面的用例全被它卡住 */
         menuTab = 'classic'; menuFam = ''; menuTaste = ''; menuStr = ''; menuTech = ''; menuQuery = '';
+        menuFamily = '';
         openRecipe = -1; renderMenu();
       },
       open: function (i) { openRecipe = i; renderMenuDetail(); },

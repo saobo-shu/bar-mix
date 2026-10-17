@@ -800,6 +800,17 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .guide .body ul { margin: 6px 0; padding-left: 18px; }
 .guide .body li { margin: 3px 0; }
 
+/* 家族对照表：手机上横向滚，不把字挤成一列 */
+.famtable-wrap { margin: 8px 0 0; overflow-x: auto; }
+.famtable { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 12px; }
+.famtable th, .famtable td {
+  padding: 6px 8px; text-align: left; vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+.famtable th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+.famtable td:first-child { color: var(--amber); font-weight: 600; white-space: nowrap; }
+.famtable td:last-child { color: var(--muted); white-space: nowrap; }
+
 footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6px 0 10px; }
 
 /* ---------------- 桌面双栏 ---------------- */
@@ -1138,6 +1149,31 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
       <span class="hint">点标题展开　<b class="fold"></b></span>
     </summary>
     <div class="guide">
+
+      <details open>
+        <summary>家族对照表：先看你这杯属于哪一类</summary>
+        <div class="body">
+          家族不是"逼你照经典做"，它决定这杯的<b>平衡拿什么量</b>。同一副骨架，换一种量法，分数才有意义。
+          <div class="famtable-wrap">
+            <table class="famtable">
+              <thead>
+                <tr><th>家族</th><th>长什么样</th><th>例子</th><th>平衡看什么</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>酸类</td><td>酒 + 酸 + 甜（可加蛋清）</td><td>威士忌酸、黛绮莉、玛格丽特</td><td>Brix/TA</td></tr>
+                <tr><td>菲士 / 柯林斯</td><td>酸酒骨架 + 气泡</td><td>金菲士、莫吉托、蜂之膝</td><td>Brix/TA</td></tr>
+                <tr><td>高球</td><td>酒 + 气泡，酸糖都可无</td><td>金汤力、威士忌高球、自由古巴</td><td>酒体 : 稀释物</td></tr>
+                <tr><td>长饮</td><td>酒 + 大杯果汁，没气泡</td><td>螺丝刀、灰狗</td><td>酒体 : 稀释物</td></tr>
+                <tr><td>双料</td><td>酒 + 加强酒 / 利口酒，不加酸</td><td>干马天尼、曼哈顿、尼格罗尼</td><td>甜酸 / 浓度</td></tr>
+                <tr><td>古典型</td><td>烈酒 + 少量糖 + 苦精</td><td>古典、萨泽拉克</td><td>甜酸 / 浓度</td></tr>
+                <tr><td>蛋类 / 奶类</td><td>含蛋黄 / 全蛋，或含乳脂</td><td>波特菲利普、白俄罗斯</td><td>甜酸 / 浓度</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>两条边界是从 191 份参考本里量出来的：利口酒占到 <b>12%</b> 以上才算"甜味来源"；果汁占到 <b>35%</b> 以上才算长饮。</p>
+          <p>往马天尼里加苏打水，工具说的是<b>"换家族了"</b>，不是"更好的马天尼"——换标签、换尺子，不奖励也不惩罚。</p>
+        </div>
+      </details>
 
       <details open>
         <summary>冰从哪来（这件事比买什么酒重要）</summary>
@@ -7299,6 +7335,8 @@ var qrcode = function() {
   var FAV_KEY = 'barmix.favs', MINE_KEY = 'barmix.mine';
   var favs = storeGet(FAV_KEY), myRecipes = storeGet(MINE_KEY);
   var menuTab = 'classic', menuFam = '', menuTaste = '', menuStr = '', menuQuery = '', menuTech = '';
+  /* 家族筛选（酸类 / 高球 / 双料…）——跟 menuFam（基酒）是两回事 */
+  var menuFamily = '';
   var MENU_PAGE = 12, menuShow = MENU_PAGE;
   var openRecipe = -1;                 /* 详情面板里正在看的那一杯 */
 
@@ -7357,6 +7395,9 @@ var qrcode = function() {
       if (cat) fams[cat] = 1;
     });
     REF_STAT[i] = {
+      /* 家族：按材料角色自动判（见 familyOf）。筛选和详情里都用这份缓存。 */
+      family: familyOf(a).id,
+      familyName: familyOf(a).name,
       abv: a.abv, sugar: a.fd.sugar, acid: a.fd.acid, fizz: a.fd.fizz, bitter: a.fd.bitter,
       body: a.fd.body, fruit: a.fd.fruit, spice: a.fd.spice,
       bubbly: a.hasFizzIng,        /* 杯里到底有没有带气的材料（跟气泡分是两回事） */
@@ -7432,6 +7473,14 @@ var qrcode = function() {
       ['shake', '摇和 ' + METHODS[2].en],
       ['noshaker', '不用摇壶', '没有摇壶？只剩兑和和搅拌这两种做法']
     ];
+    /* 家族：跟"基酒"不同——它说的是这杯的骨架（酸酒 / 高球 / 双料…），
+       直接决定平衡分拿什么尺子量。 */
+    var families = [
+      ['', '全部家族'],
+      ['sour', '酸类'], ['fizz', '菲士/柯林斯'], ['highball', '高球'], ['long', '长饮'],
+      ['old_fashioned', '古典型'], ['duo', '双料'], ['flip', '蛋类'], ['cream', '奶类'],
+      ['spirit', '烈酒向']
+    ];
     function row(list, cur, attr) {
       return list.map(function (x) {
         return '<button type="button" class="ghost' + (x[0] === cur ? ' on' : '') + '" '
@@ -7440,6 +7489,7 @@ var qrcode = function() {
       }).join('');
     }
     box.innerHTML = '<span class="mf-row">' + row(techs, menuTech, 'data-menu-tech') + '</span>'
+      + '<span class="mf-row">' + row(families, menuFamily, 'data-menu-family') + '</span>'
       + '<span class="mf-row">' + row(fams, menuFam, 'data-menu-fam') + '</span>'
       + '<span class="mf-row">' + row(tastes, menuTaste, 'data-menu-taste') + '</span>'
       + '<span class="mf-row">' + row(strs, menuStr, 'data-menu-str') + '</span>';
@@ -7472,6 +7522,7 @@ var qrcode = function() {
         if (menuTech === 'noshaker') { if (tech === 'shake') return; }
         else if (tech !== menuTech) return;
       }
+      if (menuFamily && st.family !== menuFamily) return;
       if (menuFam && st.fams.indexOf(menuFam) < 0) return;
       if (menuTaste === 'sweet' && st.sugar < 8) return;
       if (menuTaste === 'sour' && st.acid < 5) return;
@@ -7593,6 +7644,11 @@ var qrcode = function() {
         + ' · ' + esc(pre ? glassOf(pre.glass).name : glassOf(glassFromRef(r)).name)
         + ' · ' + Math.round(st.abv) + '% · ' + (pre ? pre.items.length : r.needs.length) + ' 样材料'
         + (d && d.hasDiff ? '　<b class="mc-pick">本站配比</b>' : '') + '</p>'
+      /* 家族：这杯的骨架决定平衡拿什么量。按参考本的材料自动判，不用用户自己选。 */
+      + '<p class="hint">家族：<b>' + esc(st.familyName) + '</b>'
+        + (st.family === 'highball' || st.family === 'long'
+            ? '　平衡看「酒体 : 稀释物」' : (st.family === 'sour' || st.family === 'fizz'
+            ? '　平衡看 Brix/TA' : '')) + '</p>'
       /* 一句话定位：只有推荐的 51 款有（data.js 的 PICK_LINE） */
       + (PICK_LINE[recipeName(r)] ? '<p class="hint pickline">' + esc(PICK_LINE[recipeName(r)]) + '</p>' : '')
       /* 两个叫法都告诉用户：搜过"青霉素"找不到"盘尼西林"的人，打开就明白了 */
@@ -8222,6 +8278,7 @@ var qrcode = function() {
     if (t.dataset.menuTab) { menuTab = t.dataset.menuTab; menuShow = MENU_PAGE; renderMenu(); return; }
     if (t.dataset.menuFam !== undefined) { menuFam = t.dataset.menuFam; menuShow = MENU_PAGE; renderMenu(); return; }
     if (t.dataset.menuTech !== undefined) { menuTech = t.dataset.menuTech; menuShow = MENU_PAGE; renderMenu(); return; }
+    if (t.dataset.menuFamily !== undefined) { menuFamily = t.dataset.menuFamily; menuShow = MENU_PAGE; renderMenu(); return; }
     if (t.dataset.menuTaste !== undefined) { menuTaste = t.dataset.menuTaste; menuShow = MENU_PAGE; renderMenu(); return; }
     if (t.dataset.menuStr !== undefined) { menuStr = t.dataset.menuStr; menuShow = MENU_PAGE; renderMenu(); return; }
     if (t.dataset.menuMore) { menuShow += MENU_PAGE; renderMenuList(); return; }
@@ -9490,11 +9547,14 @@ var qrcode = function() {
       setTaste: function (t) { menuTaste = t; menuShow = MENU_PAGE; renderMenu(); },
       setStr: function (s) { menuStr = s; menuShow = MENU_PAGE; renderMenu(); },
       setTech: function (t) { menuTech = t; menuShow = MENU_PAGE; renderMenu(); },
+      setFamily: function (f) { menuFamily = f; menuShow = MENU_PAGE; renderMenu(); },
+      stat: function (i) { return refStat(i); },
       setQuery: function (q) { menuQuery = String(q || ''); menuShow = MENU_PAGE; renderMenu(); },
       alias: function (name) { return (NAME_ALIAS[name] || []).slice(); },
       reset: function () {
         /* 搜索词也要清——之前 reset 不清它，自检里搜过一次之后，后面的用例全被它卡住 */
         menuTab = 'classic'; menuFam = ''; menuTaste = ''; menuStr = ''; menuTech = ''; menuQuery = '';
+        menuFamily = '';
         openRecipe = -1; renderMenu();
       },
       open: function (i) { openRecipe = i; renderMenuDetail(); },

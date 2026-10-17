@@ -1659,6 +1659,36 @@ console.log('\n--- 酒单 ---');
   console.log('  ' + (okHorse ? '✅' : '❌') + ' 马颈：不挂角标，但说清了「参考本只写白兰地、本库用干邑」');
   if (!okHorse) bad('酒单', '马颈的"具体化"说明没渲染对：' + horseTxt.slice(0, 220));
 
+  /* 家族筛选：选「双料」只出双料；重置回全部 191 */
+  B.menu.reset();
+  B.menu.setFamily('duo');
+  const duoRefs = B.menu.listRefs();
+  const wrongDuo = duoRefs.filter(function (r) {
+    return B.menu.stat(global.__REF.indexOf(r)).family !== 'duo';
+  });
+  const okFamFilter = duoRefs.length > 0 && wrongDuo.length === 0;
+  console.log('  ' + (okFamFilter ? '✅' : '❌') + ' 家族筛选「双料」：' + duoRefs.length + ' 杯，全部是双料');
+  if (!okFamFilter) bad('酒单', '家族筛选不纯：' + duoRefs.length + ' 杯里有 ' + wrongDuo.length + ' 杯不是双料');
+  B.menu.reset();
+  const okFamReset = B.menu.list() === 191;
+  console.log('  ' + (okFamReset ? '✅' : '❌') + ' 清掉家族筛选后回到 191 杯（' + B.menu.list() + '）');
+  if (!okFamReset) bad('酒单', '家族筛选没有正确重置：' + B.menu.list());
+
+  /* 详情里要写出这杯属于哪个家族 */
+  B.menu.open(global.__REF.findIndex(r => r.zh === '马天尼'));
+  const famTxt = strip(els.menuDetail.innerHTML);
+  /* 家族名外面包了 <b>，strip 之后会多一个空格 */
+  const okFamLine = /家族：\s*双料/.test(famTxt);
+  console.log('  ' + (okFamLine ? '✅' : '❌') + ' 马天尼详情里写着「家族：双料」');
+  if (!okFamLine) bad('酒单', '详情里没有家族那一行');
+
+  /* Tips 里的家族对照表 */
+  const tipsHtml = fs.readFileSync(path.join(dir, 'dev.html'), 'utf8');
+  const okTips = tipsHtml.indexOf('家族对照表') >= 0 && tipsHtml.indexOf('酒体 : 稀释物') >= 0
+    && tipsHtml.indexOf('Brix/TA') >= 0;
+  console.log('  ' + (okTips ? '✅' : '❌') + ' Tips 里有家族对照表（含两种平衡尺子）');
+  if (!okTips) bad('酒单', 'Tips 里缺家族对照表');
+
   /* 用户说"按人家的酒单挑出来的一定比咱们配的好喝"——那"不一样"就必须一眼看到，
      不能只藏在折叠里。这里把 <details> 整段抠掉，剩下的部分仍然要写清楚。 */
   const visible = i => {

@@ -754,6 +754,17 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .guide .body ul { margin: 6px 0; padding-left: 18px; }
 .guide .body li { margin: 3px 0; }
 
+/* 家族对照表：手机上横向滚，不把字挤成一列 */
+.famtable-wrap { margin: 8px 0 0; overflow-x: auto; }
+.famtable { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 12px; }
+.famtable th, .famtable td {
+  padding: 6px 8px; text-align: left; vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+.famtable th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+.famtable td:first-child { color: var(--amber); font-weight: 600; white-space: nowrap; }
+.famtable td:last-child { color: var(--muted); white-space: nowrap; }
+
 footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6px 0 10px; }
 
 /* ---------------- 桌面双栏 ---------------- */
