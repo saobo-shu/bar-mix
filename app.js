@@ -250,6 +250,8 @@
     var modMl = 0, mixerMl = 0;
     /* 家族判断还看"加了酸 / 加了甜 / 有蛋 / 有薄荷"这几种角色 */
     var sourMl = 0, sweetMl = 0, eggMl = 0, hasMint = false;
+    /* 物量化：糖（g）、可滴定酸（g），以及"有多少体积来自有来源的数值" */
+    var sugarG = 0, acidG = 0, chemMl = 0, chemCoveredMl = 0;
     var acidLoad = 0, enzymes = [], dairyName = '';
     /* 每样材料的温度，用来算冰化掉多少（见 meltFrom） */
     var parts = [], tempMix = { frozen: 0, cold: 0, room: 0, hot: 0 };
@@ -282,6 +284,17 @@
       /* 只有蛋黄/全蛋算 Flip；蛋清是酸酒里的泡沫，威士忌酸加了蛋清还是酸酒 */
       if (g.id === 'egg_yolk') eggMl += ml;
       if (g.id === 'mint') hasMint = true;
+      /* 糖度 / 可滴定酸：只有数据表里两样都有的材料才计入；
+         其它材料算"未知"，最后如实报告覆盖率。 */
+      if (ml > 0 && g.cat !== 'ice') {
+        chemMl += ml;
+        var bx = BRIX[g.id], ta0 = TA[g.id];
+        if (typeof bx === 'number' && typeof ta0 === 'number') {
+          sugarG += ml * bx / 100;
+          acidG += ml * ta0 / 1000;
+          chemCoveredMl += ml;
+        }
+      }
       if (DAIRY_FAT[g.id] || LACTIC[g.id]) hasDairy = true;
       if (DAIRY_FAT[g.id]) { dairyFat = true; if (!dairyName) dairyName = g.name; }
       if (ENZYMES[g.id] && ml > 0) enzymes.push(ENZYMES[g.id]);
@@ -372,6 +385,11 @@
     /* 把总酸量摊到总液量上再反推 pH：纯柠檬汁算出 2.2，纯菠萝汁算出 3.5 */
     var avgAcid = finalVol > 0 ? acidLoad / finalVol : 0;
     var ph = avgAcid > 0 ? clamp(2.5 - Math.log10(avgAcid), 2, 7) : 7;
+    /* 糖度 = 每 100ml 里的糖克数；可滴定酸 = 每升里的酸克数。
+       都按最终体积（含稀释水）算——喝到嘴里的是稀释后的。 */
+    var brix = finalVol > 0 ? sugarG / finalVol * 100 : 0;
+    var taG = finalVol > 0 ? acidG / finalVol * 1000 : 0;
+    var chemCoverage = chemMl > 0 ? chemCoveredMl / chemMl : 0;
     /* 风味要按"浓度"算，不是"总量"。
        一杯 190ml 的高球和一杯 95ml 的同比例酒，每一口喝起来是一样的，
        但按总量算，前者的风味层次和气泡会翻倍——这就是"整体缩放会改变分数"的根源。
@@ -390,6 +408,7 @@
       juiceMl: juiceMl, hasJuice: juiceMl > 5, hasDairy: hasDairy, dairyFat: dairyFat, isHot: isHot,
       modMl: modMl, mixerMl: mixerMl,
       sourMl: sourMl, sweetMl: sweetMl, eggMl: eggMl, hasMint: hasMint,
+      sugarG: sugarG, acidG: acidG, brix: brix, ta: taG, chemCoverage: chemCoverage,
       ph: ph, acidLoad: acidLoad, enzymes: enzymes, dairyName: dairyName, taste: state.taste,
       fd: fd, nOthers: nOthers,
       /* 温度那条线的产物：杯里有多少克冰、倒进去就化了多少水、
@@ -1305,6 +1324,12 @@
     if (famNow.id === 'highball' || famNow.id === 'long') {
       ratioCap = '按「' + famNow.name + '」量：酒体 ' + Math.round(a.baseMl + a.modMl)
         + 'ml : 稀释物 ' + Math.round(a.mixerMl + a.juiceMl + a.sourMl + a.sweetMl) + 'ml';
+    }
+    /* 物量化：有来源的数据覆盖过半时，把糖度 / 可滴定酸也写出来。
+       覆盖率不够就不写——宁可不显示，也不拿一堆估值装成实测。 */
+    if (a.chemCoverage > 0.5) {
+      ratioCap += '　｜糖度 ' + a.brix.toFixed(1) + ' °Bx · 可滴定酸 ' + a.ta.toFixed(1) + ' g/L'
+        + (a.chemCoverage < 0.85 ? '（部分估值）' : '');
     }
     var dimsOn = DIMS.filter(function (d) { return a.fd[d.k] > 2; }).length;
     /* 每一项都标出它现在的权重——换了评分方案，这些数字会一起变 */
@@ -4172,6 +4197,7 @@
     dims: DIMS,                       /* 风味图的八个维度（调试/自检用） */
     familyOf: familyOf,               /* 家族判断：给自检和调试用 */
     FAMILY_LABEL: FAMILY_LABEL,
+    chem: { BRIX: BRIX, TA: TA },     /* 糖度 / 可滴定酸数据表：给自检用 */
     /* 「今晚喝什么」：给自检和调试用 */
     tonight: {
       moods: MOODS,

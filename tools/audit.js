@@ -30,7 +30,8 @@ const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
 eval(src);
 
 const B = window.BarMix, X = global.__X;
-const P = X.PRESETS, I = X.INGREDIENTS, GL = X.GLASSES, TA = X.TASTES, LV = X.ICE_LEVELS, PM = X.PRESET_METHOD;
+/* 变量别叫 TA——data.js 里的 TA 是"可滴定酸"表，拼在一起会撞名 */
+const P = X.PRESETS, I = X.INGREDIENTS, GL = X.GLASSES, TASTE = X.TASTES, LV = X.ICE_LEVELS, PM = X.PRESET_METHOD;
 const byId = {};
 I.forEach(g => byId[g.id] = g);
 const defaultIce = g => (g.ice === 'inglass' ? 'full' : 'none');
@@ -57,7 +58,7 @@ const scale = (items, k) => items.map(it => [it[0], Math.round(it[1] * k * 100) 
 let combos = 0;
 P.forEach(p => {
   const glass = p.glass || 'icecup';
-  GL.forEach(g => LV.forEach(lv => TA.forEach(t => {
+  GL.forEach(g => LV.forEach(lv => TASTE.forEach(t => {
     combos++;
     const o = run(p.items, g.id, lv.id, t.id, PM[p.name]);
     ['total', 'balance', 'strength', 'structure', 'complexity'].forEach(k => {
@@ -72,7 +73,7 @@ P.forEach(p => {
   })));
 });
 console.log('跑了 ' + combos + ' 种组合（' + P.length + ' 配方 × ' + GL.length + ' 杯型 × '
-  + LV.length + ' 冰量 × ' + TA.length + ' 口味）');
+  + LV.length + ' 冰量 × ' + TASTE.length + ' 口味）');
 
 /* ---------------- B. 整体缩放不变性 ---------------- */
 /* 把配方整体放大/缩小，比例没变 → 分数不该变。之前"用总量推理想浓度"就是死在这里。 */
@@ -90,7 +91,7 @@ P.forEach(p => {
 /* ---------------- C. 加基酒的方向性 ---------------- */
 P.forEach(p => {
   const glass = GL.find(g => g.id === (p.glass || 'icecup'));
-  const taste = TA[1];
+  const taste = TASTE[1];
   const o = run(p.items, glass.id, defaultIce(glass), taste.id);
   const baseItem = p.items.find(it => byId[it[0]] && byId[it[0]].cat === 'base');
   if (!baseItem) return;

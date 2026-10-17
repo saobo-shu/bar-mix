@@ -2237,6 +2237,100 @@ var PH = {
 var PH_DEFAULT = 6.0;
 
 /* =========================================================
+   糖度（°Bx）和可滴定酸（g/L）——物量化用
+
+   °Bx ≈ 每 100ml 里溶了多少克糖（饮料密度接近 1，够用）。
+   可滴定酸是"能中和掉多少碱"，不是 pH——柠檬 pH 只有 2.2，
+   但可滴定酸有 50-60 g/L，这才是酸味和酸甜比该用的量。
+
+   数值来源：食品成分表 / 厂商标签 / 果汁行业的常见区间，取区间中值。
+   只有区间、没有单品实测的也写在这里（本来就是这个精度），
+   但界面上会如实标"部分为估值"；没有列出的材料算"未知"，
+   计算时报告覆盖率（chemCoverage），不假装精确。
+   ========================================================= */
+var BRIX = {
+  /* 糖浆 / 甜味（按标签 Brix） */
+  syrup: 50, demerara: 67, honey_syrup: 42, honey: 82, grenadine: 60,
+  monin: 58, maple: 66, oleo: 60, lemon_sherbet: 45,
+  /* 酸味 */
+  lemon: 8, lime: 7, lemon_bottle: 8, passionfruit: 15, sunquick: 45,
+  /* 果汁 */
+  orange_juice: 11, grapefruit: 9, pineapple: 13, cranberry: 10, tomato: 4.5,
+  apple_juice: 11.5, grape_juice: 16, mango_mix: 14, coconut_water: 5,
+  /* 气泡和饮料 */
+  soda: 0, tonic: 8.5, ginger_ale: 9, ginger_beer: 9, coke: 10.6, sprite: 9.5,
+  vitale: 9, genki: 10, grapefruit_soda: 9, oolong: 0.5, jasmine_tea: 0.3,
+  iced_tea: 9, coffee_hot: 1, cold_brew: 1, redbull: 10.5, sparkling_mineral: 0,
+  schweppes_c: 9, fanta: 11, beibingyang: 10, shuirongc: 9,
+  /* 乳饮 */
+  milk: 4.7, cream: 3, coconut_milk: 5, yakult: 12, calpis: 12, yogurt: 7,
+  vitasoy: 6, coconut_drink: 6, wangzai: 10,
+  /* 利口酒 / 加强酒 */
+  cointreau: 27, campari: 22, aperol: 22, vermouth: 13, dry_vermouth: 4,
+  lillet: 15, kahlua: 23, baileys: 19, disaronno: 33, drambuie: 40,
+  frangelico: 33, maraschino: 30, cherry_brandy: 32, cassis: 30,
+  sloe_gin: 25, cocoa_white: 25, cocoa_dark: 20, absinthe: 2, pastis: 2,
+  /* 烈酒（几乎无糖） */
+  gin: 0, tanqueray: 0, beefeater: 0, bombay: 0, hendricks: 0, old_tom: 0.5,
+  plymouth: 0, tanqueray10: 0, roku: 0, botanist: 0, nordes: 0, monkey47: 0,
+  rum: 0, havana3: 0, havana7: 0.5, captain: 3, dark_rum: 1, plantation3: 0,
+  plantation_dark: 1, bacardi_oro: 2, appleton: 2, cachaca: 0,
+  vodka: 0, grey_goose: 0, smirnoff: 0, belvedere: 0, finlandia: 0,
+  tequila: 0, patron: 0, olmeca: 0, donjulio: 0, mezcal: 0,
+  cognac: 0, remymartin: 0, keya: 0, calvados: 0, pisco: 0, soju: 1,
+  bourbon: 0, makers: 0, buffalo_trace: 0, wild_turkey: 0, jack: 0, rye: 0,
+  jw_black: 0, chivas12: 0, glenlivet: 0, glenfiddich: 0, macallan: 0,
+  ballantines: 0, jw_red: 0, monkey: 0, jameson: 0, kakubin: 0, laphroaig: 0,
+  ardbeg10: 0, talisker: 0, jiangxiaobai: 0, aquavit: 0,
+  /* 葡萄酒 */
+  red_wine: 0.5, white_wine: 1, fino: 1.5, port: 10, sparkling_wine: 2.5,
+  /* 其他 */
+  egg_white: 0.7, egg_yolk: 0,
+  angostura: 20, peychaud: 15, orange_bitters: 20, salt_water: 0
+};
+
+var TA = {
+  /* 酸味（g/L，按柠檬酸计） */
+  lemon: 55, lime: 65, lemon_bottle: 50, passionfruit: 35, sunquick: 55,
+  /* 糖浆 / 甜味（本身几乎不带酸） */
+  syrup: 0, demerara: 0, honey_syrup: 0, honey: 0.5, grenadine: 1.5,
+  monin: 0.5, maple: 0.2, oleo: 0, lemon_sherbet: 15,
+  /* 果汁 */
+  orange_juice: 8, grapefruit: 10, pineapple: 9, cranberry: 10, tomato: 4,
+  apple_juice: 5, grape_juice: 7, mango_mix: 5, coconut_water: 1,
+  /* 气泡和饮料 */
+  soda: 0, tonic: 1, ginger_ale: 0.6, ginger_beer: 0.8, coke: 0.6, sprite: 1.5,
+  vitale: 2, genki: 1.2, grapefruit_soda: 1, oolong: 0.3, jasmine_tea: 0.3,
+  iced_tea: 2, coffee_hot: 6, cold_brew: 6, redbull: 1, sparkling_mineral: 0,
+  schweppes_c: 1.5, fanta: 1, beibingyang: 1, shuirongc: 2,
+  /* 乳饮 */
+  milk: 1.5, cream: 1.2, coconut_milk: 0.5, yakult: 6, calpis: 8, yogurt: 8,
+  vitasoy: 1.5, coconut_drink: 0.8, wangzai: 1,
+  /* 利口酒 / 加强酒 */
+  cointreau: 0.5, campari: 1.5, aperol: 1.5, vermouth: 4, dry_vermouth: 5,
+  lillet: 4, kahlua: 0.5, baileys: 1, disaronno: 0, drambuie: 0.5,
+  frangelico: 0, maraschino: 0.5, cherry_brandy: 1, cassis: 1,
+  sloe_gin: 2, cocoa_white: 0.5, cocoa_dark: 0.5, absinthe: 0, pastis: 0,
+  /* 烈酒：可滴定酸基本都是 0 */
+  gin: 0, tanqueray: 0, beefeater: 0, bombay: 0, hendricks: 0, old_tom: 0,
+  plymouth: 0, tanqueray10: 0, roku: 0, botanist: 0, nordes: 0, monkey47: 0,
+  rum: 0, havana3: 0, havana7: 0, captain: 0, dark_rum: 0, plantation3: 0,
+  plantation_dark: 0, bacardi_oro: 0, appleton: 0, cachaca: 0,
+  vodka: 0, grey_goose: 0, smirnoff: 0, belvedere: 0, finlandia: 0,
+  tequila: 0, patron: 0, olmeca: 0, donjulio: 0, mezcal: 0,
+  cognac: 0, remymartin: 0, keya: 0, calvados: 0, pisco: 0, soju: 0.3,
+  bourbon: 0, makers: 0, buffalo_trace: 0, wild_turkey: 0, jack: 0, rye: 0,
+  jw_black: 0, chivas12: 0, glenlivet: 0, glenfiddich: 0, macallan: 0,
+  ballantines: 0, jw_red: 0, monkey: 0, jameson: 0, kakubin: 0, laphroaig: 0,
+  ardbeg10: 0, talisker: 0, jiangxiaobai: 0, aquavit: 0,
+  /* 葡萄酒 */
+  red_wine: 6, white_wine: 6.5, fino: 5, port: 5, sparkling_wine: 8,
+  /* 其他 */
+  egg_white: 0.5, egg_yolk: 0,
+  angostura: 5, peychaud: 5, orange_bitters: 3, salt_water: 0
+};
+
+/* =========================================================
    蛋白酶：会把奶类蛋白和椰浆的乳化结构拆开，跟 pH 无关
    菠萝汁是最常见的那个（这就是椰林飘香容易分层的原因）
    ========================================================= */
@@ -5320,6 +5414,8 @@ var qrcode = function() {
     var modMl = 0, mixerMl = 0;
     /* 家族判断还看"加了酸 / 加了甜 / 有蛋 / 有薄荷"这几种角色 */
     var sourMl = 0, sweetMl = 0, eggMl = 0, hasMint = false;
+    /* 物量化：糖（g）、可滴定酸（g），以及"有多少体积来自有来源的数值" */
+    var sugarG = 0, acidG = 0, chemMl = 0, chemCoveredMl = 0;
     var acidLoad = 0, enzymes = [], dairyName = '';
     /* 每样材料的温度，用来算冰化掉多少（见 meltFrom） */
     var parts = [], tempMix = { frozen: 0, cold: 0, room: 0, hot: 0 };
@@ -5352,6 +5448,17 @@ var qrcode = function() {
       /* 只有蛋黄/全蛋算 Flip；蛋清是酸酒里的泡沫，威士忌酸加了蛋清还是酸酒 */
       if (g.id === 'egg_yolk') eggMl += ml;
       if (g.id === 'mint') hasMint = true;
+      /* 糖度 / 可滴定酸：只有数据表里两样都有的材料才计入；
+         其它材料算"未知"，最后如实报告覆盖率。 */
+      if (ml > 0 && g.cat !== 'ice') {
+        chemMl += ml;
+        var bx = BRIX[g.id], ta0 = TA[g.id];
+        if (typeof bx === 'number' && typeof ta0 === 'number') {
+          sugarG += ml * bx / 100;
+          acidG += ml * ta0 / 1000;
+          chemCoveredMl += ml;
+        }
+      }
       if (DAIRY_FAT[g.id] || LACTIC[g.id]) hasDairy = true;
       if (DAIRY_FAT[g.id]) { dairyFat = true; if (!dairyName) dairyName = g.name; }
       if (ENZYMES[g.id] && ml > 0) enzymes.push(ENZYMES[g.id]);
@@ -5442,6 +5549,11 @@ var qrcode = function() {
     /* 把总酸量摊到总液量上再反推 pH：纯柠檬汁算出 2.2，纯菠萝汁算出 3.5 */
     var avgAcid = finalVol > 0 ? acidLoad / finalVol : 0;
     var ph = avgAcid > 0 ? clamp(2.5 - Math.log10(avgAcid), 2, 7) : 7;
+    /* 糖度 = 每 100ml 里的糖克数；可滴定酸 = 每升里的酸克数。
+       都按最终体积（含稀释水）算——喝到嘴里的是稀释后的。 */
+    var brix = finalVol > 0 ? sugarG / finalVol * 100 : 0;
+    var taG = finalVol > 0 ? acidG / finalVol * 1000 : 0;
+    var chemCoverage = chemMl > 0 ? chemCoveredMl / chemMl : 0;
     /* 风味要按"浓度"算，不是"总量"。
        一杯 190ml 的高球和一杯 95ml 的同比例酒，每一口喝起来是一样的，
        但按总量算，前者的风味层次和气泡会翻倍——这就是"整体缩放会改变分数"的根源。
@@ -5460,6 +5572,7 @@ var qrcode = function() {
       juiceMl: juiceMl, hasJuice: juiceMl > 5, hasDairy: hasDairy, dairyFat: dairyFat, isHot: isHot,
       modMl: modMl, mixerMl: mixerMl,
       sourMl: sourMl, sweetMl: sweetMl, eggMl: eggMl, hasMint: hasMint,
+      sugarG: sugarG, acidG: acidG, brix: brix, ta: taG, chemCoverage: chemCoverage,
       ph: ph, acidLoad: acidLoad, enzymes: enzymes, dairyName: dairyName, taste: state.taste,
       fd: fd, nOthers: nOthers,
       /* 温度那条线的产物：杯里有多少克冰、倒进去就化了多少水、
@@ -6375,6 +6488,12 @@ var qrcode = function() {
     if (famNow.id === 'highball' || famNow.id === 'long') {
       ratioCap = '按「' + famNow.name + '」量：酒体 ' + Math.round(a.baseMl + a.modMl)
         + 'ml : 稀释物 ' + Math.round(a.mixerMl + a.juiceMl + a.sourMl + a.sweetMl) + 'ml';
+    }
+    /* 物量化：有来源的数据覆盖过半时，把糖度 / 可滴定酸也写出来。
+       覆盖率不够就不写——宁可不显示，也不拿一堆估值装成实测。 */
+    if (a.chemCoverage > 0.5) {
+      ratioCap += '　｜糖度 ' + a.brix.toFixed(1) + ' °Bx · 可滴定酸 ' + a.ta.toFixed(1) + ' g/L'
+        + (a.chemCoverage < 0.85 ? '（部分估值）' : '');
     }
     var dimsOn = DIMS.filter(function (d) { return a.fd[d.k] > 2; }).length;
     /* 每一项都标出它现在的权重——换了评分方案，这些数字会一起变 */
@@ -9242,6 +9361,7 @@ var qrcode = function() {
     dims: DIMS,                       /* 风味图的八个维度（调试/自检用） */
     familyOf: familyOf,               /* 家族判断：给自检和调试用 */
     FAMILY_LABEL: FAMILY_LABEL,
+    chem: { BRIX: BRIX, TA: TA },     /* 糖度 / 可滴定酸数据表：给自检用 */
     /* 「今晚喝什么」：给自检和调试用 */
     tonight: {
       moods: MOODS,

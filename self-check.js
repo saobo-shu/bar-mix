@@ -2242,6 +2242,89 @@ console.log('\n--- 配方码 ---');
   B.code.load(code); B.load([]);
 })();
 
+/* ---- 物量化：糖度 °Bx / 可滴定酸 g/L ---- */
+console.log('\n--- 物量化（°Bx / 可滴定酸 g/L）---');
+(function () {
+  const run = (items, glass, ice) => {
+    B.state.glass = glass || 'rocks'; B.state.iceLevel = ice || 'none';
+    B.state.method = 'build'; B.state.taste = 'normal'; B.state.scheme = 'balanced';
+    B.state.recipeName = '';
+    B.load(items);
+    return B.analyze();
+  };
+  const syrup = run([['syrup', 30]]);
+  const okSyrup = Math.abs(syrup.brix - 50) < 0.5;
+  console.log('  ' + (okSyrup ? '✅' : '❌') + ' 30ml 1:1 糖浆 → ' + syrup.brix.toFixed(1) + ' °Bx（应约 50）');
+  if (!okSyrup) bad('物量化', '1:1 糖浆的糖度不对：' + syrup.brix.toFixed(1));
+
+  const coke = run([['coke', 100]]);
+  const okCoke = Math.abs(coke.brix - 10.6) < 0.2;
+  console.log('  ' + (okCoke ? '✅' : '❌') + ' 100ml 可乐 → ' + coke.brix.toFixed(1) + ' °Bx（应约 10.6）');
+  if (!okCoke) bad('物量化', '可乐的糖度不对：' + coke.brix.toFixed(1));
+
+  const lemon = run([['lemon', 20]]);
+  const okLemon = Math.abs(lemon.ta - 55) < 0.5;
+  console.log('  ' + (okLemon ? '✅' : '❌') + ' 20ml 柠檬汁 → 可滴定酸 ' + lemon.ta.toFixed(1) + ' g/L（应约 55）');
+  if (!okLemon) bad('物量化', '柠檬汁的可滴定酸不对：' + lemon.ta.toFixed(1));
+
+  /* 两张表必须一一对应：只有糖度没有酸度的材料会被当成"未知"，
+     覆盖率就永远上不去——这次就是漏了糖浆的 TA 才发现的。 */
+  const bKeys = Object.keys(B.chem.BRIX), tKeys = Object.keys(B.chem.TA);
+  const missTa = bKeys.filter(k => tKeys.indexOf(k) < 0);
+  const missBrix = tKeys.filter(k => bKeys.indexOf(k) < 0);
+  const okPair = !missTa.length && !missBrix.length;
+  console.log('  ' + (okPair ? '✅' : '❌') + ' 糖度表和酸度表一一对应（各 ' + bKeys.length + ' 条）'
+    + (okPair ? '' : '：缺 TA ' + missTa.join('、') + '；缺 Brix ' + missBrix.join('、')));
+  if (!okPair) bad('物量化', '糖度/酸度表对不上：' + missTa.concat(missBrix).join('、'));
+
+  /* 威士忌酸：六样材料全都有来源数据，覆盖率应该是 100% */
+  const sour = run([['bourbon', 45], ['lemon', 20], ['syrup', 15],
+    ['egg_white', 15], ['angostura', 2], ['salt_water', 3]], 'rocks', 'full');
+  const okCov = sour.chemCoverage > 0.999;
+  console.log('  ' + (okCov ? '✅' : '❌') + ' 威士忌酸：糖度 ' + sour.brix.toFixed(1)
+    + ' °Bx · 可滴定酸 ' + sour.ta.toFixed(1) + ' g/L · 覆盖率 '
+    + Math.round(sour.chemCoverage * 100) + '%');
+  if (!okCov) bad('物量化', '威士忌酸的覆盖率不是 100%：' + sour.chemCoverage.toFixed(2));
+
+  /* 有一样材料没进数据表时，覆盖率必须如实下降（不许假装全知道） */
+  const unknown = global.__I.filter(g => g.mlu > 0 && g.cat !== 'ice'
+    && B.chem.BRIX[g.id] === undefined)[0];
+  if (unknown) {
+    const partial = run([['bourbon', 45], [unknown.id, unknown.def]], 'rocks', 'full');
+    const okPartial = partial.chemCoverage > 0 && partial.chemCoverage < 1;
+    console.log('  ' + (okPartial ? '✅' : '❌') + ' 掺了一样没数据的「' + unknown.name + '」：覆盖率降到 '
+      + Math.round(partial.chemCoverage * 100) + '%');
+    if (!okPartial) bad('物量化', '未知材料没有拉低覆盖率');
+  }
+
+  /* 界面：覆盖率够就把糖度/酸度写出来 */
+  run([['bourbon', 45], ['lemon', 20], ['syrup', 15]], 'rocks', 'full');
+  const cap = els['subScores'].innerHTML;
+  const okShow = cap.indexOf('°Bx') >= 0 && cap.indexOf('可滴定酸') >= 0;
+  console.log('  ' + (okShow ? '✅' : '❌') + ' 平衡那一条下面写出了糖度 / 可滴定酸');
+  if (!okShow) bad('物量化', '界面上没显示糖度 / 可滴定酸');
+
+  /* 给下一步用：44 个预设的 Brix/TA 分布（这次只量，不改分数） */
+  const rows = [];
+  global.__PRESETS.forEach(function (p) {
+    B.state.glass = p.glass || 'icecup';
+    B.state.iceLevel = 'full';
+    B.state.method = global.__PM[p.name] || 'build';
+    B.state.taste = 'normal'; B.state.scheme = 'balanced'; B.state.recipeName = '';
+    B.load(p.items);
+    const a = B.analyze();
+    if (a.ta > 0.5) rows.push({ name: p.name, ratio: a.brix / a.ta, cov: a.chemCoverage });
+  });
+  rows.sort((x, y) => x.ratio - y.ratio);
+  const med = rows[Math.floor(rows.length / 2)];
+  const lowCov = rows.filter(x => x.cov < 0.85);
+  console.log('  Brix/TA 比值（' + rows.length + ' 杯有酸度的）：最低 '
+    + rows[0].ratio.toFixed(2) + '（' + rows[0].name + '）· 中位 '
+    + med.ratio.toFixed(2) + '（' + med.name + '）· 最高 '
+    + rows[rows.length - 1].ratio.toFixed(2) + '（' + rows[rows.length - 1].name + '）');
+  console.log('  覆盖率不足 85% 的：' + (lowCov.length ? lowCov.map(x => x.name).join('、') : '无'));
+})();
+
 /* ---- 家族口径：不同家族用不同的平衡尺子 ---- */
 console.log('\n--- 家族口径（换家族 = 换尺子，不奖励不惩罚）---');
 (function () {

@@ -923,6 +923,100 @@ var PH = {
 var PH_DEFAULT = 6.0;
 
 /* =========================================================
+   糖度（°Bx）和可滴定酸（g/L）——物量化用
+
+   °Bx ≈ 每 100ml 里溶了多少克糖（饮料密度接近 1，够用）。
+   可滴定酸是"能中和掉多少碱"，不是 pH——柠檬 pH 只有 2.2，
+   但可滴定酸有 50-60 g/L，这才是酸味和酸甜比该用的量。
+
+   数值来源：食品成分表 / 厂商标签 / 果汁行业的常见区间，取区间中值。
+   只有区间、没有单品实测的也写在这里（本来就是这个精度），
+   但界面上会如实标"部分为估值"；没有列出的材料算"未知"，
+   计算时报告覆盖率（chemCoverage），不假装精确。
+   ========================================================= */
+var BRIX = {
+  /* 糖浆 / 甜味（按标签 Brix） */
+  syrup: 50, demerara: 67, honey_syrup: 42, honey: 82, grenadine: 60,
+  monin: 58, maple: 66, oleo: 60, lemon_sherbet: 45,
+  /* 酸味 */
+  lemon: 8, lime: 7, lemon_bottle: 8, passionfruit: 15, sunquick: 45,
+  /* 果汁 */
+  orange_juice: 11, grapefruit: 9, pineapple: 13, cranberry: 10, tomato: 4.5,
+  apple_juice: 11.5, grape_juice: 16, mango_mix: 14, coconut_water: 5,
+  /* 气泡和饮料 */
+  soda: 0, tonic: 8.5, ginger_ale: 9, ginger_beer: 9, coke: 10.6, sprite: 9.5,
+  vitale: 9, genki: 10, grapefruit_soda: 9, oolong: 0.5, jasmine_tea: 0.3,
+  iced_tea: 9, coffee_hot: 1, cold_brew: 1, redbull: 10.5, sparkling_mineral: 0,
+  schweppes_c: 9, fanta: 11, beibingyang: 10, shuirongc: 9,
+  /* 乳饮 */
+  milk: 4.7, cream: 3, coconut_milk: 5, yakult: 12, calpis: 12, yogurt: 7,
+  vitasoy: 6, coconut_drink: 6, wangzai: 10,
+  /* 利口酒 / 加强酒 */
+  cointreau: 27, campari: 22, aperol: 22, vermouth: 13, dry_vermouth: 4,
+  lillet: 15, kahlua: 23, baileys: 19, disaronno: 33, drambuie: 40,
+  frangelico: 33, maraschino: 30, cherry_brandy: 32, cassis: 30,
+  sloe_gin: 25, cocoa_white: 25, cocoa_dark: 20, absinthe: 2, pastis: 2,
+  /* 烈酒（几乎无糖） */
+  gin: 0, tanqueray: 0, beefeater: 0, bombay: 0, hendricks: 0, old_tom: 0.5,
+  plymouth: 0, tanqueray10: 0, roku: 0, botanist: 0, nordes: 0, monkey47: 0,
+  rum: 0, havana3: 0, havana7: 0.5, captain: 3, dark_rum: 1, plantation3: 0,
+  plantation_dark: 1, bacardi_oro: 2, appleton: 2, cachaca: 0,
+  vodka: 0, grey_goose: 0, smirnoff: 0, belvedere: 0, finlandia: 0,
+  tequila: 0, patron: 0, olmeca: 0, donjulio: 0, mezcal: 0,
+  cognac: 0, remymartin: 0, keya: 0, calvados: 0, pisco: 0, soju: 1,
+  bourbon: 0, makers: 0, buffalo_trace: 0, wild_turkey: 0, jack: 0, rye: 0,
+  jw_black: 0, chivas12: 0, glenlivet: 0, glenfiddich: 0, macallan: 0,
+  ballantines: 0, jw_red: 0, monkey: 0, jameson: 0, kakubin: 0, laphroaig: 0,
+  ardbeg10: 0, talisker: 0, jiangxiaobai: 0, aquavit: 0,
+  /* 葡萄酒 */
+  red_wine: 0.5, white_wine: 1, fino: 1.5, port: 10, sparkling_wine: 2.5,
+  /* 其他 */
+  egg_white: 0.7, egg_yolk: 0,
+  angostura: 20, peychaud: 15, orange_bitters: 20, salt_water: 0
+};
+
+var TA = {
+  /* 酸味（g/L，按柠檬酸计） */
+  lemon: 55, lime: 65, lemon_bottle: 50, passionfruit: 35, sunquick: 55,
+  /* 糖浆 / 甜味（本身几乎不带酸） */
+  syrup: 0, demerara: 0, honey_syrup: 0, honey: 0.5, grenadine: 1.5,
+  monin: 0.5, maple: 0.2, oleo: 0, lemon_sherbet: 15,
+  /* 果汁 */
+  orange_juice: 8, grapefruit: 10, pineapple: 9, cranberry: 10, tomato: 4,
+  apple_juice: 5, grape_juice: 7, mango_mix: 5, coconut_water: 1,
+  /* 气泡和饮料 */
+  soda: 0, tonic: 1, ginger_ale: 0.6, ginger_beer: 0.8, coke: 0.6, sprite: 1.5,
+  vitale: 2, genki: 1.2, grapefruit_soda: 1, oolong: 0.3, jasmine_tea: 0.3,
+  iced_tea: 2, coffee_hot: 6, cold_brew: 6, redbull: 1, sparkling_mineral: 0,
+  schweppes_c: 1.5, fanta: 1, beibingyang: 1, shuirongc: 2,
+  /* 乳饮 */
+  milk: 1.5, cream: 1.2, coconut_milk: 0.5, yakult: 6, calpis: 8, yogurt: 8,
+  vitasoy: 1.5, coconut_drink: 0.8, wangzai: 1,
+  /* 利口酒 / 加强酒 */
+  cointreau: 0.5, campari: 1.5, aperol: 1.5, vermouth: 4, dry_vermouth: 5,
+  lillet: 4, kahlua: 0.5, baileys: 1, disaronno: 0, drambuie: 0.5,
+  frangelico: 0, maraschino: 0.5, cherry_brandy: 1, cassis: 1,
+  sloe_gin: 2, cocoa_white: 0.5, cocoa_dark: 0.5, absinthe: 0, pastis: 0,
+  /* 烈酒：可滴定酸基本都是 0 */
+  gin: 0, tanqueray: 0, beefeater: 0, bombay: 0, hendricks: 0, old_tom: 0,
+  plymouth: 0, tanqueray10: 0, roku: 0, botanist: 0, nordes: 0, monkey47: 0,
+  rum: 0, havana3: 0, havana7: 0, captain: 0, dark_rum: 0, plantation3: 0,
+  plantation_dark: 0, bacardi_oro: 0, appleton: 0, cachaca: 0,
+  vodka: 0, grey_goose: 0, smirnoff: 0, belvedere: 0, finlandia: 0,
+  tequila: 0, patron: 0, olmeca: 0, donjulio: 0, mezcal: 0,
+  cognac: 0, remymartin: 0, keya: 0, calvados: 0, pisco: 0, soju: 0.3,
+  bourbon: 0, makers: 0, buffalo_trace: 0, wild_turkey: 0, jack: 0, rye: 0,
+  jw_black: 0, chivas12: 0, glenlivet: 0, glenfiddich: 0, macallan: 0,
+  ballantines: 0, jw_red: 0, monkey: 0, jameson: 0, kakubin: 0, laphroaig: 0,
+  ardbeg10: 0, talisker: 0, jiangxiaobai: 0, aquavit: 0,
+  /* 葡萄酒 */
+  red_wine: 6, white_wine: 6.5, fino: 5, port: 5, sparkling_wine: 8,
+  /* 其他 */
+  egg_white: 0.5, egg_yolk: 0,
+  angostura: 5, peychaud: 5, orange_bitters: 3, salt_water: 0
+};
+
+/* =========================================================
    蛋白酶：会把奶类蛋白和椰浆的乳化结构拆开，跟 pH 无关
    菠萝汁是最常见的那个（这就是椰林飘香容易分层的原因）
    ========================================================= */
