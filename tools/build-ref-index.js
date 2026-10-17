@@ -50,6 +50,9 @@ const EXACT = {
   '唐胡里奥龙舌兰': { type: 'tequila' },
   '奥美佳阿特兹': { type: 'tequila' },
   '100% 龙舌兰': { type: 'tequila' },
+  /* 名字里带"龙舌兰"但它是糖浆——不写这条会被下面按龙舌兰酒认掉，
+     装杯时多 10ml 酒、少 10ml 糖浆（汤米家的玛格丽特） */
+  '龙舌兰糖浆': { id: 'syrup', approx: 1 },
   'Mezcal 梅斯卡尔': { type: 'mezcal' },
   /* 金酒 / 伏特加 / 烧酒：不认识的金酒牌子统一按金酒算 */
   '季之美金酒': { family: 'gin_dry', approx: 1 },

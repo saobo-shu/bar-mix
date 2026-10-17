@@ -250,6 +250,9 @@
     var modMl = 0, mixerMl = 0;
     /* 家族判断还看"加了酸 / 加了甜 / 有蛋 / 有薄荷"这几种角色 */
     var sourMl = 0, sweetMl = 0, eggMl = 0, hasMint = false;
+    /* 判家族看的是"有没有加"，不是"加了多少毫升"——
+       方糖、白砂糖这类块状材料 mlu 是 0，但它们是货真价实的甜味来源。 */
+    var hasSourAdd = false, hasSweetAdd = false;
     /* 物量化：糖（g）、可滴定酸（g），以及"有多少体积来自有来源的数值" */
     var sugarG = 0, acidG = 0, chemMl = 0, chemCoveredMl = 0;
     var acidLoad = 0, enzymes = [], dairyName = '';
@@ -281,6 +284,8 @@
       if (g.cat === 'mixer') mixerMl += ml;
       if (g.cat === 'sour') sourMl += ml;
       if (g.cat === 'sweet') sweetMl += ml;
+      if (g.cat === 'sour') hasSourAdd = true;
+      if (g.cat === 'sweet') hasSweetAdd = true;
       /* 只有蛋黄/全蛋算 Flip；蛋清是酸酒里的泡沫，威士忌酸加了蛋清还是酸酒 */
       if (g.id === 'egg_yolk') eggMl += ml;
       if (g.id === 'mint') hasMint = true;
@@ -408,6 +413,7 @@
       juiceMl: juiceMl, hasJuice: juiceMl > 5, hasDairy: hasDairy, dairyFat: dairyFat, isHot: isHot,
       modMl: modMl, mixerMl: mixerMl,
       sourMl: sourMl, sweetMl: sweetMl, eggMl: eggMl, hasMint: hasMint,
+      hasSourAdd: hasSourAdd, hasSweetAdd: hasSweetAdd,
       sugarG: sugarG, acidG: acidG, brix: brix, ta: taG, chemCoverage: chemCoverage,
       ph: ph, acidLoad: acidLoad, enzymes: enzymes, dairyName: dairyName, taste: state.taste,
       fd: fd, nOthers: nOthers,
@@ -465,7 +471,7 @@
     /* 酸酒骨架 = 加了酸，而且有甜味来源（糖浆，或者够分量的利口酒）。
        全部用比例判断，不用绝对毫升——不然把同一杯整体放大，家族会跳。 */
     var modShare = a.liquid > 0 ? a.modMl / a.liquid : 0;
-    if (a.sourMl > 0 && (a.sweetMl > 0 || modShare >= 0.12))
+    if (a.hasSourAdd && (a.hasSweetAdd || modShare >= 0.12))
       return a.hasFizzIng
         ? { id: 'fizz', name: FAMILY_LABEL.fizz }
         : { id: 'sour', name: FAMILY_LABEL.sour };

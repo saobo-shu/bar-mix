@@ -2395,6 +2395,40 @@ console.log('\n--- 家族口径（换家族 = 换尺子，不奖励不惩罚）-
     + (wrong.length ? '：' + wrong.join('、') : '都对'));
   if (wrong.length) bad('家族', '家族判歪了：' + wrong.join('、'));
 
+  /* 两条边界线来自 191 份分布，这里盯住它们别被改坏 */
+  const mod10 = [['gin', 70], ['lime', 20], ['cointreau', 10]];   /* 利口酒 10% */
+  const mod20 = [['gin', 60], ['lime', 20], ['cointreau', 20]];   /* 利口酒 20% */
+  const f10 = B.familyOf(run('rocks', 'full', mod10, 'shake') && B.analyze()).id;
+  const f20 = B.familyOf(run('rocks', 'full', mod20, 'shake') && B.analyze()).id;
+  const okMod = f10 !== 'sour' && f20 === 'sour';
+  console.log('  ' + (okMod ? '✅' : '❌') + ' 利口酒当甜的边界：10% → ' + f10 + '，20% → ' + f20);
+  if (!okMod) bad('家族', '利口酒占比 12% 的边界判错了：10%=' + f10 + ' / 20%=' + f20);
+
+  const j30 = [['vodka', 70], ['orange_juice', 30]];   /* 果汁 30% */
+  const j35 = [['vodka', 65], ['orange_juice', 35]];   /* 果汁 35% */
+  const g30 = B.familyOf(run('highball', 'full', j30) && B.analyze()).id;
+  const g35 = B.familyOf(run('highball', 'full', j35) && B.analyze()).id;
+  const okJuice = g30 !== 'long' && g35 === 'long';
+  console.log('  ' + (okJuice ? '✅' : '❌') + ' 果汁算长饮的边界：30% → ' + g30 + '，35% → ' + g35);
+  if (!okJuice) bad('家族', '果汁占比 35% 的边界判错了：30%=' + g30 + ' / 35%=' + g35);
+
+  /* 参考本里用砂糖 / 龙舌兰糖浆的两杯：不能被漏判，也不能把糖浆当成酒 */
+  const daq = global.__REF.findIndex(r => r.zh === '黛绮莉');
+  B.have.load(daq);
+  const fDaq = B.familyOf(B.analyze()).id;
+  console.log('  ' + (fDaq === 'sour' ? '✅' : '❌') + ' 参考本黛绮莉（用砂糖）仍然算酸类，不是烈酒向');
+  if (fDaq !== 'sour') bad('家族', '用砂糖的黛绮莉被漏判成 ' + fDaq);
+
+  const tommy = global.__REF.findIndex(r => r.zh === '汤米家的玛格丽特');
+  B.have.load(tommy);
+  const fTommy = B.familyOf(B.analyze()).id;
+  const tommySyrup = B.state.cup.get('syrup') || 0;
+  const tommyTequila = B.state.cup.get('tequila') || 0;
+  const okTommy = fTommy === 'sour' && Math.abs(tommySyrup - 10) < 0.01 && Math.abs(tommyTequila - 45) < 0.01;
+  console.log('  ' + (okTommy ? '✅' : '❌') + ' 汤米家的玛格丽特：龙舌兰糖浆没有被当成酒（龙舌兰 '
+    + tommyTequila + 'ml / 糖浆 ' + tommySyrup + 'ml，判成 ' + fTommy + '）');
+  if (!okTommy) bad('家族', '龙舌兰糖浆映射错了：酒 ' + tommyTequila + ' / 糖 ' + tommySyrup);
+
   /* 高球那根评分条的说明必须换成"酒体 : 稀释物"，不能再拿甜酸比解释 */
   run('highball', 'full', [['tanqueray', 45], ['tonic', 120], ['lime', 10]], 'build');
   const cap = els['subScores'].innerHTML;
