@@ -238,7 +238,7 @@ console.log('\n--- 做法（和经典字典对账）---');
     if (theirs === mine) same++;
     else diff.push(p.name + '：我写「' + OUR[mine] + '」，字典是「' + (r.method || '?') + '」');
   });
-  console.log('  44 条里能对上字典的 ' + (global.__PRESETS.length - missing.length) + ' 条，做法一致 ' + same + ' 条');
+  console.log('  ' + global.__PRESETS.length + ' 条里能对上字典的 ' + (global.__PRESETS.length - missing.length) + ' 条，做法一致 ' + same + ' 条');
   if (missing.length) console.log('  字典里没同名条目：' + missing.join('、'));
   diff.forEach(function (d) { console.log('  ⚠ ' + d); });
 })();
@@ -1682,10 +1682,38 @@ console.log('\n--- 酒单 ---');
   console.log('  ' + (okFamLine ? '✅' : '❌') + ' 马天尼详情里写着「家族：双料」');
   if (!okFamLine) bad('酒单', '详情里没有家族那一行');
 
+  /* 瑞基 / 骡子：都"没加糖的酸 + 气泡"，区别只在苏打还是姜汁 */
+  const rickeyIdx = global.__PRESETS.findIndex(p => p.name === '金瑞基');
+  const rickeyP = global.__PRESETS[rickeyIdx];
+  B.preset(rickeyIdx);
+  const rickeyA = B.analyze();
+  const okRickey = !!rickeyP && rickeyP.items.length === 3
+    && rickeyP.items.some(it => it[0] === 'gin' && it[1] === 45)
+    && rickeyP.items.some(it => it[0] === 'lime' && it[1] === 10)
+    && rickeyP.items.some(it => it[0] === 'soda' && it[1] === 120)
+    && B.familyOf(rickeyA).id === 'rickey';
+  console.log('  ' + (okRickey ? '✅' : '❌') + ' 金瑞基：金酒 45 / 青柠 10 / 苏打 120，判成 '
+    + B.familyOf(rickeyA).name + '（不加糖）');
+  if (!okRickey) bad('家族', '金瑞基缺了或家族判错');
+
+  const muleIdx = global.__PRESETS.findIndex(p => p.name === '姜味骡子');
+  B.preset(muleIdx);
+  const fMule = B.familyOf(B.analyze()).id;
+  console.log('  ' + (fMule === 'mule' ? '✅' : '❌') + ' 姜味骡子判成骡子（姜汁 + 青柠）');
+  if (fMule !== 'mule') bad('家族', '姜味骡子被漏判成 ' + fMule);
+
+  B.menu.reset();
+  B.menu.setFamily('rickey');
+  const rickeyRefs = B.menu.listRefs().map(r => r.zh);
+  const okRickeyFilter = rickeyRefs.indexOf('金Ricky') >= 0;
+  console.log('  ' + (okRickeyFilter ? '✅' : '❌') + ' 酒单按「瑞基」筛出金Ricky');
+  if (!okRickeyFilter) bad('家族', '酒单的瑞基筛选没有金Ricky');
+  B.menu.reset();
+
   /* Tips 里的家族对照表 */
   const tipsHtml = fs.readFileSync(path.join(dir, 'dev.html'), 'utf8');
   const okTips = tipsHtml.indexOf('家族对照表') >= 0 && tipsHtml.indexOf('酒体 : 稀释物') >= 0
-    && tipsHtml.indexOf('Brix/TA') >= 0;
+    && tipsHtml.indexOf('Brix/TA') >= 0 && tipsHtml.indexOf('瑞基') >= 0 && tipsHtml.indexOf('骡子') >= 0;
   console.log('  ' + (okTips ? '✅' : '❌') + ' Tips 里有家族对照表（含两种平衡尺子）');
   if (!okTips) bad('酒单', 'Tips 里缺家族对照表');
 

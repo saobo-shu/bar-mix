@@ -59,7 +59,7 @@
 
 `data.js` 是全部内容所在——材料、风味数值、配方、杯子、保存档案都在里面。想加一种材料或改一条配方，只改这个文件就够了。
 
-`dev.html` 是开发用的源文件，引用 `app.css` / `app.js` / `data.js`。`tools/build.js` 把它们打包成 `dist/` 里的单文件。`self-check.js` 和 `tools/audit.js` 是两个检查脚本：前者看有没有面板渲染不出来、数据对不对得上，后者把 44 配方 × 7 杯型 × 3 冰量 × 5 套评分方案全跑一遍，找自相矛盾的地方。部署和更新写在 `DEPLOY.md`。
+`dev.html` 是开发用的源文件，引用 `app.css` / `app.js` / `data.js`。`tools/build.js` 把它们打包成 `dist/` 里的单文件。`self-check.js` 和 `tools/audit.js` 是两个检查脚本：前者看有没有面板渲染不出来、数据对不对得上，后者把全部住处特调 × 8 杯型 × 3 冰量 × 3 口味全跑一遍，找自相矛盾的地方。部署和更新写在 `DEPLOY.md`。
 
 ## 数据来源
 

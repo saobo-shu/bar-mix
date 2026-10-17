@@ -250,6 +250,8 @@
     var modMl = 0, mixerMl = 0;
     /* 家族判断还看"加了酸 / 加了甜 / 有蛋 / 有薄荷"这几种角色 */
     var sourMl = 0, sweetMl = 0, eggMl = 0, hasMint = false;
+    /* 瑞基 / 骡子要靠"哪种气泡"区分：苏打 vs 姜汁 */
+    var sodaMl = 0, gingerMl = 0;
     /* 判家族看的是"有没有加"，不是"加了多少毫升"——
        方糖、白砂糖这类块状材料 mlu 是 0，但它们是货真价实的甜味来源。 */
     var hasSourAdd = false, hasSweetAdd = false;
@@ -282,6 +284,8 @@
       if (g.cat === 'juice') juiceMl += ml;
       if (g.cat === 'wine' || g.cat === 'liqueur') modMl += ml;
       if (g.cat === 'mixer') mixerMl += ml;
+      if (g.id === 'soda') sodaMl += ml;
+      if (g.id === 'ginger_ale' || g.id === 'ginger_beer') gingerMl += ml;
       if (g.cat === 'sour') sourMl += ml;
       if (g.cat === 'sweet') sweetMl += ml;
       if (g.cat === 'sour') hasSourAdd = true;
@@ -414,6 +418,7 @@
       modMl: modMl, mixerMl: mixerMl,
       sourMl: sourMl, sweetMl: sweetMl, eggMl: eggMl, hasMint: hasMint,
       hasSourAdd: hasSourAdd, hasSweetAdd: hasSweetAdd,
+      sodaMl: sodaMl, gingerMl: gingerMl,
       sugarG: sugarG, acidG: acidG, brix: brix, ta: taG, chemCoverage: chemCoverage,
       ph: ph, acidLoad: acidLoad, enzymes: enzymes, dairyName: dairyName, taste: state.taste,
       fd: fd, nOthers: nOthers,
@@ -458,7 +463,8 @@
   var FAMILY_LABEL = {
     hot: '热饮', neat: '纯饮', flip: '蛋类 Flip', cream: '奶类',
     fizz: '菲士 / 柯林斯', sour: '酸类', highball: '高球', long: '长饮',
-    old_fashioned: '古典型', duo: '双料', spirit: '烈酒向'
+    old_fashioned: '古典型', duo: '双料', spirit: '烈酒向',
+    rickey: '瑞基 Rickey', mule: '骡子 Mule'
   };
   function familyOf(a) {
     if (a.isHot) return { id: 'hot', name: FAMILY_LABEL.hot };
@@ -475,7 +481,15 @@
       return a.hasFizzIng
         ? { id: 'fizz', name: FAMILY_LABEL.fizz }
         : { id: 'sour', name: FAMILY_LABEL.sour };
-    if (a.hasFizzIng) return { id: 'highball', name: FAMILY_LABEL.highball };
+    /* 没加糖的酸 + 气泡：瑞基（苏打）和骡子（姜汁）是高球的两个有名字的子类。
+       区分它们只看气泡是哪一种——这是配方里的固定角色，不用猜。 */
+    if (a.hasFizzIng) {
+      if (a.hasSourAdd && !a.hasSweetAdd && modShare < 0.12) {
+        if (a.gingerMl > 0) return { id: 'mule', name: FAMILY_LABEL.mule };
+        if (a.sodaMl > 0) return { id: 'rickey', name: FAMILY_LABEL.rickey };
+      }
+      return { id: 'highball', name: FAMILY_LABEL.highball };
+    }
     if (a.liquid > 0 && a.juiceMl / a.liquid >= 0.35) return { id: 'long', name: FAMILY_LABEL.long };
     if (a.sweetMl > 0 && a.fd.bitter > 0.5) return { id: 'old_fashioned', name: FAMILY_LABEL.old_fashioned };
     if (a.modMl > 0) return { id: 'duo', name: FAMILY_LABEL.duo };
@@ -517,7 +531,8 @@
     if (a.neatPour) return neatBalance(a);
     /* 高球 / 长饮换尺子：量的是"酒体 : 稀释物"，不是甜酸比 */
     var fam = familyOf(a);
-    if (fam.id === 'highball' || fam.id === 'long') return highballBalance(a);
+    if (fam.id === 'highball' || fam.id === 'long'
+        || fam.id === 'rickey' || fam.id === 'mule') return highballBalance(a);
     var load = S + A;
     var over = Math.max(0, load - 42);
     var cap = clamp(1 - over / 22, 0.35, 1);
@@ -1345,7 +1360,8 @@
     /* 高球 / 长饮换了一把尺子：这里也要跟着换说法，不然会拿甜酸比去解释一个
        按"酒体 : 稀释物"打的分。 */
     var famNow = familyOf(a);
-    if (famNow.id === 'highball' || famNow.id === 'long') {
+    if (famNow.id === 'highball' || famNow.id === 'long'
+        || famNow.id === 'rickey' || famNow.id === 'mule') {
       ratioCap = '按「' + famNow.name + '」量：酒体 ' + Math.round(a.baseMl + a.modMl)
         + 'ml : 稀释物 ' + Math.round(a.mixerMl + a.juiceMl + a.sourMl + a.sweetMl) + 'ml';
     }
@@ -2277,6 +2293,7 @@
     var families = [
       ['', '全部家族'],
       ['sour', '酸类'], ['fizz', '菲士/柯林斯'], ['highball', '高球'], ['long', '长饮'],
+      ['rickey', '瑞基'], ['mule', '骡子'],
       ['old_fashioned', '古典型'], ['duo', '双料'], ['flip', '蛋类'], ['cream', '奶类'],
       ['spirit', '烈酒向']
     ];
@@ -2446,6 +2463,7 @@
       /* 家族：这杯的骨架决定平衡拿什么量。按参考本的材料自动判，不用用户自己选。 */
       + '<p class="hint">家族：<b>' + esc(st.familyName) + '</b>'
         + (st.family === 'highball' || st.family === 'long'
+            || st.family === 'rickey' || st.family === 'mule'
             ? '　平衡看「酒体 : 稀释物」' : (st.family === 'sour' || st.family === 'fizz'
             ? '　平衡看 Brix/TA' : '')) + '</p>'
       /* 一句话定位：只有推荐的 51 款有（data.js 的 PICK_LINE） */
