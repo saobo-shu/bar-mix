@@ -426,6 +426,9 @@ var INGREDIENTS = [
   { id:'honey_syrup', cat:'sweet', name:'蜂蜜糖浆（1:1）', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
     f:{sugar:9,acid:0,bitter:0,booze:0,fruit:0,spice:4,fizz:0,body:3},
     note:'做青霉素、热托蒂的灵魂。纯蜂蜜太稠，兑一半热水就好用了。' },
+  { id:'honey_syrup_31', cat:'sweet', name:'蜂蜜糖浆（3:1）', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
+    f:{sugar:9.5,acid:0,bitter:0,booze:0,fruit:0,spice:4,fizz:0,body:3.5},
+    note:'三份蜂蜜兑一份热水——酒吧的常用浓度，比 1:1 更甜、更稠，也更耐放。青霉素、蜂之膝、淘金热的参考本都写这一版。' },
   { id:'honey', cat:'sweet', name:'蜂蜜（直接舀）', unit:'ml', mlu:1, def:10, step:5, abv:0, src:'rt',
     f:{sugar:9,acid:0,bitter:0,booze:0,fruit:0,spice:4,fizz:0,body:4},
     note:'热水类饮品可以直接用。' },
@@ -688,8 +691,8 @@ var PRESETS = [
     tip:'青柠一定要现挤。姜的辣和青柠的酸是互相放大的。' },
   { name:'热托蒂', family:'hot', glass:'mug', sub:'Hot Toddy · 不用冰，冬天必备', items:[['jw_black',45],['hot_water',90],['honey',15],['lemon',15],['clove',2],['cinnamon_stick',1]],
     tip:'水温别超过 80 度，太烫会把酒精的香气蒸没。先放蜂蜜再倒热水更好化开。' },
-  { name:'青霉素', family:'sour', glass:'rocks', sub:'Penicillin · 感冒时最想喝的一杯', items:[['jw_black',45],['laphroaig',10],['lemon',20],['honey_syrup',20],['ginger_fresh',2]],
-    tip:'那 10ml 拉弗格不能省：这杯的灵魂就是最后浮上来的那层泥煤味，拿基底酒顶就不是青霉素了。生姜在杯里压几下。蜂蜜糖浆用 3:1 更接近原版。' },
+  { name:'青霉素', family:'sour', glass:'rocks', sub:'Penicillin · 感冒时最想喝的一杯', items:[['jw_black',45],['laphroaig',10],['lemon',20],['honey_syrup_31',20],['ginger_fresh',2]],
+    tip:'那 10ml 拉弗格不能省：这杯的灵魂就是最后浮上来的那层泥煤味，拿基底酒顶就不是青霉素了。生姜在杯里压几下。蜂蜜糖浆按参考本用 3:1。' },
   { name:'锈钉', family:'spirit', glass:'rocks', sub:'Rusty Nail · 两样东西就成立', items:[['jw_black',45],['drambuie',20]],
     tip:'蜂蜜香草利口酒 + 威士忌，几乎是作弊的简单。适合冬天。' },
   { name:'教父', family:'spirit', glass:'rocks', sub:'Godfather', items:[['jw_black',45],['disaronno',15]],
@@ -702,8 +705,8 @@ var PRESETS = [
     tip:'经典版本就是 20/20/20/20。橙汁建议现榨，瓶装的太甜。' },
   { name:'花花公子', family:'spirit', glass:'rocks', sub:'Boulevardier · 三等份，最好记', items:[['bourbon',30],['vermouth',30],['campari',30]],
     tip:'尼格罗尼的威士忌版，三样各 30ml。苦味重，适合慢慢喝。换成更清瘦的苏格兰调和，橙皮香会更突出。' },
-  { name:'淘金热', family:'sour', glass:'rocks', sub:'Gold Rush · 三样材料，新手最不容易失手', items:[['bourbon',45],['lemon',15],['honey_syrup',15]],
-    tip:'蜂蜜和柠檬一进一出，摇到杯子外壁起霜就行。没有蜂蜜糖浆就用 1:1 的。' },
+  { name:'淘金热', family:'sour', glass:'rocks', sub:'Gold Rush · 三样材料，新手最不容易失手', items:[['bourbon',45],['lemon',15],['honey_syrup_31',15]],
+    tip:'蜂蜜和柠檬一进一出，摇到杯子外壁起霜就行。蜂蜜糖浆用 3:1；手上只有 1:1 的话，甜度会淡一点。' },
   { name:'薄荷朱丽普', family:'spirit', glass:'rocks', sub:'Mint Julep · 冰最多的一杯', items:[['bourbon',45],['syrup',10],['mint',6]],
     tip:'冰要装到杯口再压实。薄荷只用手拍一下，别捣碎，碎了会出草腥味。' },
   { name:'纽约', family:'sour', glass:'coupe', sub:'New York · 颜色好看，适合待客', items:[['bourbon',45],['lemon',30],['syrup',10],['grenadine',15]],
@@ -752,7 +755,7 @@ var PRESETS = [
   ,{ name:'黛绮莉', family:'sour', glass:'coupe', sub:'Daiquiri · 三样材料，考的全是配比', items:[['rum',60],['lime',20],['syrup',15]],
     why:'参考本用砂糖；冷饮里糖化不开，这里用糖浆（甜度相当）。',
     tip:'朗姆、青柠、糖，就这三样。做不好通常是酸甜没配平——这杯最适合拿来练手，也是所有"酸"类鸡尾酒的原型。' }
-  ,{ name:'蜂之膝', family:'sour', glass:'coupe', sub:'Bee\'s Knees · 金酒、蜂蜜、柠檬', items:[['gin',45],['honey_syrup',15],['lemon',15]],
+  ,{ name:'蜂之膝', family:'sour', glass:'coupe', sub:'Bee\'s Knees · 金酒、蜂蜜、柠檬', items:[['gin',45],['honey_syrup_31',15],['lemon',15]],
     tip:'禁酒令时期的配方，当年蜂蜜是用来盖住劣质酒的杂味的。把金酒换成威士忌或苹果白兰地，同样成立。' }
   ,{ name:'吉姆雷特', family:'sour', glass:'coupe', sub:'Gimlet · 金酒和青柠的直球', items:[['gin',60],['lime',15],['syrup',10]],
     tip:'比黛绮莉更冷、更直接。青柠别超过 15ml，多了会盖掉杜松子——这杯喝的就是金酒本身。' }
@@ -817,6 +820,7 @@ var STORE = {
   /* ---- 甜味 ---- */
   syrup: { lv: 'mid', risk: 1, text: '自制 1:1 糖浆常温阴凉能放 2-3 周；做成 2:1（糖多水少）能放半年以上，是住处更该选的做法。' },
   honey_syrup: { lv: 'mid', risk: 1, text: '常温阴凉 3-4 周，蜂蜜本身抑菌，比白糖浆耐放。' },
+  honey_syrup_31: { lv: 'mid', risk: 1, text: '3:1 糖度高，常温阴凉能放 1-2 个月；出现起泡或异味就丢掉。' },
   honey: { lv: 'ok', risk: 0, text: '常温放着就行，几乎不坏。结晶了隔温水泡一下就行。' },
   demerara: { lv: 'mid', risk: 1, text: '和白糖浆一样，常温阴凉 2-3 周。' },
   maple: { lv: 'mid', risk: 1, text: '未开封常温。开封后冷藏最稳，住处建议 1-2 个月内用完。' },
@@ -898,7 +902,7 @@ var PH = {
   orange_juice: 3.7, grapefruit: 3.2, pineapple: 3.5, cranberry: 2.6, tomato: 4.2,
   coconut_water: 5.0, apple_juice: 3.5, grape_juice: 3.4, mango_mix: 3.6,
   /* 甜味 */
-  syrup: 5.0, honey_syrup: 4.8, honey: 4.0, demerara: 4.5, maple: 5.5,
+  syrup: 5.0, honey_syrup: 4.8, honey_syrup_31: 4.8, honey: 4.0, demerara: 4.5, maple: 5.5,
   grenadine: 2.8, monin: 3.5, lemon_sherbet: 2.4, oleo: 3.0,
   /* 气泡与饮料 */
   soda: 5.0, tonic: 3.0, ginger_ale: 3.2, ginger_beer: 3.4, coke: 2.5, sprite: 3.2,
@@ -936,7 +940,7 @@ var PH_DEFAULT = 6.0;
    ========================================================= */
 var BRIX = {
   /* 糖浆 / 甜味（按标签 Brix） */
-  syrup: 50, demerara: 67, honey_syrup: 42, honey: 82, grenadine: 60,
+  syrup: 50, demerara: 67, honey_syrup: 42, honey_syrup_31: 60, honey: 82, grenadine: 60,
   monin: 58, maple: 66, oleo: 60, lemon_sherbet: 45,
   /* 酸味 */
   lemon: 8, lime: 7, lemon_bottle: 8, passionfruit: 15, sunquick: 45,
@@ -979,7 +983,7 @@ var TA = {
   /* 酸味（g/L，按柠檬酸计） */
   lemon: 55, lime: 65, lemon_bottle: 50, passionfruit: 35, sunquick: 55,
   /* 糖浆 / 甜味（本身几乎不带酸） */
-  syrup: 0, demerara: 0, honey_syrup: 0, honey: 0.5, grenadine: 1.5,
+  syrup: 0, demerara: 0, honey_syrup: 0, honey_syrup_31: 0.4, honey: 0.5, grenadine: 1.5,
   monin: 0.5, maple: 0.2, oleo: 0, lemon_sherbet: 15,
   /* 果汁 */
   orange_juice: 8, grapefruit: 10, pineapple: 9, cranberry: 10, tomato: 4,

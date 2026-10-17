@@ -1689,6 +1689,37 @@ console.log('\n--- 酒单 ---');
   console.log('  ' + (okTips ? '✅' : '❌') + ' Tips 里有家族对照表（含两种平衡尺子）');
   if (!okTips) bad('酒单', 'Tips 里缺家族对照表');
 
+  /* 蜂蜜糖浆：1:1 和 3:1 是两种浓度，参考本那 7 条写的都是 3:1 */
+  const okHs = B.chem.BRIX.honey_syrup_31 === 60 && B.chem.TA.honey_syrup_31 === 0.4
+    && global.__I.some(g => g.id === 'honey_syrup_31' && g.cat === 'sweet');
+  console.log('  ' + (okHs ? '✅' : '❌') + ' 蜂蜜糖浆（3:1）在库里：60 °Bx / 0.4 g/L');
+  if (!okHs) bad('酒单', '蜂蜜糖浆（3:1）缺失或数据不对');
+
+  const ref31 = global.__REF.filter(r => r.needs.some(nd => nd.n.indexOf('3:1蜂蜜糖浆') === 0));
+  const bad31 = ref31.filter(r => !r.needs.some(nd => nd.need.id === 'honey_syrup_31'));
+  const okRef31 = ref31.length === 7 && bad31.length === 0;
+  console.log('  ' + (okRef31 ? '✅' : '❌') + ' 参考本里 7 条「3:1蜂蜜糖浆」都指向 3:1 那款'
+    + (bad31.length ? '：漏 ' + bad31.map(r => r.zh).join('、') : ''));
+  if (!okRef31) bad('酒单', '3:1蜂蜜糖浆的映射不对：' + ref31.length + ' 条，错 ' + bad31.length);
+
+  const preset31 = ['蜂之膝', '青霉素', '淘金热'].filter(function (n) {
+    const p = global.__PRESETS.filter(x => x.name === n)[0];
+    return p && p.items.some(it => it[0] === 'honey_syrup_31');
+  });
+  console.log('  ' + (preset31.length === 3 ? '✅' : '❌') + ' 蜂之膝 / 青霉素 / 淘金热的预设都用 3:1（'
+    + preset31.join('、') + '）');
+  if (preset31.length !== 3) bad('酒单', '预设没用 3:1：只改了 ' + preset31.join('、'));
+
+  const hsBadge = [];
+  [['蜂之膝', '蜂之膝'], ['盘尼西林', '青霉素'], ['淘金热', '淘金热']].forEach(function (pair) {
+    const i = global.__REF.findIndex(r => r.zh === pair[0]);
+    B.menu.open(i);
+    if (els.menuDetail.innerHTML.indexOf('本站配比') >= 0) hsBadge.push(pair[1]);
+  });
+  console.log('  ' + (hsBadge.length ? '❌' : '✅') + ' 这两边的蜂蜜浓度对齐后，不再挂「本站配比」'
+    + (hsBadge.length ? '：' + hsBadge.join('、') : ''));
+  if (hsBadge.length) bad('酒单', '蜂蜜浓度已对齐却还挂角标：' + hsBadge.join('、'));
+
   /* 用户说"按人家的酒单挑出来的一定比咱们配的好喝"——那"不一样"就必须一眼看到，
      不能只藏在折叠里。这里把 <details> 整段抠掉，剩下的部分仍然要写清楚。 */
   const visible = i => {
