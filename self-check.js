@@ -2242,6 +2242,73 @@ console.log('\n--- 配方码 ---');
   B.code.load(code); B.load([]);
 })();
 
+/* ---- 家族口径：不同家族用不同的平衡尺子 ---- */
+console.log('\n--- 家族口径（换家族 = 换尺子，不奖励不惩罚）---');
+(function () {
+  const run = (glass, ice, items, method) => {
+    B.state.glass = glass; B.state.iceLevel = ice; B.state.method = method || 'build';
+    B.state.taste = 'normal'; B.state.scheme = 'balanced';
+    return B.load(items);
+  };
+  const martini = [['tanqueray', 60], ['dry_vermouth', 10], ['orange_bitters', 1]];
+  B.state.recipeName = '';
+  const m1 = run('coupe', 'none', martini, 'stir');
+  const f1 = B.familyOf(B.analyze());
+  const m2 = run('coupe', 'none', martini.concat([['soda', 60]]), 'stir');
+  const f2 = B.familyOf(B.analyze());
+  const okFam = f1.id === 'duo' && f2.id === 'highball';
+  const okDrop = m2.total < m1.total;
+  console.log('  ' + (okFam ? '✅' : '❌') + ' 干马天尼是「' + f1.name + '」；加 60ml 苏打水后变成「' + f2.name + '」');
+  console.log('  ' + (okDrop ? '✅' : '❌') + ' 加苏打水之后总分不再上涨：'
+    + m1.total + ' → ' + m2.total + '（平衡 ' + m1.balance + ' → ' + m2.balance + '）');
+  if (!okFam) bad('家族', '马天尼加苏打水没有被判成换家族');
+  if (!okDrop) bad('家族', '马天尼加苏打水总分反而涨了：' + m1.total + ' → ' + m2.total);
+
+  /* 其他几杯的家族别判歪 */
+  const famCases = [
+    ['金汤力', [['tanqueray', 45], ['tonic', 120], ['lime', 10]], 'highball'],
+    ['自由古巴', [['havana3', 50], ['coke', 120], ['lime', 10]], 'highball'],
+    ['螺丝刀', [['vodka', 50], ['orange_juice', 100]], 'long'],
+    ['威士忌酸', [['bourbon', 45], ['lemon', 20], ['syrup', 15], ['egg_white', 15]], 'sour'],
+    ['尼格罗尼', [['gin', 30], ['campari', 30], ['vermouth', 30]], 'duo'],
+    ['古典鸡尾酒', [['bourbon', 60], ['syrup', 7.5], ['angostura', 2]], 'old_fashioned']
+  ];
+  const wrong = [];
+  famCases.forEach(function (c) {
+    const r = run(c[1].some(it => ['tonic', 'coke', 'orange_juice'].indexOf(it[0]) >= 0) ? 'highball' : 'rocks',
+      'full', c[1], 'build');
+    const got = B.familyOf(B.analyze()).id;
+    if (got !== c[2]) wrong.push(c[0] + '=' + got + '（应为 ' + c[2] + '）');
+  });
+  console.log('  ' + (wrong.length ? '❌' : '✅') + ' 家族抽查 ' + famCases.length + ' 杯'
+    + (wrong.length ? '：' + wrong.join('、') : '都对'));
+  if (wrong.length) bad('家族', '家族判歪了：' + wrong.join('、'));
+
+  /* 高球那根评分条的说明必须换成"酒体 : 稀释物"，不能再拿甜酸比解释 */
+  run('highball', 'full', [['tanqueray', 45], ['tonic', 120], ['lime', 10]], 'build');
+  const cap = els['subScores'].innerHTML;
+  const okCap = cap.indexOf('按「高球」量') >= 0 && cap.indexOf('酒体') >= 0;
+  console.log('  ' + (okCap ? '✅' : '❌') + ' 高球的平衡条写的是「酒体 : 稀释物」，不是甜酸比');
+  if (!okCap) bad('家族', '高球的平衡说明没换过来');
+
+  /* 加了苏打水之后，"换家族了"要说人话 */
+  /* 参考本里这杯就叫「马天尼」（我们的预设叫「干马天尼」） */
+  const dm = global.__REF.findIndex(r => r.zh === '马天尼');
+  B.have.load(dm);
+  B.state.cup.set('soda', 60);
+  const tips = B.advise(B.analyze()).map(x => x.text).join(' ');
+  const okSay = tips.indexOf('现在算「高球」') >= 0 && tips.indexOf('马天尼') >= 0;
+  console.log('  ' + (okSay ? '✅' : '❌') + ' 加完苏打水会说"这杯现在算高球，不再是干马天尼"');
+  if (!okSay) bad('家族', '换家族没有说人话：' + tips.slice(0, 80));
+
+  /* 整体放大不能换家族（绝对毫升阈值会造成这种悬崖） */
+  const cosmo = [['vodka', 40], ['cointreau', 15], ['cranberry', 30], ['lime', 15]];
+  const c1 = B.familyOf(run('coupe', 'none', cosmo, 'shake') && B.analyze()).id;
+  const c2 = B.familyOf(B.load(cosmo.map(it => [it[0], Math.round(it[1] * 1.6)])) && B.analyze()).id;
+  console.log('  ' + (c1 === c2 ? '✅' : '❌') + ' 大都会放大 1.6 倍，家族不变（' + c1 + '）');
+  if (c1 !== c2) bad('家族', '整体缩放换了家族：' + c1 + ' → ' + c2);
+})();
+
 /* ---- IBA 官方规格：第三个版本，映射不许静默漏 ---- */
 console.log('\n--- IBA 官方规格（第三个版本）---');
 (function () {

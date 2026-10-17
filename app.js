@@ -246,6 +246,10 @@
     var nItems = 0, nBase = 0, nNonIce = 0, hasFizzIng = false, baseMl = 0;
     var nOthers = 0;   /* 除基酒和冰以外的材料（配料） */
     var juiceMl = 0, hasDairy = false, dairyFat = false, isHot = false;
+    /* 家族判断要用的体积：加强酒/利口酒（"辅料酒"）和气泡饮料 */
+    var modMl = 0, mixerMl = 0;
+    /* 家族判断还看"加了酸 / 加了甜 / 有蛋 / 有薄荷"这几种角色 */
+    var sourMl = 0, sweetMl = 0, eggMl = 0, hasMint = false;
     var acidLoad = 0, enzymes = [], dairyName = '';
     /* 每样材料的温度，用来算冰化掉多少（见 meltFrom） */
     var parts = [], tempMix = { frozen: 0, cold: 0, room: 0, hot: 0 };
@@ -271,6 +275,13 @@
       if (isBase(g)) { hasBase = true; nBase++; baseMl += ml; }
       else if (!g.ice) nOthers++;
       if (g.cat === 'juice') juiceMl += ml;
+      if (g.cat === 'wine' || g.cat === 'liqueur') modMl += ml;
+      if (g.cat === 'mixer') mixerMl += ml;
+      if (g.cat === 'sour') sourMl += ml;
+      if (g.cat === 'sweet') sweetMl += ml;
+      /* 只有蛋黄/全蛋算 Flip；蛋清是酸酒里的泡沫，威士忌酸加了蛋清还是酸酒 */
+      if (g.id === 'egg_yolk') eggMl += ml;
+      if (g.id === 'mint') hasMint = true;
       if (DAIRY_FAT[g.id] || LACTIC[g.id]) hasDairy = true;
       if (DAIRY_FAT[g.id]) { dairyFat = true; if (!dairyName) dairyName = g.name; }
       if (ENZYMES[g.id] && ml > 0) enzymes.push(ENZYMES[g.id]);
@@ -377,6 +388,8 @@
       hasIce: hasIce, hasBase: hasBase, nItems: nItems, nBase: nBase,
       nNonIce: nNonIce, hasFizzIng: hasFizzIng, baseMl: baseMl,
       juiceMl: juiceMl, hasJuice: juiceMl > 5, hasDairy: hasDairy, dairyFat: dairyFat, isHot: isHot,
+      modMl: modMl, mixerMl: mixerMl,
+      sourMl: sourMl, sweetMl: sweetMl, eggMl: eggMl, hasMint: hasMint,
       ph: ph, acidLoad: acidLoad, enzymes: enzymes, dairyName: dairyName, taste: state.taste,
       fd: fd, nOthers: nOthers,
       /* 温度那条线的产物：杯里有多少克冰、倒进去就化了多少水、
@@ -411,6 +424,52 @@
   /* 平衡：全部按"浓度"判断，不用绝对量。
      甜不甜、酸不酸是每口的感觉，跟杯子多大无关——用绝对量的话，
      把同一杯酒整体放大，甜度阈值就会越过去，分数跟着变。 */
+  /* ---------------------------------------------------------
+     家族：按材料角色自动判（用户不用知道自己调的是哪个家族）
+
+     家族只做两件事：换一把"平衡"的尺子、解释"这杯已经不是那杯了"。
+     不因为偏离经典扣分——那是复古税，会惩罚新东西。
+     --------------------------------------------------------- */
+  var FAMILY_LABEL = {
+    hot: '热饮', neat: '纯饮', flip: '蛋类 Flip', cream: '奶类',
+    fizz: '菲士 / 柯林斯', sour: '酸类', highball: '高球', long: '长饮',
+    old_fashioned: '古典型', duo: '双料', spirit: '烈酒向'
+  };
+  function familyOf(a) {
+    if (a.isHot) return { id: 'hot', name: FAMILY_LABEL.hot };
+    if (a.neatPour) return { id: 'neat', name: FAMILY_LABEL.neat };
+    if (a.eggMl > 0) return { id: 'flip', name: FAMILY_LABEL.flip };
+    if (a.dairyFat) return { id: 'cream', name: FAMILY_LABEL.cream };
+    /* 加了酸、也加了甜 → 酸酒骨架；有气泡就是菲士 / 柯林斯。
+       注意看的是"有没有加"（sourMl / sweetMl），不是糖酸总分——
+       自由古巴的甜来自可乐、没有另加酸，它是高球，不是酸酒。 */
+    /* 酸酒骨架 = 加了酸，而且有甜味来源（糖浆，或者够分量的利口酒）。
+       全部用比例判断，不用绝对毫升——不然把同一杯整体放大，家族会跳。 */
+    var modShare = a.liquid > 0 ? a.modMl / a.liquid : 0;
+    if (a.sourMl > 0 && (a.sweetMl > 0 || modShare >= 0.12))
+      return a.hasFizzIng
+        ? { id: 'fizz', name: FAMILY_LABEL.fizz }
+        : { id: 'sour', name: FAMILY_LABEL.sour };
+    if (a.hasFizzIng) return { id: 'highball', name: FAMILY_LABEL.highball };
+    if (a.liquid > 0 && a.juiceMl / a.liquid >= 0.35) return { id: 'long', name: FAMILY_LABEL.long };
+    if (a.sweetMl > 0 && a.fd.bitter > 0.5) return { id: 'old_fashioned', name: FAMILY_LABEL.old_fashioned };
+    if (a.modMl > 0) return { id: 'duo', name: FAMILY_LABEL.duo };
+    if (a.sweetMl > 0) return { id: 'old_fashioned', name: FAMILY_LABEL.old_fashioned };
+    return { id: 'spirit', name: FAMILY_LABEL.spirit };
+  }
+  /* 高球的平衡不是"甜:酸"，是"酒体 : 稀释物"。
+     1:1.7 ~ 1:5 之间满分；酒太多（马天尼只加一点苏打）或太淡都会掉。
+     螺丝刀（酒 50 : 果汁 100）也是这把尺子——它是长饮，不是酸酒。 */
+  function highballBalance(a) {
+    var sp = a.baseMl + a.modMl;
+    var mix = a.mixerMl + a.juiceMl + a.sourMl + a.sweetMl;
+    if (sp <= 0 || mix <= 0) return 70;
+    var r = sp / mix;
+    if (r >= 0.2 && r <= 0.6) return 100;
+    if (r < 0.2) return interp(r / 0.2, [[0, 45], [0.5, 75], [0.8, 93], [1, 100]]);
+    return interp((r - 0.6) / 0.6, [[0, 100], [0.25, 82], [0.55, 64], [1, 48]]);
+  }
+
   function scoreBalance(a) {
     var S = a.fd.sugar, A = a.fd.acid, B = a.fd.bitter;
     var cw = A + 0.4 * B;
@@ -419,6 +478,9 @@
        却会因为"甜得没有酸来抵消"被扣分（所以早先版本里麦卡伦 12 年纯饮
        反而比占边白标低分）。纯饮该看的是香气层次和厚度。 */
     if (a.neatPour) return neatBalance(a);
+    /* 高球 / 长饮换尺子：量的是"酒体 : 稀释物"，不是甜酸比 */
+    var fam = familyOf(a);
+    if (fam.id === 'highball' || fam.id === 'long') return highballBalance(a);
     /* 先算"比例"分，再乘一个"浓度"系数。
        比例对不代表能喝：一杯 45ml 波本 + 15ml 糖浆 + 65ml 浓缩柠檬汁，
        甜酸比恰好落进理想区间，但「糖+酸」总量 45 是全部经典配方的上限（41）之外——
@@ -787,6 +849,19 @@
     var longDrink = f.fizz > 3;
 
     function add(p, tone, text) { out.push({ p: p, tone: tone, text: text }); }
+
+    /* 换家族：加了东西之后这杯已经不是原来那杯了——换标签、换尺子，
+       不奖励也不惩罚。不看这一条的话，"马天尼 + 苏打水"只会被当成
+       "一杯更好/更差的马天尼"，而它其实已经进了高球家族。 */
+    var famNow = familyOf(a);
+    if (state.recipeName && state.recipeFamily && state.recipeFamily !== 'neat'
+        && famNow.id !== state.recipeFamily && !a.neatPour) {
+      add(99, 'tip', '这杯现在算「' + famNow.name + '」了，不再是「'
+        + (FAMILY_LABEL[state.recipeFamily] || state.recipeFamily) + '」——平衡改按「'
+        + famNow.name + '」的尺子量'
+        + ((famNow.id === 'highball' || famNow.id === 'long') ? '（酒体 : 稀释物）' : '')
+        + '。它已经不是一杯「' + state.recipeName + '」了。');
+    }
 
     /* 气泡进了摇壶会喷——安全提醒，放第一条，不扣分（不是好不好喝的问题） */
     if (a.fizzNames.length && (state.method === 'shake' || state.method === 'stir')) {
@@ -1224,6 +1299,13 @@
         + load.toFixed(0) + (load > 42 ? '　⚠ 超过经典的浓上限 41' : '')
       : '没有明显的酸甜';
     if (a.neatPour) ratioCap = '纯饮：没有配料，按香气层次和厚度判断（不套"甜 : 酸"那套）';
+    /* 高球 / 长饮换了一把尺子：这里也要跟着换说法，不然会拿甜酸比去解释一个
+       按"酒体 : 稀释物"打的分。 */
+    var famNow = familyOf(a);
+    if (famNow.id === 'highball' || famNow.id === 'long') {
+      ratioCap = '按「' + famNow.name + '」量：酒体 ' + Math.round(a.baseMl + a.modMl)
+        + 'ml : 稀释物 ' + Math.round(a.mixerMl + a.juiceMl + a.sourMl + a.sweetMl) + 'ml';
+    }
     var dimsOn = DIMS.filter(function (d) { return a.fd[d.k] > 2; }).length;
     /* 每一项都标出它现在的权重——换了评分方案，这些数字会一起变 */
     var w = sc.weight, pc = function (x) { return Math.round(x * 100) + '%'; };
@@ -1970,7 +2052,10 @@
     state.iceLevel = glassOf(state.glass).ice === 'inglass'
       ? (/无冰/.test(r.ice || '') ? 'none' : 'full') : 'none';
     state.method = methodFromRef(r.method);
-    state.taste = tasteForAbv(analyze().abv);
+    var ra0 = analyze();
+    state.taste = tasteForAbv(ra0.abv);
+    /* 记下这杯原本属于哪个家族——用户加了苏打水之后要能说"换家族了" */
+    state.recipeFamily = familyOf(ra0).id;
     forgetRecipe();
     state.recipeName = r.zh;
     state.recipeSub = r.en || '';
@@ -3104,7 +3189,10 @@
          于是点"萨泽拉克"出来的是兑和——35 度，比实际的 31 度烈。 */
       state.method = PRESET_METHOD[p.name] || state.method;
       /* 口味也跟着这杯的度数走（见 tasteForAbv），不然点马天尼一进来就被判"太烈" */
-      state.taste = tasteForAbv(analyze().abv);
+      var pa0 = analyze();
+      state.taste = tasteForAbv(pa0.abv);
+      /* 记下这杯原本属于哪个家族：之后用户往里面加苏打水，就能说"换家族了" */
+      state.recipeFamily = familyOf(pa0).id;
       /* 备注挪到杯子下面显示（用户说挤在卡片里太乱） */
       state.recipeName = p.name; state.recipeSub = p.sub; state.recipeTip = p.tip || '';
       state.swapOpen = false;
@@ -4082,6 +4170,8 @@
   window.BarMix = {
     state: state, analyze: analyze, advise: advise, BY_ID: BY_ID,
     dims: DIMS,                       /* 风味图的八个维度（调试/自检用） */
+    familyOf: familyOf,               /* 家族判断：给自检和调试用 */
+    FAMILY_LABEL: FAMILY_LABEL,
     /* 「今晚喝什么」：给自检和调试用 */
     tonight: {
       moods: MOODS,
