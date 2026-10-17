@@ -2525,6 +2525,15 @@ console.log('\n--- 家族口径（换家族 = 换尺子，不奖励不惩罚）-
   console.log('  ' + (okCap ? '✅' : '❌') + ' 高球的平衡条写的是「酒体 : 稀释物」，不是甜酸比');
   if (!okCap) bad('家族', '高球的平衡说明没换过来');
 
+  /* 莫吉托按参考本用 60ml 朗姆，14.9%——高球杯的上限是 15，不该被判"杯子不配" */
+  B.preset(global.__PRESETS.findIndex(p => p.name === '莫吉托'));
+  const mojitoAbv = B.analyze().abv;
+  const hbGlass = global.__G.filter(g => g.id === 'highball')[0];
+  const okMojito = mojitoAbv >= hbGlass.lo && mojitoAbv <= hbGlass.hi && Math.abs(mojitoAbv - 14.9) < 0.2;
+  console.log('  ' + (okMojito ? '✅' : '❌') + ' 莫吉托 ' + mojitoAbv.toFixed(1)
+    + '% 落在高球杯区间 ' + hbGlass.lo + '-' + hbGlass.hi + '% 里');
+  if (!okMojito) bad('家族', '莫吉托又被判成杯子不配：' + mojitoAbv.toFixed(1) + '%');
+
   /* 加了苏打水之后，"换家族了"要说人话 */
   /* 参考本里这杯就叫「马天尼」（我们的预设叫「干马天尼」） */
   const dm = global.__REF.findIndex(r => r.zh === '马天尼');

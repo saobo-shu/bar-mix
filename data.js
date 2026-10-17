@@ -1043,7 +1043,9 @@ var ENZYMES = {
 var GLASSES = [
   { id: 'icecup', name: '便利店冰杯', cap: 400, liquidMax: 200, ice: 'inglass', melt: 55, lo: 4, hi: 14,
     note: '买来就是一整杯冰。冰填到杯口，剩下的空间才是液体——所以液体通常还不到冰的一半。' },
-  { id: 'highball', name: '高球杯', cap: 380, liquidMax: 190, ice: 'inglass', melt: 50, lo: 4, hi: 14,
+  /* hi 从 14 放到 15：参考本的莫吉托是 60ml 朗姆，做好 14.9%——高球杯装它没问题，
+     原来那条 14% 的上限会把它误报成"杯子不配"（2026-10-17） */
+  { id: 'highball', name: '高球杯', cap: 380, liquidMax: 190, ice: 'inglass', melt: 50, lo: 4, hi: 15,
     note: '细长直身杯，冰也要填满。高球、金汤力、莫吉托这类气泡长饮都用它。' },
   { id: 'rocks', name: '古典杯', cap: 300, liquidMax: 140, ice: 'inglass', melt: 25, lo: 14, hi: 42,
     note: '矮胖厚底，一般也是加满冰。想让它化得慢就换一整块大方冰，melt 能砍一半。' },
