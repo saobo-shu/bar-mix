@@ -1837,6 +1837,31 @@ console.log('\n--- 酒单 ---');
   console.log('  ' + (okMugCold ? '✅' : '❌') + ' 冷饮倒进马克杯，仍然不是热饮');
   if (!okMugCold) bad('家族', '倒进马克杯就被判成热饮了');
 
+  /* 冷饮进马克杯：要比用对杯子低，并且明确提醒（以前同分） */
+  const coldIn = (glass, ice) => {
+    B.state.glass = glass; B.state.iceLevel = ice; B.state.method = 'build';
+    B.state.taste = 'normal'; B.state.scheme = 'balanced';
+    B.state.recipeName = ''; B.state.recipeFamily = '';
+    B.load([['campari', 30], ['vermouth', 30], ['soda', 60]]);
+    return { total: B.scores().total, tips: B.advise(B.analyze()).map(x => x.text).join(' ') };
+  };
+  const hbOk = coldIn('highball', 'full');
+  const mugBad = coldIn('mug', 'none');
+  /* 杯子只是容器，不会加热——冷饮在马克杯里不扣分，只提醒"这里没有冰" */
+  const okMugScore = Math.abs(hbOk.total - mugBad.total) < 0.01
+    && mugBad.tips.indexOf('马克杯') >= 0 && mugBad.tips.indexOf('不影响分数') >= 0;
+  console.log('  ' + (okMugScore ? '✅' : '❌') + ' 冷饮用对杯子 ' + hbOk.total + ' / 倒进马克杯 '
+    + mugBad.total + '（同分，只提醒"这里没有冰"）');
+  if (!okMugScore) bad('家族', '冷饮在马克杯里的处理不对：' + hbOk.total + ' vs ' + mugBad.total);
+  /* 热饮在马克杯里不该触发这条提醒 */
+  B.state.glass = 'mug'; B.state.iceLevel = 'none'; B.state.method = 'build';
+  B.state.recipeName = ''; B.state.recipeFamily = '';
+  B.load([['jw_black', 45], ['hot_water', 90], ['honey', 15]]);
+  const hotTips = B.advise(B.analyze()).map(x => x.text).join(' ');
+  const okHotMug = hotTips.indexOf('这是冷饮') < 0;
+  console.log('  ' + (okHotMug ? '✅' : '❌') + ' 热饮在马克杯里不会误报"这是冷饮"');
+  if (!okHotMug) bad('家族', '热饮在马克杯里被误报成冷饮');
+
   /* 纯饮不评分；空杯不显示 */
   B.state.glass = 'shot'; B.state.iceLevel = 'none'; B.state.method = 'build';
   B.state.recipeName = ''; B.state.recipeFamily = '';
