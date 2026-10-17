@@ -1676,6 +1676,30 @@ console.log('\n--- 酒单 ---');
   console.log('  ' + (okFamReset ? '✅' : '❌') + ' 清掉家族筛选后回到 191 杯（' + B.menu.list() + '）');
   if (!okFamReset) bad('酒单', '家族筛选没有正确重置：' + B.menu.list());
 
+  /* 蛋类不能是空的：波特菲利普的蛋黄是"可选"标记，但它是这杯的身份 */
+  const flipIdx = global.__REF.findIndex(r => r.zh === '波特菲利普');
+  const flipFam = B.menu.stat(flipIdx).family;
+  console.log('  ' + (flipFam === 'flip' ? '✅' : '❌') + ' 波特菲利普判成 Flip（蛋类）');
+  if (flipFam !== 'flip') bad('酒单', '波特菲利普没被判成 Flip：' + flipFam);
+  B.menu.setFamily('flip');
+  const flipRefs = B.menu.listRefs().map(r => r.zh);
+  const okFlipFilter = flipRefs.length > 0 && flipRefs.indexOf('波特菲利普') >= 0;
+  console.log('  ' + (okFlipFilter ? '✅' : '❌') + ' 按「蛋类」筛：' + flipRefs.join('、'));
+  if (!okFlipFilter) bad('酒单', '蛋类筛选是空的');
+  B.menu.reset();
+
+  /* 筛选条上不许出现"点了没结果"的空家族 */
+  const famChips = Array.from(els['menuFilters'].innerHTML.matchAll(/data-menu-family="([a-z_]+)"/g))
+    .map(m => m[1]);
+  const emptyFams = famChips.filter(function (f) {
+    B.menu.setFamily(f);
+    return B.menu.list() === 0;
+  });
+  console.log('  ' + (emptyFams.length ? '❌' : '✅') + ' 家族筛选条上 ' + famChips.length + ' 个分类都有酒'
+    + (emptyFams.length ? '：空的是 ' + emptyFams.join('、') : ''));
+  if (emptyFams.length) bad('酒单', '筛选条上有空分类：' + emptyFams.join('、'));
+  B.menu.reset();
+
   /* 详情里要写出这杯属于哪个家族 */
   B.menu.open(global.__REF.findIndex(r => r.zh === '马天尼'));
   const famTxt = strip(els.menuDetail.innerHTML);

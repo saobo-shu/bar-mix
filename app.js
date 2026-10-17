@@ -2189,7 +2189,9 @@
     var keep = { cup: state.cup, glass: state.glass, ice: state.iceLevel, method: state.method };
     var cup = new Map();
     r.needs.forEach(function (nd) {
-      if (nd.need.optional) return;
+      /* 可选材料一般不计入统计（比如可省的柠檬皮）；
+         但蛋清/蛋黄是可选的"结构材料"——跳过蛋黄，波特菲利普就不算 Flip 了。 */
+      if (nd.need.optional && nd.need.id !== 'egg_yolk' && nd.need.id !== 'egg_white') return;
       var id = resolveNeedId(nd.need);
       if (!id || !BY_ID[id]) return;
       var g = BY_ID[id];
@@ -2238,6 +2240,20 @@
     state.cup = keep.cup; state.glass = keep.glass;
     state.iceLevel = keep.ice; state.method = keep.method;
     return (PRESET_STAT[p.name] = { family: familyOf(a), abv: a.abv });
+  }
+
+  /* 每个家族在酒单里有多少杯（跟筛选口径一致：有本站配比就按本站配比算）。
+     只用来决定筛选条上显示哪些家族，算一次缓存住。 */
+  var FAMILY_COUNTS = null;
+  function familyCounts() {
+    if (FAMILY_COUNTS) return FAMILY_COUNTS;
+    var c = {};
+    REF_RECIPES.forEach(function (r, i) {
+      var pd = presetDiffOf(r);
+      var fid = pd ? presetStat(pd.pre).family.id : refStat(i).family;
+      c[fid] = (c[fid] || 0) + 1;
+    });
+    return (FAMILY_COUNTS = c);
   }
 
   /* 酒单的一杯：只写名字、用到什么、怎么做——点开才看细节 */
@@ -2310,13 +2326,14 @@
     ];
     /* 家族：跟"基酒"不同——它说的是这杯的骨架（酸酒 / 高球 / 双料…），
        直接决定平衡分拿什么尺子量。 */
-    var families = [
-      ['', '全部家族'],
+    /* 只列出真有酒的家族——空分类摆出来很难看（2026-10-17 用户提） */
+    var counts = familyCounts();
+    var families = [['', '全部家族']].concat([
       ['sour', '酸类'], ['fizz', '菲士/柯林斯'], ['highball', '高球'], ['long', '长饮'],
       ['rickey', 'Rickey'], ['mule', '骡子'],
       ['old_fashioned', '古典型'], ['duo', '双料'], ['flip', '蛋类'], ['cream', '奶类'],
       ['spirit', '烈酒向']
-    ];
+    ].filter(function (x) { return counts[x[0]] > 0; }));
     function row(list, cur, attr) {
       return list.map(function (x) {
         return '<button type="button" class="ghost' + (x[0] === cur ? ' on' : '') + '" '
