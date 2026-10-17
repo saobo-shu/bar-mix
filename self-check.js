@@ -880,9 +880,17 @@ console.log('\n--- 建议的可执行性（不能教人做坏一杯酒）---');
 (function () {
   B.load([['bourbon', 60], ['vermouth', 20]]);
   const advM = B.advise(B.analyze()).map(x => x.text).join(' ');
-  const okM = advM.indexOf('糖浆减 5ml') < 0 && (advM.indexOf('没加糖浆') >= 0 || advM.indexOf('味美思') >= 0);
-  console.log('  ' + (okM ? '✅' : '❌') + ' 曼哈顿：不会让用户去减一杯里没有的糖浆');
+  /* 双料现在按"酒 : 辅料"给建议，不再走甜酸那条线 */
+  const okM = advM.indexOf('糖浆减 5ml') < 0 && advM.indexOf('减 5ml 糖浆') < 0;
+  console.log('  ' + (okM ? '✅' : '❌') + ' 曼哈顿：不会再让用户去减一杯里没有的糖浆');
   if (!okM) bad('建议', '曼哈顿的建议提到了不存在的糖浆');
+
+  /* 辅料压倒酒的双料：要按"酒 : 辅料"提醒，而不是甜酸 */
+  B.load([['gin', 20], ['campari', 60]]);
+  const advHeavy = B.advise(B.analyze()).map(x => x.text).join(' ');
+  const okHeavy = advHeavy.indexOf('辅料') >= 0 && advHeavy.indexOf('补 10ml 基酒') >= 0;
+  console.log('  ' + (okHeavy ? '✅' : '❌') + ' 辅料压倒酒的双料：按「酒 : 辅料」提醒');
+  if (!okHeavy) bad('建议', '双料的建议没按酒:辅料给：' + advHeavy.slice(0, 80));
 
   B.load([['rum', 45], ['coconut_milk', 60], ['cream', 30]]);
   const advD = B.advise(B.analyze()).map(x => x.text).join(' ');
@@ -1771,6 +1779,28 @@ console.log('\n--- 酒单 ---');
   console.log('  ' + (okSourLine ? '✅' : '❌') + ' 自己配的酸类：' + lineSour);
   console.log('  ' + (okHbLine ? '✅' : '❌') + ' 自己配的高球：' + lineHb);
   if (!okDuoLine || !okSourLine || !okHbLine) bad('家族', '自己配的酒没写家族/尺子');
+
+  /* 双料：按"酒 : 辅料"量，不再用甜酸比 */
+  const duoScore = items => {
+    B.state.glass = 'rocks'; B.state.iceLevel = 'full'; B.state.method = 'build';
+    B.state.taste = 'normal'; B.state.scheme = 'balanced';
+    B.state.recipeName = ''; B.state.recipeFamily = '';
+    B.load(items);
+    return B.scores();
+  };
+  const manh = duoScore([['bourbon', 60], ['vermouth', 20]]);
+  const mart = duoScore([['tanqueray', 60], ['dry_vermouth', 10]]);
+  const heavy = duoScore([['gin', 20], ['campari', 60]]);
+  const wash = duoScore([['gin', 90], ['dry_vermouth', 5]]);
+  const okDuoScore = manh.balance >= 99 && mart.balance >= 99
+    && heavy.balance < 95 && wash.balance < 80;
+  console.log('  ' + (okDuoScore ? '✅' : '❌') + ' 双料按酒:辅料量：曼哈顿 ' + manh.balance
+    + ' / 马天尼 ' + mart.balance + ' / 辅料压倒 ' + heavy.balance + ' / 只洗个杯 ' + wash.balance);
+  if (!okDuoScore) bad('家族', '双料的平衡没按酒:辅料量');
+  const duoCap = els['subScores'].innerHTML;
+  const okDuoCap = duoCap.indexOf('按「双料」量') >= 0 && duoCap.indexOf('酒体') >= 0;
+  console.log('  ' + (okDuoCap ? '✅' : '❌') + ' 双料的平衡说明写的是「酒体 : 辅料」');
+  if (!okDuoCap) bad('家族', '双料的平衡说明没换过来');
 
   /* 纯饮不评分；空杯不显示 */
   B.state.glass = 'shot'; B.state.iceLevel = 'none'; B.state.method = 'build';

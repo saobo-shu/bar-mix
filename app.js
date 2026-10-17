@@ -521,6 +521,21 @@
     return interp((r - 1.05) / 1.95, [[0, 100], [0.3, 85], [0.6, 70], [1, 55]]);
   }
 
+  /* 双料的平衡：不是甜酸，是"酒 : 加强酒/利口酒"，外加稀释度。
+     1:2.2 ~ 8:1 之间满分——覆盖 Negroni（1:2）、Manhattan（3:1）、
+     Rob Roy（3.5:1）、Martini（6:1）。辅料比酒还多两倍以上、或只是洗杯量，才往下掉。 */
+  function duoBalance(a) {
+    var sp = a.baseMl, mod = a.modMl;
+    if (sp <= 0 || mod <= 0) return 85;
+    var r = sp / mod, s = 100;
+    if (r < 0.45) s = interp(r / 0.45, [[0, 40], [0.5, 72], [0.8, 90], [1, 100]]);
+    else if (r > 8) s = interp((r - 8) / 8, [[0, 100], [0.5, 82], [1, 58]]);
+    /* 稀释度：水占最终体积超过 35% 开始扣，最多扣 18 分 */
+    var waterShare = a.finalVol > 0 ? (a.finalVol - a.liquid) / a.finalVol : 0;
+    if (waterShare > 0.35) s -= Math.min(18, (waterShare - 0.35) * 120);
+    return clamp(s, 0, 100);
+  }
+
   function scoreBalance(a) {
     var S = a.fd.sugar, A = a.fd.acid, B = a.fd.bitter;
     var cw = A + 0.4 * B;
@@ -533,6 +548,7 @@
     var fam = familyOf(a);
     if (fam.id === 'highball' || fam.id === 'long'
         || fam.id === 'rickey' || fam.id === 'mule') return highballBalance(a);
+    if (fam.id === 'duo') return duoBalance(a);
     var load = S + A;
     var over = Math.max(0, load - 42);
     var cap = clamp(1 - over / 22, 0.35, 1);
@@ -981,7 +997,18 @@
         + '但做法选的是「兑和」——这样既没有冰也不会稀释。点上面的做法换成'
         + '「搅拌 Stir」或「摇和 Shake」，酒才会是冰的。');
 
-    if (f.sugar >= 4.5 && cw < 2.5) {
+    /* 双料不看甜酸——它的尺子是"酒 : 辅料"，甜酸建议会把人带偏（曼哈顿减味美思反而降分） */
+    if (famNow.id === 'duo' && a.modMl > 0 && a.baseMl > 0) {
+      var dr = a.baseMl / a.modMl;
+      if (dr < 0.45)
+        add(90, 'warn', '利口酒 / 味美思已经比酒还多（大约 1 : ' + (1 / dr).toFixed(1)
+          + '）。双料一般是酒当主角——补 10ml 基酒，或者把辅料减 5ml。');
+      else if (dr > 8)
+        add(84, 'tip', '辅料只有一点点（酒 : 辅料 ≈ ' + dr.toFixed(0)
+          + ' : 1）。再补 5ml 味美思 / 利口酒，骨架会更完整；现在更像"洗杯"。');
+    }
+
+    if (famNow.id !== 'duo' && f.sugar >= 4.5 && cw < 2.5) {
       if (spiritForward)
         add(94, 'warn', '糖不低，又没有东西压住它。2 滴安高天娜苦精（或者一条橙皮）就能把甜味变成「有层次的甜」，比加酸更适合这杯。');
       else if (a.dairyFat)
@@ -991,7 +1018,7 @@
         add(94, 'warn', '太甜了，缺一个「刹车」。加 15ml 鲜柠檬汁，或者 2 滴安高天娜苦精。');
     }
 
-    if (cw >= 2.5 && f.sugar >= 3.5 && r > (a.abv > 25 ? 1.9 : 1.75)) {
+    if (famNow.id !== 'duo' && cw >= 2.5 && f.sugar >= 3.5 && r > (a.abv > 25 ? 1.9 : 1.75)) {
       if (a.dairyFat && !a.hasJuice)
         add(92, 'warn', '甜度偏高（甜:酸大约 ' + r.toFixed(1) + ':1），但这杯里有奶，补酸会结块。把甜的那一味减 5ml 最安全。');
       else if (!a.hasSweetAdd)
@@ -1001,7 +1028,7 @@
         add(92, 'warn', '甜酸比偏甜（大约 ' + r.toFixed(1) + ' : 1）。把糖浆减 5ml，或者补 5-10ml 柠檬 / 青柠汁。');
     }
 
-    if (f.sugar >= 3.5 && cw >= 2.5 && r < 0.7)
+    if (famNow.id !== 'duo' && f.sugar >= 3.5 && cw >= 2.5 && r < 0.7)
       add(92, 'warn', '偏酸，有点冲。加 5ml 糖浆或蜂蜜——酸和糖一起进去，反而会显得更圆而不是更甜。');
 
     var band = tasteBand(a.taste);
@@ -1370,6 +1397,9 @@
         || famNow.id === 'rickey' || famNow.id === 'mule') {
       ratioCap = '按「' + famNow.name + '」量：酒体 ' + Math.round(a.baseMl + a.modMl)
         + 'ml : 稀释物 ' + Math.round(a.mixerMl + a.juiceMl + a.sourMl + a.sweetMl) + 'ml';
+    } else if (famNow.id === 'duo' && a.modMl > 0) {
+      ratioCap = '按「双料」量：酒体 ' + Math.round(a.baseMl) + 'ml : 辅料 '
+        + Math.round(a.modMl) + 'ml（约 ' + (a.baseMl / a.modMl).toFixed(1) + ' : 1）';
     }
     /* 酸类 / 菲士的平衡已经改用 Brix/TA，说明也要跟着换；
        其余家族在覆盖率过半时把糖度/酸度附在后面。
