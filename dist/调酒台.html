@@ -923,6 +923,18 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
   .mc-star, .tc-star { padding: 4px; }
 }
 
+@media (min-width: 1500px) {
+  /* 宽屏别把 600px 留给空气：杯子和风味图并排，材料库在下面铺满 */
+  .shell { max-width: 1680px; }
+  .cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .col-a, .col-b { display: contents; }
+  .p-cup { grid-column: 1; grid-row: 1; }
+  .p-result { grid-column: 2; grid-row: 1; }
+  .p-lib { grid-column: 1 / -1; grid-row: 2; }
+  .big-score { font-size: 60px; }
+  #radar { max-width: 420px; }
+}
+
 @media (max-width: 380px) {
   .grid { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); }
   .stats { grid-template-columns: repeat(3, 1fr); gap: 6px; }
