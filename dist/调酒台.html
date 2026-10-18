@@ -360,6 +360,24 @@ main {
 .p-result { order: 2; }
 .p-lib { order: 3; }
 
+/* 材料库顶部的小杯子摘要：加完材料不用滑回上面，也知道杯子里现在有什么 */
+.minicup {
+  position: sticky; top: 64px; z-index: 8;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin: 0 0 10px; padding: 7px 10px;
+  background: var(--card2); border: 1px solid var(--line); border-radius: 10px;
+  font-size: 12px; color: var(--muted);
+  backdrop-filter: blur(10px);
+}
+.minicup b { color: var(--amber); font-weight: 600; font-variant-numeric: tabular-nums; }
+.minicup .mc-back { padding: 2px 8px; font-size: 11.5px; white-space: nowrap; }
+.minicup .mc-empty { opacity: .85; }
+/* 从空杯入口/小杯子摘要跳过去时，别让 sticky 顶栏盖住标题 */
+#cupPanel, #libPanel, #havePanel { scroll-margin-top: 72px; }
+@media (max-width: 979px) {
+  .minicup { top: 60px; }
+}
+
 .panel {
   background: var(--card);
   border: 1px solid var(--line);
@@ -417,6 +435,27 @@ details.panel:not([open]) { padding-bottom: 13px; }
 #shareImg { width: 100%; height: auto; display: block; border-radius: 10px; border: 1px solid var(--line); }
 .sharedl { display: block; text-align: center; text-decoration: none; padding: 10px; }
 .sharebox .hint { margin: 0; }
+
+/* 加料反馈：底部一条，带撤销；别挡住分享卡/配方码弹层（它们 z-index 90） */
+.toast {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+  z-index: 95; display: flex; align-items: center; gap: 10px;
+  max-width: calc(100vw - 28px); padding: 9px 12px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 11px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .32);
+  font-size: 12.5px; color: var(--text);
+  animation: toastIn .16s ease-out;
+}
+.toast[hidden] { display: none; }
+.toast b { color: var(--amber); }
+.toast-undo { padding: 2px 8px; font-size: 11.5px; white-space: nowrap; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (max-width: 979px) {
+  .toast { bottom: calc(14px + env(safe-area-inset-bottom)); }
+}
 /* 配方码那两个输入框：码要能一眼看清，所以用等宽字、能全选 */
 .codefield {
   width: 100%; font: inherit; font-size: 13px; font-family: ui-monospace, Consolas, Menlo, monospace;
@@ -705,6 +744,8 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .ghost:active { color: var(--text); border-color: var(--muted); }
 
 .empty { color: var(--muted); font-size: 13px; margin: 4px 0 2px; }
+.empty-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.empty-acts .ghost { padding: 6px 12px; }
 
 /* ---------------- 结果 ---------------- */
 .result-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
@@ -1011,7 +1052,7 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
   <div class="col-a">
 
   <!-- ① 杯子 -->
-  <section class="panel p-cup">
+  <section class="panel p-cup" id="cupPanel">
     <div class="panel-head">
       <h2>① 杯子里</h2>
       <div class="head-acts">
@@ -1039,15 +1080,21 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
     <div class="swap-panel" id="swapPanel" hidden></div>
     <p class="hint cuphint">材料行里的小标签都能点：<b>「常温」换温度</b>（冷冻 / 冷藏 / 常温）、<b>「40%」改度数</b>（按你瓶身上印的填）；点材料名那一行会展开完整说明。</p>
     <div class="cup-list" id="cupList"></div>
-    <p class="empty" id="cupEmpty">杯子是空的。你可以直接在下面「④ 手边有什么」里勾上你手上有的，看现在能调什么；也可以去「酒单」挑一杯点「装进杯子」，或者从材料库自己挑——手上只有一瓶基酒也没关系，先倒进去，再用「换基酒」换成你有的那瓶。</p>
+    <p class="empty" id="cupEmpty">杯子是空的。想随便玩玩，就从下面的材料库点几样；手上只有几样，就看看现在能做什么。
+      <span class="empty-acts">
+        <button type="button" class="ghost" data-goto-lib="1">随便加点 →</button>
+        <button type="button" class="ghost" data-goto-have="1">我手上只有几样</button>
+      </span>
+    </p>
   </section>
 
   <!-- ③ 材料库 -->
-  <section class="panel p-lib">
+  <section class="panel p-lib" id="libPanel">
     <div class="panel-head">
       <h2>③ 材料库</h2>
       <button type="button" class="ghost" id="riskyBtn" aria-pressed="false">隐藏高风险</button>
     </div>
+    <div class="minicup" id="miniCup" aria-live="polite"></div>
     <div class="havebar">
       <input type="search" id="libSearch" class="havesearch" placeholder="搜材料名、品牌…（跨分类找）" aria-label="搜索材料">
       <button type="button" class="ghost" id="libClear">清空</button>
@@ -1086,7 +1133,7 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
   </div><!-- /cols -->
 
   <!-- ④ 手边有什么 → 现在能做什么 -->
-  <details class="panel p-have" open>
+  <details class="panel p-have" id="havePanel" open>
     <summary class="panel-head">
       <h2>④ 手边有什么 · 现在能做什么</h2>
       <span class="hint">勾上你有的，就知道能调什么、还差什么　<b class="fold"></b></span>
@@ -1318,6 +1365,9 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
 
 </main>
 </div><!-- /shell -->
+
+<!-- 加料反馈：底部一条，能撤销 -->
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <!-- 分享卡：把一杯酒画成一张竖版图片（手机上长按保存） -->
 <div class="sharewrap" id="shareWrap" hidden>
@@ -6567,6 +6617,19 @@ var qrcode = function() {
       '</div>';
   }
 
+  /* 材料库顶部的小杯子摘要：加完材料，不用滑回上面也知道杯子里有什么 */
+  function renderMiniCup(a, empty) {
+    var box = document.getElementById('miniCup');
+    if (!box) return;
+    if (empty) {
+      box.innerHTML = '<span class="mc-empty">杯子里还是空的 · 点下面的材料开始</span>';
+      return;
+    }
+    box.innerHTML = '<span class="mc-sum">杯子里 <b>' + a.nItems + '</b> 样 · <b>'
+      + Math.round(a.finalVol) + 'ml</b> · <b>' + a.abv.toFixed(1) + '%</b></span>'
+      + '<button type="button" class="ghost mc-back" data-goto-cup="1">回到杯子 ↑</button>';
+  }
+
   function renderResult() {
     var a = analyze();
     var v = DIMS.map(function (d) { return clamp(a.fd[d.k] / d.ref, 0, 1); });
@@ -6730,6 +6793,8 @@ var qrcode = function() {
 
     /* 这杯酒最后是什么构成的 */
     renderMixBar(a);
+    /* 材料库顶部的迷你摘要（和上面这些数同一份） */
+    renderMiniCup(a, empty);
 
     /* 这杯是哪条配方、这条配方的备注——原来备注挤在配方卡片里，
        现在卡片只留名字用料，备注挪到杯子下面（用户要求的） */
@@ -8419,6 +8484,50 @@ var qrcode = function() {
     state.refMiss = []; state.refNotStocked = [];
   }
 
+  /* 加料反馈：底部一条，告诉用户刚加了多少；带撤销，撤销时连配方备注一起还原 */
+  var toastTimer = 0, toastUndo = null;
+  function hideToast() {
+    if (toastTimer) { clearTimeout(toastTimer); toastTimer = 0; }
+    var box = document.getElementById('toast');
+    if (box) { box.hidden = true; box.innerHTML = ''; }
+    toastUndo = null;
+  }
+  function showToast(html, undo) {
+    var box = document.getElementById('toast');
+    if (!box) return;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastUndo = undo || null;
+    box.innerHTML = '<span class="toast-msg">' + html + '</span>'
+      + (undo ? '<button type="button" class="ghost toast-undo" data-toast-undo="1">撤销</button>' : '');
+    box.hidden = false;
+    toastTimer = setTimeout(hideToast, 3200);
+  }
+  function addToCupWithFeedback(id) {
+    var g = BY_ID[id];
+    if (!g) return;
+    var before = state.cup.has(id) ? state.cup.get(id) : 0;
+    /* addToCup 会清掉"这杯是哪条配方"，撤销时要把这段一起还回来 */
+    var snap = {
+      name: state.recipeName, sub: state.recipeSub, tip: state.recipeTip,
+      miss: state.refMiss.slice(), notStocked: state.refNotStocked.slice(),
+      family: state.recipeFamily
+    };
+    addToCup(id);
+    var after = state.cup.get(id);
+    renderCup(); renderResult(); renderLib();
+    var added = after - before;
+    var msg = '已加入 <b>' + esc(g.name) + '</b> ' + esc(fmtAmt(g, added));
+    if (before > 0) msg += '（杯里现在共 ' + esc(fmtAmt(g, after)) + '）';
+    showToast(msg, function () {
+      if (before > 0) state.cup.set(id, before); else state.cup.delete(id);
+      state.recipeName = snap.name; state.recipeSub = snap.sub; state.recipeTip = snap.tip;
+      state.refMiss = snap.miss; state.refNotStocked = snap.notStocked;
+      state.recipeFamily = snap.family;
+      renderCup(); renderResult(); renderLib();
+      hideToast();
+    });
+  }
+
   document.addEventListener('click', function (e) {
     /* 之前这里只写 closest('button')，于是所有挂在 <div> 上的点击
        （比如"看全部"那一行）都被这一行挡掉了——点了没反应。
@@ -8427,6 +8536,32 @@ var qrcode = function() {
        所以 [data-temp] 也必须在这个选择器里，否则点温度会变成展开说明。 */
     var t = e.target.closest ? e.target.closest('button, [data-expand], [data-temp], [data-fav]') : null;
     if (!t) return;
+
+    /* 空杯两个入口 / 小杯子摘要 / toast 撤销 */
+    if (t.dataset.gotoLib !== undefined) {
+      var libPanel = document.getElementById('libPanel');
+      if (libPanel && libPanel.scrollIntoView) libPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (t.dataset.gotoHave !== undefined) {
+      var havePanel = document.getElementById('havePanel');
+      if (havePanel) {
+        havePanel.open = true;
+        if (havePanel.scrollIntoView) havePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      return;
+    }
+    if (t.dataset.gotoCup !== undefined) {
+      var cupPanel = document.getElementById('cupPanel');
+      if (cupPanel && cupPanel.scrollIntoView) cupPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (t.dataset.toastUndo !== undefined) {
+      var undo = toastUndo;
+      hideToast();
+      if (undo) undo();
+      return;
+    }
 
     /* 侧栏导航 */
     if (t.dataset.page) { setPage(t.dataset.page, true); return; }
@@ -8539,11 +8674,7 @@ var qrcode = function() {
     }
 
     if (t.dataset.add) {
-      var id = t.dataset.add;
-      addToCup(id);
-      renderCup();
-      renderResult();
-      renderLib();
+      addToCupWithFeedback(t.dataset.add);
       return;
     }
 

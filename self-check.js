@@ -217,6 +217,56 @@ console.log('\n--- 点击交互（模拟真实点击，不是读代码）---');
   if (!ok3) bad('交互', '加/减/删按钮有问题：' + plus + '/' + minus + '/' + del);
 })();
 
+/* ---- 空杯入口 / 加料反馈 / 小杯子摘要 ----
+   用户的要求：材料库别动位置（乱点的人要顺手），但加完材料得马上知道自己加了什么。 */
+console.log('\n--- 空杯入口 / 加料反馈 / 小杯子摘要 ---');
+(function () {
+  const dev = fs.readFileSync(path.join(__dirname, 'dev.html'), 'utf8');
+  const hasEntry = /data-goto-lib/.test(dev) && /data-goto-have/.test(dev);
+  const hasNodes = /id="miniCup"/.test(dev) && /id="toast"/.test(dev);
+  console.log('  ' + (hasEntry && hasNodes ? '✅' : '❌')
+    + ' 空杯两个入口 + 小杯子摘要 + toast 都在页面里');
+  if (!(hasEntry && hasNodes)) bad('加料反馈', 'dev.html 缺少空杯入口/小杯子摘要/toast 节点');
+
+  B.load([]);
+  const emptyMini = els.miniCup ? els.miniCup.innerHTML : '';
+  const okEmptyMini = emptyMini.indexOf('杯子里还是空的') >= 0;
+  console.log('  ' + (okEmptyMini ? '✅' : '❌') + ' 空杯时小杯子摘要写「还是空的」');
+  if (!okEmptyMini) bad('加料反馈', '空杯时小杯子摘要没写「还是空的」：' + emptyMini);
+
+  B.preset(1);                       /* 威士忌酸：带配方备注，用来验证撤销能还原 */
+  const recipeName = B.state.recipeName;
+  fire({ add: 'gin' });
+  const toastText = els.toast ? els.toast.innerHTML : '';
+  const okToast = !!els.toast && !els.toast.hidden && toastText.indexOf('哥顿金酒') >= 0
+    && toastText.indexOf('45ml') >= 0 && toastText.indexOf('撤销') >= 0;
+  console.log('  ' + (okToast ? '✅' : '❌') + ' 点材料后弹出「已加入 哥顿金酒 45ml」+ 撤销');
+  if (!okToast) bad('加料反馈', '点材料后没有正确的 toast：' + toastText);
+
+  const mini = els.miniCup ? els.miniCup.innerHTML : '';
+  const okMini = mini.indexOf('杯子里') >= 0 && mini.indexOf('样') >= 0
+    && mini.indexOf('ml') >= 0 && mini.indexOf('%') >= 0 && mini.indexOf('回到杯子') >= 0;
+  console.log('  ' + (okMini ? '✅' : '❌') + ' 小杯子摘要跟着更新：'
+    + mini.replace(/<[^>]+>/g, ''));
+  if (!okMini) bad('加料反馈', '小杯子摘要没更新：' + mini);
+
+  fire({ toastUndo: '1' });
+  const undone = !B.state.cup.has('gin');
+  const restored = B.state.recipeName === recipeName;
+  const hidden = els.toast ? els.toast.hidden : true;
+  console.log('  ' + (undone && restored && hidden ? '✅' : '❌')
+    + ' 点撤销：材料退回去、配方备注也恢复、toast 收起');
+  if (!(undone && restored && hidden)) bad('加料反馈',
+    '撤销没有完全恢复：gin=' + B.state.cup.has('gin') + ' recipe=' + B.state.recipeName
+    + ' hidden=' + hidden);
+
+  fire({ gotoHave: '1' });
+  const opened = els.havePanel ? els.havePanel.open === true : false;
+  console.log('  ' + (opened ? '✅' : '❌') + ' 「我手上只有几样」会展开并跳到手边那一块');
+  if (!opened) bad('加料反馈', '点「我手上只有几样」没有把手边那块打开');
+  B.load([]);
+})();
+
 /* ---- 做法：和参考字典对账 ---- */
 console.log('\n--- 做法（和经典字典对账）---');
 (function () {

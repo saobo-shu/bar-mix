@@ -314,6 +314,24 @@ main {
 .p-result { order: 2; }
 .p-lib { order: 3; }
 
+/* 材料库顶部的小杯子摘要：加完材料不用滑回上面，也知道杯子里现在有什么 */
+.minicup {
+  position: sticky; top: 64px; z-index: 8;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin: 0 0 10px; padding: 7px 10px;
+  background: var(--card2); border: 1px solid var(--line); border-radius: 10px;
+  font-size: 12px; color: var(--muted);
+  backdrop-filter: blur(10px);
+}
+.minicup b { color: var(--amber); font-weight: 600; font-variant-numeric: tabular-nums; }
+.minicup .mc-back { padding: 2px 8px; font-size: 11.5px; white-space: nowrap; }
+.minicup .mc-empty { opacity: .85; }
+/* 从空杯入口/小杯子摘要跳过去时，别让 sticky 顶栏盖住标题 */
+#cupPanel, #libPanel, #havePanel { scroll-margin-top: 72px; }
+@media (max-width: 979px) {
+  .minicup { top: 60px; }
+}
+
 .panel {
   background: var(--card);
   border: 1px solid var(--line);
@@ -371,6 +389,27 @@ details.panel:not([open]) { padding-bottom: 13px; }
 #shareImg { width: 100%; height: auto; display: block; border-radius: 10px; border: 1px solid var(--line); }
 .sharedl { display: block; text-align: center; text-decoration: none; padding: 10px; }
 .sharebox .hint { margin: 0; }
+
+/* 加料反馈：底部一条，带撤销；别挡住分享卡/配方码弹层（它们 z-index 90） */
+.toast {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+  z-index: 95; display: flex; align-items: center; gap: 10px;
+  max-width: calc(100vw - 28px); padding: 9px 12px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 11px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .32);
+  font-size: 12.5px; color: var(--text);
+  animation: toastIn .16s ease-out;
+}
+.toast[hidden] { display: none; }
+.toast b { color: var(--amber); }
+.toast-undo { padding: 2px 8px; font-size: 11.5px; white-space: nowrap; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (max-width: 979px) {
+  .toast { bottom: calc(14px + env(safe-area-inset-bottom)); }
+}
 /* 配方码那两个输入框：码要能一眼看清，所以用等宽字、能全选 */
 .codefield {
   width: 100%; font: inherit; font-size: 13px; font-family: ui-monospace, Consolas, Menlo, monospace;
@@ -659,6 +698,8 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .ghost:active { color: var(--text); border-color: var(--muted); }
 
 .empty { color: var(--muted); font-size: 13px; margin: 4px 0 2px; }
+.empty-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.empty-acts .ghost { padding: 6px 12px; }
 
 /* ---------------- 结果 ---------------- */
 .result-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }

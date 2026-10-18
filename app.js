@@ -1349,6 +1349,19 @@
       '</div>';
   }
 
+  /* 材料库顶部的小杯子摘要：加完材料，不用滑回上面也知道杯子里有什么 */
+  function renderMiniCup(a, empty) {
+    var box = document.getElementById('miniCup');
+    if (!box) return;
+    if (empty) {
+      box.innerHTML = '<span class="mc-empty">杯子里还是空的 · 点下面的材料开始</span>';
+      return;
+    }
+    box.innerHTML = '<span class="mc-sum">杯子里 <b>' + a.nItems + '</b> 样 · <b>'
+      + Math.round(a.finalVol) + 'ml</b> · <b>' + a.abv.toFixed(1) + '%</b></span>'
+      + '<button type="button" class="ghost mc-back" data-goto-cup="1">回到杯子 ↑</button>';
+  }
+
   function renderResult() {
     var a = analyze();
     var v = DIMS.map(function (d) { return clamp(a.fd[d.k] / d.ref, 0, 1); });
@@ -1512,6 +1525,8 @@
 
     /* 这杯酒最后是什么构成的 */
     renderMixBar(a);
+    /* 材料库顶部的迷你摘要（和上面这些数同一份） */
+    renderMiniCup(a, empty);
 
     /* 这杯是哪条配方、这条配方的备注——原来备注挤在配方卡片里，
        现在卡片只留名字用料，备注挪到杯子下面（用户要求的） */
@@ -3201,6 +3216,50 @@
     state.refMiss = []; state.refNotStocked = [];
   }
 
+  /* 加料反馈：底部一条，告诉用户刚加了多少；带撤销，撤销时连配方备注一起还原 */
+  var toastTimer = 0, toastUndo = null;
+  function hideToast() {
+    if (toastTimer) { clearTimeout(toastTimer); toastTimer = 0; }
+    var box = document.getElementById('toast');
+    if (box) { box.hidden = true; box.innerHTML = ''; }
+    toastUndo = null;
+  }
+  function showToast(html, undo) {
+    var box = document.getElementById('toast');
+    if (!box) return;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastUndo = undo || null;
+    box.innerHTML = '<span class="toast-msg">' + html + '</span>'
+      + (undo ? '<button type="button" class="ghost toast-undo" data-toast-undo="1">撤销</button>' : '');
+    box.hidden = false;
+    toastTimer = setTimeout(hideToast, 3200);
+  }
+  function addToCupWithFeedback(id) {
+    var g = BY_ID[id];
+    if (!g) return;
+    var before = state.cup.has(id) ? state.cup.get(id) : 0;
+    /* addToCup 会清掉"这杯是哪条配方"，撤销时要把这段一起还回来 */
+    var snap = {
+      name: state.recipeName, sub: state.recipeSub, tip: state.recipeTip,
+      miss: state.refMiss.slice(), notStocked: state.refNotStocked.slice(),
+      family: state.recipeFamily
+    };
+    addToCup(id);
+    var after = state.cup.get(id);
+    renderCup(); renderResult(); renderLib();
+    var added = after - before;
+    var msg = '已加入 <b>' + esc(g.name) + '</b> ' + esc(fmtAmt(g, added));
+    if (before > 0) msg += '（杯里现在共 ' + esc(fmtAmt(g, after)) + '）';
+    showToast(msg, function () {
+      if (before > 0) state.cup.set(id, before); else state.cup.delete(id);
+      state.recipeName = snap.name; state.recipeSub = snap.sub; state.recipeTip = snap.tip;
+      state.refMiss = snap.miss; state.refNotStocked = snap.notStocked;
+      state.recipeFamily = snap.family;
+      renderCup(); renderResult(); renderLib();
+      hideToast();
+    });
+  }
+
   document.addEventListener('click', function (e) {
     /* 之前这里只写 closest('button')，于是所有挂在 <div> 上的点击
        （比如"看全部"那一行）都被这一行挡掉了——点了没反应。
@@ -3209,6 +3268,32 @@
        所以 [data-temp] 也必须在这个选择器里，否则点温度会变成展开说明。 */
     var t = e.target.closest ? e.target.closest('button, [data-expand], [data-temp], [data-fav]') : null;
     if (!t) return;
+
+    /* 空杯两个入口 / 小杯子摘要 / toast 撤销 */
+    if (t.dataset.gotoLib !== undefined) {
+      var libPanel = document.getElementById('libPanel');
+      if (libPanel && libPanel.scrollIntoView) libPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (t.dataset.gotoHave !== undefined) {
+      var havePanel = document.getElementById('havePanel');
+      if (havePanel) {
+        havePanel.open = true;
+        if (havePanel.scrollIntoView) havePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      return;
+    }
+    if (t.dataset.gotoCup !== undefined) {
+      var cupPanel = document.getElementById('cupPanel');
+      if (cupPanel && cupPanel.scrollIntoView) cupPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (t.dataset.toastUndo !== undefined) {
+      var undo = toastUndo;
+      hideToast();
+      if (undo) undo();
+      return;
+    }
 
     /* 侧栏导航 */
     if (t.dataset.page) { setPage(t.dataset.page, true); return; }
@@ -3321,11 +3406,7 @@
     }
 
     if (t.dataset.add) {
-      var id = t.dataset.add;
-      addToCup(id);
-      renderCup();
-      renderResult();
-      renderLib();
+      addToCupWithFeedback(t.dataset.add);
       return;
     }
 

@@ -196,7 +196,7 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
   <div class="col-a">
 
   <!-- ① 杯子 -->
-  <section class="panel p-cup">
+  <section class="panel p-cup" id="cupPanel">
     <div class="panel-head">
       <h2>① 杯子里</h2>
       <div class="head-acts">
@@ -224,15 +224,21 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
     <div class="swap-panel" id="swapPanel" hidden></div>
     <p class="hint cuphint">材料行里的小标签都能点：<b>「常温」换温度</b>（冷冻 / 冷藏 / 常温）、<b>「40%」改度数</b>（按你瓶身上印的填）；点材料名那一行会展开完整说明。</p>
     <div class="cup-list" id="cupList"></div>
-    <p class="empty" id="cupEmpty">杯子是空的。你可以直接在下面「④ 手边有什么」里勾上你手上有的，看现在能调什么；也可以去「酒单」挑一杯点「装进杯子」，或者从材料库自己挑——手上只有一瓶基酒也没关系，先倒进去，再用「换基酒」换成你有的那瓶。</p>
+    <p class="empty" id="cupEmpty">杯子是空的。想随便玩玩，就从下面的材料库点几样；手上只有几样，就看看现在能做什么。
+      <span class="empty-acts">
+        <button type="button" class="ghost" data-goto-lib="1">随便加点 →</button>
+        <button type="button" class="ghost" data-goto-have="1">我手上只有几样</button>
+      </span>
+    </p>
   </section>
 
   <!-- ③ 材料库 -->
-  <section class="panel p-lib">
+  <section class="panel p-lib" id="libPanel">
     <div class="panel-head">
       <h2>③ 材料库</h2>
       <button type="button" class="ghost" id="riskyBtn" aria-pressed="false">隐藏高风险</button>
     </div>
+    <div class="minicup" id="miniCup" aria-live="polite"></div>
     <div class="havebar">
       <input type="search" id="libSearch" class="havesearch" placeholder="搜材料名、品牌…（跨分类找）" aria-label="搜索材料">
       <button type="button" class="ghost" id="libClear">清空</button>
@@ -271,7 +277,7 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
   </div><!-- /cols -->
 
   <!-- ④ 手边有什么 → 现在能做什么 -->
-  <details class="panel p-have" open>
+  <details class="panel p-have" id="havePanel" open>
     <summary class="panel-head">
       <h2>④ 手边有什么 · 现在能做什么</h2>
       <span class="hint">勾上你有的，就知道能调什么、还差什么　<b class="fold"></b></span>
@@ -503,6 +509,9 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
 
 </main>
 </div><!-- /shell -->
+
+<!-- 加料反馈：底部一条，能撤销 -->
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <!-- 分享卡：把一杯酒画成一张竖版图片（手机上长按保存） -->
 <div class="sharewrap" id="shareWrap" hidden>
