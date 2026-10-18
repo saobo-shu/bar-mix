@@ -913,7 +913,7 @@
   }
 
   var BANDS = [
-    [90, '大师级', '结构、香气、稀释都到位了。这杯可以拿去卖。'],
+    [90, '大师级', '结构、香气、稀释都到位了。按配比看很完整——好不好喝，还是你自己尝一口。'],
     [82, '酒吧级', '风味立体，结构完整，端出去不会丢人。'],
     [72, '好喝',   '日常微醺完全够用，属于会想再来一杯的类型。'],
     [62, '还行',   '能喝，但有一两处明显可以调，看下面的建议。'],
@@ -1459,15 +1459,15 @@
     var w = sc.weight, pc = function (x) { return Math.round(x * 100) + '%'; };
     /* 纯饮模式一根评分条都不留——说了不评分就别再写着"权重 32%" */
     document.getElementById('subScores').innerHTML = (empty || neat || single) ? '' :
-      bar('平衡', b, '权重 ' + pc(w.balance) + '　' + ratioCap) +
-      bar('复杂度', cx, '权重 ' + pc(w.complexity) + '　激活了 ' + dimsOn + ' 种风味') +
-      bar('结构', stru, '权重 ' + pc(w.structure) + '　'
+      bar('平衡', b, '占总分 ' + pc(w.balance) + '　' + ratioCap) +
+      bar('复杂度', cx, '占总分 ' + pc(w.complexity) + '　激活了 ' + dimsOn + ' 种风味') +
+      bar('结构', stru, '占总分 ' + pc(w.structure) + '　'
         + (a.hasIce ? iceLevelOf(state.iceLevel).name
            : (glassOf(state.glass).ice === 'chilled' ? '冰镇·滤掉冰' : '没放冰')) + ' · '
         + (a.hasFizzIng ? '有气泡' : '没有气泡') + ' · ' + glassOf(state.glass).name + ' 液体 '
         + Math.round(a.liquid) + '/' + liquidMaxFor(glassOf(state.glass)) + 'ml'
         + (a.isHot ? '' : ' · ' + coldLabel(a))) +
-      bar('浓度', st, '权重 ' + pc(w.strength) + '　' + strengthCaption(a));
+      bar('浓度', st, '占总分 ' + pc(w.strength) + '　' + strengthCaption(a));
 
     /* 主导风味 */
     var tops = DIMS.map(function (d, i) { return { name: d.name, val: v[i] }; })
@@ -3049,11 +3049,28 @@
   }
 
   /* 调酒台右上角：把当前这杯存进「我的特调」 */
-  function saveCurrent() {
-    if (!state.cup.size) { alert('杯子还是空的——先往里放点东西，再存。'); return; }
+  function openSaveDialog() {
+    var wrap = document.getElementById('saveWrap');
+    var input = document.getElementById('saveName');
+    if (!wrap) return;
+    if (input) input.value = state.recipeName || ('我的特调 ' + (myRecipes.length + 1));
+    wrap.hidden = false;
+    setTimeout(function () {
+      if (input && input.focus) { input.focus(); if (input.select) input.select(); }
+    }, 30);
+  }
+  function closeSaveDialog() {
+    var wrap = document.getElementById('saveWrap');
+    if (wrap) wrap.hidden = true;
+  }
+  /* name 只在自检/二次开发时直接传；界面上不传，走页内弹窗 */
+  function saveCurrent(name) {
+    if (!state.cup.size) {
+      showToast('杯子还是空的——先往里放点东西，再存。');
+      return;
+    }
+    if (typeof name !== 'string') { openSaveDialog(); return; }
     var guess = state.recipeName || ('我的特调 ' + (myRecipes.length + 1));
-    var name = window.prompt('给这杯起个名字：', guess);
-    if (name === null) return;
     name = String(name).trim() || guess;
     myRecipes.push({
       name: name,
@@ -3061,13 +3078,19 @@
       glass: state.glass, ice: state.iceLevel, method: state.method, taste: state.taste
     });
     storeSet(MINE_KEY, myRecipes);
+    closeSaveDialog();
     var btn = document.getElementById('saveBtn');
     if (btn) {
       var old = btn.textContent;
       btn.textContent = '已保存 ✓';
       setTimeout(function () { btn.textContent = old; }, 1600);
     }
+    showToast('已保存到「我的特调」');
     renderMenu();
+  }
+  function confirmSave() {
+    var input = document.getElementById('saveName');
+    saveCurrent(input ? input.value : '');
   }
 
   function renderAll() {
@@ -3254,6 +3277,7 @@
       + (undo ? '<button type="button" class="ghost toast-undo" data-toast-undo="1">撤销</button>' : '');
     box.hidden = false;
     toastTimer = setTimeout(hideToast, 3200);
+    if (toastTimer && toastTimer.unref) toastTimer.unref();
   }
   function addToCupWithFeedback(id) {
     var g = BY_ID[id];
@@ -3290,6 +3314,15 @@
     var t = e.target.closest ? e.target.closest('button, [data-expand], [data-temp], [data-fav]') : null;
     if (!t) return;
 
+    if (t.dataset.saveClose !== undefined) {
+      closeSaveDialog();
+      return;
+    }
+    if (t.dataset.catnav !== undefined) {
+      var cats = document.getElementById('cats');
+      if (cats) cats.scrollLeft += (+t.dataset.catnav) * 240;
+      return;
+    }
     /* 空杯两个入口 / 小杯子摘要 / toast 撤销 */
     if (t.dataset.gotoLib !== undefined) {
       var libPanel = document.getElementById('libPanel');
@@ -3563,10 +3596,36 @@
     }
   });
 
-  document.getElementById('clearBtn').addEventListener('click', function () {
+  /* 清空也能后悔：把整杯（含杯型/做法/备注）先拍个快照，撤销时还原 */
+  function clearCupWithUndo() {
+    if (!state.cup.size) return;
+    var snap = {
+      cup: Array.from(state.cup),
+      glass: state.glass, ice: state.iceLevel, method: state.method, taste: state.taste,
+      open: Object.assign({}, state.open),
+      recipeName: state.recipeName, recipeSub: state.recipeSub, recipeTip: state.recipeTip,
+      refMiss: state.refMiss.slice(), refNotStocked: state.refNotStocked.slice(),
+      recipeFamily: state.recipeFamily
+    };
     state.cup.clear();
+    state.open = {};
+    forgetRecipe();
     renderCup(); renderResult(); renderLib();
-  });
+    showToast('杯子已清空', function () {
+      state.cup.clear();
+      snap.cup.forEach(function (it) { state.cup.set(it[0], it[1]); });
+      state.glass = snap.glass; state.iceLevel = snap.ice; state.method = snap.method;
+      state.taste = snap.taste; state.open = snap.open;
+      state.recipeName = snap.recipeName; state.recipeSub = snap.recipeSub; state.recipeTip = snap.recipeTip;
+      state.refMiss = snap.refMiss; state.refNotStocked = snap.refNotStocked;
+      state.recipeFamily = snap.recipeFamily;
+      renderCup(); renderResult(); renderLib();
+      renderGlassPick(); renderIcePick(); renderMethodPick(); renderTastePick();
+      hideToast();
+    });
+  }
+
+  document.getElementById('clearBtn').addEventListener('click', clearCupWithUndo);
 
   /* ④ 手边有什么：搜索框 + 清空 */
   (function () {
@@ -3945,6 +4004,21 @@
     if (save) save.addEventListener('click', saveCurrent);
   })();
 
+  /* 保存这杯：页内小弹窗 */
+  (function () {
+    var confirmBtn = document.getElementById('saveConfirm');
+    if (confirmBtn) confirmBtn.addEventListener('click', confirmSave);
+    var nameInput = document.getElementById('saveName');
+    if (nameInput) nameInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); confirmSave(); }
+      if (e.key === 'Escape') { e.preventDefault(); closeSaveDialog(); }
+    });
+    var saveWrap = document.getElementById('saveWrap');
+    if (saveWrap) saveWrap.addEventListener('click', function (e) {
+      if (e.target === saveWrap) closeSaveDialog();   /* 点黑幕关掉 */
+    });
+  })();
+
   /* ③ 材料库：搜索框 + 清空 */
   (function () {
     var box = document.getElementById('libSearch');
@@ -4033,7 +4107,7 @@
   });
 
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') { closeShareCard(); closeCodeBox(); }
+    if (e.key === 'Escape') { closeShareCard(); closeCodeBox(); closeSaveDialog(); }
   });
 
   /* ---------------------------------------------------------
@@ -4698,6 +4772,7 @@
       renderCup(); renderResult(); renderLib();
       return this.scores();
     },
+    clear: clearCupWithUndo,
     /* 跟界面上点一张经典配方卡片走同一条路：杯型、冰量、做法一起设定。
        自检和审计都该用它，不然测出来的不是用户真正看到的那杯。 */
     preset: function (i) {

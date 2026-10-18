@@ -228,6 +228,15 @@ console.log('\n--- 空杯入口 / 加料反馈 / 小杯子摘要 ---');
   console.log('  ' + (hasEntry && hasNodes ? '✅' : '❌')
     + ' 空杯两个入口 + 小杯子摘要 + toast 都在页面里');
   if (!(hasEntry && hasNodes)) bad('加料反馈', 'dev.html 缺少空杯入口/小杯子摘要/toast 节点');
+  const hasCatbar = /class="catbar"/.test(dev)
+    && /data-catnav="-1"/.test(dev) && /data-catnav="1"/.test(dev);
+  console.log('  ' + (hasCatbar ? '✅' : '❌') + ' 分类标签有左右箭头（桌面收成一行）');
+  if (!hasCatbar) bad('加料反馈', 'dev.html 缺少分类左右箭头');
+  els.cats.scrollLeft = 0;
+  fire({ catnav: '1' });
+  const catScrolled = els.cats.scrollLeft === 240;
+  console.log('  ' + (catScrolled ? '✅' : '❌') + ' 点分类箭头会横向滚动');
+  if (!catScrolled) bad('加料反馈', '分类箭头没有滚动：scrollLeft=' + els.cats.scrollLeft);
 
   B.load([]);
   const emptyMini = els.miniCup ? els.miniCup.innerHTML : '';
@@ -263,6 +272,18 @@ console.log('\n--- 空杯入口 / 加料反馈 / 小杯子摘要 ---');
     '撤销没有完全恢复：gin=' + B.state.cup.has('gin') + ' recipe=' + B.state.recipeName
     + ' hidden=' + hidden);
 
+  /* 清空也要能撤销 */
+  B.preset(1);
+  const nCup = B.state.cup.size;
+  B.clear();
+  const clearedToast = els.toast ? els.toast.innerHTML : '';
+  const cleared = !B.state.cup.size && clearedToast.indexOf('已清空') >= 0;
+  fire({ toastUndo: '1' });
+  const cupBack = B.state.cup.size === nCup;
+  console.log('  ' + (cleared && cupBack ? '✅' : '❌') + ' 清空后能撤销，整杯材料回来');
+  if (!(cleared && cupBack)) bad('加料反馈',
+    '清空撤销没恢复：cleared=' + cleared + ' cup=' + B.state.cup.size + '/' + nCup);
+
   fire({ gotoHave: '1' });
   const opened = els.havePanel ? els.havePanel.open === true : false;
   console.log('  ' + (opened ? '✅' : '❌') + ' 「我手上只有几样」会展开并跳到手边那一块');
@@ -275,10 +296,11 @@ console.log('\n--- 空杯入口 / 加料反馈 / 小杯子摘要 ---');
   const cssText = fs.readFileSync(path.join(__dirname, 'app.css'), 'utf8');
   const hasStickyAct = /class="mineacts detail-acts"[\s\S]*data-menu-load/.test(detailHtml);
   const stickyCss = /\.detail-acts\s*\{[^}]*position:\s*sticky/.test(cssText);
-  console.log('  ' + (hasStickyAct && stickyCss ? '✅' : '❌')
-    + ' 详情「装进杯子」在 sticky 底栏里，不用拉到最下面');
-  if (!(hasStickyAct && stickyCss)) bad('详情',
-    '详情的主操作没有做成 sticky 底栏：html=' + hasStickyAct + ' css=' + stickyCss);
+  const stickyHead = /#menuDetail > \.panel-head\s*\{[^}]*position:\s*sticky/.test(cssText);
+  console.log('  ' + (hasStickyAct && stickyCss && stickyHead ? '✅' : '❌')
+    + ' 详情「装进杯子」和「关闭」都是 sticky，不用拉到最下面');
+  if (!(hasStickyAct && stickyCss && stickyHead)) bad('详情',
+    '详情的主操作/关闭没有做成 sticky：html=' + hasStickyAct + ' css=' + stickyCss + ' head=' + stickyHead);
   B.menu.reset();
   B.load([]);
 })();
@@ -297,6 +319,14 @@ console.log('\n--- 一致性：空杯分数 / 收藏 / 预设残留 / 分享卡 
   const scoresBack = els.subScores.innerHTML.indexOf('平衡') >= 0;
   console.log('  ' + (scoresBack ? '✅' : '❌') + ' 有材料后四项分数回来');
   if (!scoresBack) bad('空杯分数', '有材料后分项条没回来');
+  const subUi = els.subScores.innerHTML;
+  const plainWeights = subUi.indexOf('权重') < 0 && subUi.indexOf('占总分') >= 0;
+  console.log('  ' + (plainWeights ? '✅' : '❌') + ' 分项条写「占总分」，不写「权重」');
+  if (!plainWeights) bad('文案', '分项条还在写「权重」或没写「占总分」');
+  const verdictText = els.verdictText.textContent || '';
+  const honestVerdict = verdictText.indexOf('你自己尝一口') >= 0;
+  console.log('  ' + (honestVerdict ? '✅' : '❌') + ' 高分评语不再说"可以拿去卖"');
+  if (!honestVerdict) bad('文案', '高分评语没有留"你自己尝一口"的余地');
 
   /* B&B / XYZ 没有中文名，收藏必须用 recipeName（英文名），不能存空字符串 */
   B.menu.reset();
@@ -1630,14 +1660,18 @@ console.log('\n--- 酒单 ---');
 
   /* 我的特调：调酒台保存一杯 → 出现在酒单 */
   B.load([['gin', 45], ['tonic', 120], ['lime', 10]]);
-  global.window.prompt = function () { return '我的第一杯'; };
-  B.menu.save();
+  B.menu.save('我的第一杯');
   B.menu.setTab('mine');
   const mineHtml = els.menuList.innerHTML;
   const okMine = B.menu.mine().length === 1 && B.menu.mine()[0] === '我的第一杯'
     && mineHtml.indexOf('我的第一杯') >= 0 && mineHtml.indexOf('装进杯子') >= 0;
   console.log('  ' + (okMine ? '✅' : '❌') + ' 调酒台「保存这杯」→ 我的特调里有「' + B.menu.mine()[0] + '」');
   if (!okMine) bad('酒单', '保存的配方没有出现在"我的特调"');
+  const devSave = fs.readFileSync(path.join(__dirname, 'dev.html'), 'utf8');
+  const saveDialogOk = /id="saveWrap"/.test(devSave) && /id="saveName"/.test(devSave)
+    && /id="saveConfirm"/.test(devSave);
+  console.log('  ' + (saveDialogOk ? '✅' : '❌') + ' 保存这杯用页内小弹窗，不再用浏览器 prompt');
+  if (!saveDialogOk) bad('酒单', '保存弹窗的节点不齐');
   /* 空杯子不让存 */
   global.window.alert = function () {};
   B.load([]);

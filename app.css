@@ -10,7 +10,7 @@
   --card2: #262120;
   --line: rgba(255, 255, 255, .09);
   --text: #f3ebe3;
-  --muted: #a3978c;
+  --muted: #b8ab9e;
   --amber: #e0a35c;
   --amber-d: #c9832f;
   --green: #7fb069;
@@ -185,6 +185,11 @@ main {
 .menufilters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px; }
 .menugrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
 .menudetail { background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+/* 详情标题 + 关闭：贴着详情面板顶部，滚到多深都能关掉 */
+#menuDetail > .panel-head {
+  position: sticky; top: 0; z-index: 6;
+  background: var(--card2); padding-bottom: 8px;
+}
 .moodrow { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 12px; }
 .moodbtn {
   padding: 10px 16px; border-radius: 999px; font-size: 14px;
@@ -437,6 +442,15 @@ details.panel:not([open]) { padding-bottom: 13px; }
 /* ---------------- 材料库 ---------------- */
 .cats { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 9px; margin-bottom: 10px; scrollbar-width: none; }
 .cats::-webkit-scrollbar { display: none; }
+/* 分类标签 + 左右箭头：桌面也收成一行，别让 18 个标签铺三行 */
+.catbar { display: flex; align-items: center; gap: 4px; margin-bottom: 10px; }
+.catbar .cats { flex: 1; min-width: 0; margin-bottom: 0; padding-bottom: 0; }
+.catnav {
+  flex: none; width: 28px; height: 32px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--card2);
+  color: var(--muted); font-size: 16px; line-height: 1; padding: 0;
+}
+.catnav:active { color: var(--text); border-color: var(--muted); }
 .cat {
   flex: none; padding: 6px 12px; border-radius: 999px; font-size: 13px;
   background: var(--card2); border: 1px solid var(--line); color: var(--muted);
@@ -831,12 +845,11 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
   .stats { grid-template-columns: repeat(4, 1fr); }
   /* 桌面端分类标签改成"等宽网格"：16 个标签自动铺满、自动换行，
      永远不可能溢出；分隔线在网格布局里没意义，藏掉 */
+  /* 分类标签收成一行横滑，左右各有箭头；不再铺成三行网格 */
   .cats {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
-    gap: 6px; overflow: visible;
+    display: flex; flex-wrap: nowrap; overflow-x: auto;
   }
-  .cat { padding: 5px 3px; font-size: 12.5px; text-align: center; }
+  .cat { padding: 6px 12px; font-size: 12.5px; text-align: center; }
   .cat-sep { display: none; }
   .cols {
     grid-template-columns: minmax(0, 1.02fr) minmax(0, .98fr);
@@ -857,6 +870,7 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
 }
 
 @media (max-width: 979px) {
+  #menuDetail > .panel-head { top: 58px; }
   /* 手机上按钮要够得着：分类、杯型/口味、筛选、心情 */
   .cat, .gchip {
     display: inline-flex; align-items: center; justify-content: center;
