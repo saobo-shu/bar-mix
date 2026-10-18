@@ -1349,14 +1349,17 @@
       '</div>';
   }
 
-  /* 材料库顶部的小杯子摘要：加完材料，不用滑回上面也知道杯子里有什么 */
+  /* 材料库顶部的小杯子摘要：加完材料，不用滑回上面也知道杯子里有什么。
+     空杯时整条不显示——杯子那块已经写了“杯子是空的”，这里再来一条只会显得挤。 */
   function renderMiniCup(a, empty) {
     var box = document.getElementById('miniCup');
     if (!box) return;
     if (empty) {
-      box.innerHTML = '<span class="mc-empty">杯子里还是空的 · 点下面的材料开始</span>';
+      box.hidden = true;
+      box.innerHTML = '';
       return;
     }
+    box.hidden = false;
     box.innerHTML = '<span class="mc-sum">杯子里 <b>' + a.nItems + '</b> 样 · <b>'
       + Math.round(a.finalVol) + 'ml</b> · <b>' + a.abv.toFixed(1) + '%</b></span>'
       + '<button type="button" class="ghost mc-back" data-goto-cup="1">回到杯子 ↑</button>';
@@ -2586,6 +2589,7 @@
     box.innerHTML = '<div class="panel-head"><h2>' + esc(recipeName(r)) + '　'
       + '<span class="hint">' + esc(r.en || '') + '</span></h2>'
       + '<button type="button" class="ghost" data-menu-close="1">关闭</button></div>'
+      + '<div class="detail-body">'
       + '<p class="hint">' + esc(pre ? (PRESET_METHOD[pre.name] ? methodName({ method: PRESET_METHOD[pre.name] }) : methodName(r)) : methodName(r))
         + ' · ' + esc(pre ? glassOf(pre.glass).name : glassOf(glassFromRef(r)).name)
         + ' · ' + Math.round(pre ? presetStat(pre).abv : st.abv) + '% · '
@@ -2629,8 +2633,11 @@
       + ((pre && pre.tip) ? '<p class="hint">' + esc(pre.tip) + '</p>'
           : (r.note ? '<p class="hint">' + esc(r.note) + '</p>' : ''))
       + originLine(r)
-      + '<div class="mineacts">'
-      + '<button type="button" class="ghost on" data-menu-load="' + i + '">装进杯子</button>'
+      + '</div>'
+      /* 主操作做成 sticky 底栏：读到一半想装杯，不用再拉到最下面 */
+      + '<div class="mineacts detail-acts">'
+      + '<button type="button" class="ghost on detail-primary" data-menu-load="' + i + '">装进杯子</button>'
+      + '<div class="detail-secondary">'
       /* 跟参考本不一样的（16 款）：多给一个"照书上来"的按钮。
          库里确实没有的那几样没法凭空装进去，杯子里会写清楚哪几样是替代品 */
       + (d && d.hasDiff
@@ -2640,7 +2647,8 @@
       + '<button type="button" class="ghost" data-menu-favbtn="' + i + '">'
         + (isFav(recipeName(r)) ? '★ 已收藏' : '☆ 收藏') + '</button>'
       + '<button type="button" class="ghost" data-share="' + i + '"'
-        + ' title="做成一张竖版图片，手机上长按保存">做成分享卡</button>'
+        + ' title="做成一张竖版图片，手机上长按保存">分享卡</button>'
+      + '</div>'
       + '</div>';
   }
   function methodName(r) {

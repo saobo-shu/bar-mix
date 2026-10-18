@@ -343,6 +343,17 @@ main {
 .menulist .opt.swap { color: var(--amber); border-color: rgba(224, 163, 92, .55); }
 .minecard { display: flex; flex-direction: column; gap: 5px; padding: 10px 11px; border-radius: 11px; background: var(--card2); border: 1px solid var(--line); }
 .mineacts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+/* 详情底部的主操作：sticky，读到一半也能直接装杯，不用再拉到最下面 */
+.detail-acts {
+  position: sticky; bottom: 0; z-index: 4;
+  display: grid; gap: 6px; margin-top: 10px; padding: 8px 0 2px;
+  background: var(--card2); border-top: 1px solid var(--line);
+  box-shadow: 0 -10px 14px -14px rgba(0, 0, 0, .4);
+}
+.detail-acts .detail-primary { width: 100%; padding: 8px 11px; font-size: 13px; }
+.detail-secondary { display: flex; flex-wrap: wrap; gap: 6px; }
+.detail-secondary .ghost { flex: 1 1 auto; }
+.detail-body { padding-bottom: 2px; }
 .menu-card-wrap { display: grid; gap: 12px; }
 .menucount { margin: 0 0 8px; }
 .menumore { margin-top: 9px; }
@@ -360,18 +371,21 @@ main {
 .p-result { order: 2; }
 .p-lib { order: 3; }
 
-/* 材料库顶部的小杯子摘要：加完材料不用滑回上面，也知道杯子里现在有什么 */
+/* 材料库顶部的小杯子摘要：加完材料不用滑回上面，也知道杯子里现在有什么。
+   空杯时整条隐藏；有酒时只留一行字，不再做成一条像输入框的横条。 */
 .minicup {
   position: sticky; top: 64px; z-index: 8;
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  margin: 0 0 10px; padding: 7px 10px;
-  background: var(--card2); border: 1px solid var(--line); border-radius: 10px;
-  font-size: 12px; color: var(--muted);
-  backdrop-filter: blur(10px);
+  margin: 0 0 9px; padding: 4px 0 7px;
+  background: var(--card); border: 0; border-bottom: 1px solid var(--line);
+  border-radius: 0; font-size: 11.5px; color: var(--muted);
 }
+.minicup[hidden] { display: none; }
 .minicup b { color: var(--amber); font-weight: 600; font-variant-numeric: tabular-nums; }
-.minicup .mc-back { padding: 2px 8px; font-size: 11.5px; white-space: nowrap; }
-.minicup .mc-empty { opacity: .85; }
+.minicup .mc-back {
+  border: 0; background: transparent; color: var(--amber);
+  padding: 0 2px; font-size: 11.5px; white-space: nowrap;
+}
 /* 从空杯入口/小杯子摘要跳过去时，别让 sticky 顶栏盖住标题 */
 #cupPanel, #libPanel, #havePanel { scroll-margin-top: 72px; }
 @media (max-width: 979px) {
@@ -6617,14 +6631,17 @@ var qrcode = function() {
       '</div>';
   }
 
-  /* 材料库顶部的小杯子摘要：加完材料，不用滑回上面也知道杯子里有什么 */
+  /* 材料库顶部的小杯子摘要：加完材料，不用滑回上面也知道杯子里有什么。
+     空杯时整条不显示——杯子那块已经写了“杯子是空的”，这里再来一条只会显得挤。 */
   function renderMiniCup(a, empty) {
     var box = document.getElementById('miniCup');
     if (!box) return;
     if (empty) {
-      box.innerHTML = '<span class="mc-empty">杯子里还是空的 · 点下面的材料开始</span>';
+      box.hidden = true;
+      box.innerHTML = '';
       return;
     }
+    box.hidden = false;
     box.innerHTML = '<span class="mc-sum">杯子里 <b>' + a.nItems + '</b> 样 · <b>'
       + Math.round(a.finalVol) + 'ml</b> · <b>' + a.abv.toFixed(1) + '%</b></span>'
       + '<button type="button" class="ghost mc-back" data-goto-cup="1">回到杯子 ↑</button>';
@@ -7854,6 +7871,7 @@ var qrcode = function() {
     box.innerHTML = '<div class="panel-head"><h2>' + esc(recipeName(r)) + '　'
       + '<span class="hint">' + esc(r.en || '') + '</span></h2>'
       + '<button type="button" class="ghost" data-menu-close="1">关闭</button></div>'
+      + '<div class="detail-body">'
       + '<p class="hint">' + esc(pre ? (PRESET_METHOD[pre.name] ? methodName({ method: PRESET_METHOD[pre.name] }) : methodName(r)) : methodName(r))
         + ' · ' + esc(pre ? glassOf(pre.glass).name : glassOf(glassFromRef(r)).name)
         + ' · ' + Math.round(pre ? presetStat(pre).abv : st.abv) + '% · '
@@ -7897,8 +7915,11 @@ var qrcode = function() {
       + ((pre && pre.tip) ? '<p class="hint">' + esc(pre.tip) + '</p>'
           : (r.note ? '<p class="hint">' + esc(r.note) + '</p>' : ''))
       + originLine(r)
-      + '<div class="mineacts">'
-      + '<button type="button" class="ghost on" data-menu-load="' + i + '">装进杯子</button>'
+      + '</div>'
+      /* 主操作做成 sticky 底栏：读到一半想装杯，不用再拉到最下面 */
+      + '<div class="mineacts detail-acts">'
+      + '<button type="button" class="ghost on detail-primary" data-menu-load="' + i + '">装进杯子</button>'
+      + '<div class="detail-secondary">'
       /* 跟参考本不一样的（16 款）：多给一个"照书上来"的按钮。
          库里确实没有的那几样没法凭空装进去，杯子里会写清楚哪几样是替代品 */
       + (d && d.hasDiff
@@ -7908,7 +7929,8 @@ var qrcode = function() {
       + '<button type="button" class="ghost" data-menu-favbtn="' + i + '">'
         + (isFav(recipeName(r)) ? '★ 已收藏' : '☆ 收藏') + '</button>'
       + '<button type="button" class="ghost" data-share="' + i + '"'
-        + ' title="做成一张竖版图片，手机上长按保存">做成分享卡</button>'
+        + ' title="做成一张竖版图片，手机上长按保存">分享卡</button>'
+      + '</div>'
       + '</div>';
   }
   function methodName(r) {

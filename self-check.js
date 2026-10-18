@@ -230,9 +230,10 @@ console.log('\n--- 空杯入口 / 加料反馈 / 小杯子摘要 ---');
 
   B.load([]);
   const emptyMini = els.miniCup ? els.miniCup.innerHTML : '';
-  const okEmptyMini = emptyMini.indexOf('杯子里还是空的') >= 0;
-  console.log('  ' + (okEmptyMini ? '✅' : '❌') + ' 空杯时小杯子摘要写「还是空的」');
-  if (!okEmptyMini) bad('加料反馈', '空杯时小杯子摘要没写「还是空的」：' + emptyMini);
+  const okEmptyMini = !!els.miniCup && els.miniCup.hidden === true && emptyMini === '';
+  console.log('  ' + (okEmptyMini ? '✅' : '❌') + ' 空杯时小杯子摘要整条隐藏（不再多一条空状态条）');
+  if (!okEmptyMini) bad('加料反馈', '空杯时小杯子摘要没有隐藏：hidden=' + (els.miniCup && els.miniCup.hidden)
+    + ' html=' + emptyMini);
 
   B.preset(1);                       /* 威士忌酸：带配方备注，用来验证撤销能还原 */
   const recipeName = B.state.recipeName;
@@ -244,7 +245,8 @@ console.log('\n--- 空杯入口 / 加料反馈 / 小杯子摘要 ---');
   if (!okToast) bad('加料反馈', '点材料后没有正确的 toast：' + toastText);
 
   const mini = els.miniCup ? els.miniCup.innerHTML : '';
-  const okMini = mini.indexOf('杯子里') >= 0 && mini.indexOf('样') >= 0
+  const okMini = !!els.miniCup && els.miniCup.hidden === false
+    && mini.indexOf('杯子里') >= 0 && mini.indexOf('样') >= 0
     && mini.indexOf('ml') >= 0 && mini.indexOf('%') >= 0 && mini.indexOf('回到杯子') >= 0;
   console.log('  ' + (okMini ? '✅' : '❌') + ' 小杯子摘要跟着更新：'
     + mini.replace(/<[^>]+>/g, ''));
@@ -264,6 +266,19 @@ console.log('\n--- 空杯入口 / 加料反馈 / 小杯子摘要 ---');
   const opened = els.havePanel ? els.havePanel.open === true : false;
   console.log('  ' + (opened ? '✅' : '❌') + ' 「我手上只有几样」会展开并跳到手边那一块');
   if (!opened) bad('加料反馈', '点「我手上只有几样」没有把手边那块打开');
+
+  /* 详情的主操作必须放在 sticky 底栏里，读到一半也能直接装杯 */
+  B.menu.setTab('classic');
+  B.menu.open(0);
+  const detailHtml = els.menuDetail.innerHTML;
+  const cssText = fs.readFileSync(path.join(__dirname, 'app.css'), 'utf8');
+  const hasStickyAct = /class="mineacts detail-acts"[\s\S]*data-menu-load/.test(detailHtml);
+  const stickyCss = /\.detail-acts\s*\{[^}]*position:\s*sticky/.test(cssText);
+  console.log('  ' + (hasStickyAct && stickyCss ? '✅' : '❌')
+    + ' 详情「装进杯子」在 sticky 底栏里，不用拉到最下面');
+  if (!(hasStickyAct && stickyCss)) bad('详情',
+    '详情的主操作没有做成 sticky 底栏：html=' + hasStickyAct + ' css=' + stickyCss);
+  B.menu.reset();
   B.load([]);
 })();
 
