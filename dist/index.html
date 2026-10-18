@@ -972,6 +972,12 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
   #radar { max-width: 420px; }
 }
 
+@media (min-width: 1800px) {
+  /* 1920 的 100% 直接按 110% 的视觉大小显示。
+     110% 浏览器缩放下 CSS 宽度约 1745，不会触发这条，避免二次放大。 */
+  body { zoom: 1.1; }
+}
+
 @media (max-width: 380px) {
   .grid { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); }
   .stats { grid-template-columns: repeat(3, 1fr); gap: 6px; }
