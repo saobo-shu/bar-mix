@@ -279,10 +279,13 @@ console.log('\n--- 空杯入口 / 加料反馈 / 小杯子摘要 ---');
   if (!(cleared && cupBack)) bad('加料反馈',
     '清空撤销没恢复：cleared=' + cleared + ' cup=' + B.state.cup.size + '/' + nCup);
 
+  B.page.set('menu');
   fire({ gotoHave: '1' });
-  const opened = els.havePanel ? els.havePanel.open === true : false;
-  console.log('  ' + (opened ? '✅' : '❌') + ' 「我手上只有几样」会展开并跳到手边那一块');
-  if (!opened) bad('加料反馈', '点「我手上只有几样」没有把手边那块打开');
+  const opened = B.page.current() === 'bar' && els.havePanel
+    && els.havePanel.open === true;
+  console.log('  ' + (opened ? '✅' : '❌') + ' 「我手上只有几样」从别的页也会切回调酒台并展开手边那块');
+  if (!opened) bad('加料反馈', '点「我手上只有几样」没有切回调酒台/打开手边那块');
+  B.page.set('bar');
 
   /* 详情的主操作必须放在 sticky 底栏里，读到一半也能直接装杯 */
   B.menu.setTab('classic');

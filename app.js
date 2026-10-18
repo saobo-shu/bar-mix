@@ -3395,21 +3395,26 @@
     }
     /* 空杯两个入口 / 小杯子摘要 / toast 撤销 */
     if (t.dataset.gotoLib !== undefined) {
+      setPage('bar', true);
       var libPanel = document.getElementById('libPanel');
-      if (libPanel && libPanel.scrollIntoView) libPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (libPanel && libPanel.scrollIntoView) libPanel.scrollIntoView({ block: 'start' });
       return;
     }
     if (t.dataset.gotoHave !== undefined) {
+      setPage('bar', true);
       var havePanel = document.getElementById('havePanel');
       if (havePanel) {
         havePanel.open = true;
-        if (havePanel.scrollIntoView) havePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(function () {
+          if (havePanel.scrollIntoView) havePanel.scrollIntoView({ block: 'start' });
+        }, 20);
       }
       return;
     }
     if (t.dataset.gotoCup !== undefined) {
+      setPage('bar', true);
       var cupPanel = document.getElementById('cupPanel');
-      if (cupPanel && cupPanel.scrollIntoView) cupPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (cupPanel && cupPanel.scrollIntoView) cupPanel.scrollIntoView({ block: 'start' });
       return;
     }
     if (t.dataset.toastUndo !== undefined) {
@@ -4004,11 +4009,6 @@
         var shell = document.querySelector('.shell');
         if (shell) shell.classList.toggle('folded');
       }
-    });
-    var fold = document.getElementById('navFold');
-    if (fold) fold.addEventListener('click', function () {
-      var shell = document.querySelector('.shell');
-      if (shell) shell.classList.add('folded');
     });
     var back = document.getElementById('navBack');
     if (back) back.addEventListener('click', closeNav);

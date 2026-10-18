@@ -169,7 +169,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .navitem.is-mini.on { border-color: var(--amber); background: rgba(224, 163, 92, .14); }
 .navitem.on b { color: var(--amber); }
 .navitem:active { transform: scale(.99); }
-.navfold { width: 100%; margin-top: 2px; }
 .navbtn { display: inline-block; flex: none; padding: 4px 9px; font-size: 14px; line-height: 1.2; }
 .navback { display: none; }
 
@@ -700,7 +699,6 @@ details.panel:not([open]) { padding-bottom: 13px; }
   }
   body.navopen .sidenav { transform: none; }
   body.navopen .navback { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(0, 0, 0, .5); }
-  .navfold { display: none; }
 }
 
 /* ---------------- 换基酒 ---------------- */

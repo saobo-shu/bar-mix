@@ -215,7 +215,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .navitem.is-mini.on { border-color: var(--amber); background: rgba(224, 163, 92, .14); }
 .navitem.on b { color: var(--amber); }
 .navitem:active { transform: scale(.99); }
-.navfold { width: 100%; margin-top: 2px; }
 .navbtn { display: inline-block; flex: none; padding: 4px 9px; font-size: 14px; line-height: 1.2; }
 .navback { display: none; }
 
@@ -746,7 +745,6 @@ details.panel:not([open]) { padding-bottom: 13px; }
   }
   body.navopen .sidenav { transform: none; }
   body.navopen .navback { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(0, 0, 0, .5); }
-  .navfold { display: none; }
 }
 
 /* ---------------- 换基酒 ---------------- */
@@ -1042,7 +1040,6 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
       <button type="button" class="navitem is-big on" data-page="bar"><b>调酒台</b><i>配比 · 风味 · 评分</i></button>
       <button type="button" class="navitem" data-page="tonight"><b>今晚喝什么</b><i>挑一个心情，来三杯</i></button>
       <button type="button" class="navitem" data-page="menu"><b>酒单</b><i>191 款经典</i></button>
-      <button type="button" class="ghost navfold" id="navFold">收起侧栏</button>
 
       <!-- 侧栏里的当前杯子：宽屏时下面不再是一整块空白 -->
       <div class="sidecup" id="sideCup">
@@ -8791,21 +8788,26 @@ var qrcode = function() {
     }
     /* 空杯两个入口 / 小杯子摘要 / toast 撤销 */
     if (t.dataset.gotoLib !== undefined) {
+      setPage('bar', true);
       var libPanel = document.getElementById('libPanel');
-      if (libPanel && libPanel.scrollIntoView) libPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (libPanel && libPanel.scrollIntoView) libPanel.scrollIntoView({ block: 'start' });
       return;
     }
     if (t.dataset.gotoHave !== undefined) {
+      setPage('bar', true);
       var havePanel = document.getElementById('havePanel');
       if (havePanel) {
         havePanel.open = true;
-        if (havePanel.scrollIntoView) havePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(function () {
+          if (havePanel.scrollIntoView) havePanel.scrollIntoView({ block: 'start' });
+        }, 20);
       }
       return;
     }
     if (t.dataset.gotoCup !== undefined) {
+      setPage('bar', true);
       var cupPanel = document.getElementById('cupPanel');
-      if (cupPanel && cupPanel.scrollIntoView) cupPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (cupPanel && cupPanel.scrollIntoView) cupPanel.scrollIntoView({ block: 'start' });
       return;
     }
     if (t.dataset.toastUndo !== undefined) {
@@ -9400,11 +9402,6 @@ var qrcode = function() {
         var shell = document.querySelector('.shell');
         if (shell) shell.classList.toggle('folded');
       }
-    });
-    var fold = document.getElementById('navFold');
-    if (fold) fold.addEventListener('click', function () {
-      var shell = document.querySelector('.shell');
-      if (shell) shell.classList.add('folded');
     });
     var back = document.getElementById('navBack');
     if (back) back.addEventListener('click', closeNav);
