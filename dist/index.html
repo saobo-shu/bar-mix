@@ -5321,6 +5321,13 @@ var qrcode = function() {
      大部分人在住处调酒都是往这样一个冰杯里加，液体很少超过这个数。 */
   var CUP_ML = 200;
 
+  /* 按滴算的材料（苦精、辣椒仔、盐水……）是调味，不是 20ml 那样的主料。
+     老模型里 2 滴安高天娜的 f.bitter=9，和 20ml 金巴利一样——这就是
+     SCORING.md 里记的「2 滴苦精算出 20ml 金巴利的苦」。
+     这里给一个估值系数：2 滴 ≈ 20ml 金巴利 1/3 的苦；等真人盲测再标定。
+     只缩放风味贡献，不影响体积、ABV、糖度/酸度（那些仍按实际 ml 算）。 */
+  var DASH_WEIGHT = 0.33;
+
   /* 每个杯型的画法：outer 是描边的外轮廓，inner 是内部区域的多边形
      （既用来裁剪、也用来铺颗粒）。画布 100 × 150，杯子站在 y≈134 的地面上。 */
   var GLASS_ART = {
@@ -5551,7 +5558,9 @@ var qrcode = function() {
       var g = BY_ID[id];
       if (!g) return;
       var r = amt / g.def;
-      DIMS.forEach(function (d) { f[d.k] += (g.f[d.k] || 0) * r; });
+      /* 按滴算的调味料不能按默认量直接和 20ml 的主料比（见 DASH_WEIGHT） */
+      var dose = g.unit === '滴' ? DASH_WEIGHT : 1;
+      DIMS.forEach(function (d) { f[d.k] += (g.f[d.k] || 0) * r * dose; });
 
       var ml = amt * (g.mlu || 0);
       if (ml > 0) liquid += ml;

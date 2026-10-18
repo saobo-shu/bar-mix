@@ -347,6 +347,24 @@ console.log('\n--- 一致性：空杯分数 / 收藏 / 预设残留 / 分享卡 
   B.load([]);
 })();
 
+/* ---- 苦精：2 滴不能等于 20ml 金巴利的苦 ---- */
+console.log('\n--- 苦精：2 滴 vs 20ml 金巴利 ---');
+(function () {
+  B.state.glass = 'rocks'; B.state.iceLevel = 'none';
+  B.state.method = 'build'; B.state.taste = 'normal';
+  /* 两杯都是 90ml：只换"2 滴安高天娜"和"20ml 金巴利"，看苦味差多少 */
+  B.load([['vodka', 45], ['soda', 44.4], ['angostura', 2]]);
+  const dash = B.analyze().fd.bitter;
+  B.load([['vodka', 45], ['soda', 25], ['campari', 20]]);
+  const camp = B.analyze().fd.bitter;
+  const ratio = camp > 0 ? dash / camp : 99;
+  const ok = dash > 0 && camp > 0 && ratio < 0.5 && ratio > 0.1;
+  console.log('  ' + (ok ? '✅' : '❌') + ' 2 滴安高天娜的苦是 20ml 金巴利的 '
+    + (ratio * 100).toFixed(0) + '%（目标 10-50%）');
+  if (!ok) bad('苦精', '2 滴苦精的苦和 20ml 金巴利不成比例：ratio=' + ratio);
+  B.load([]);
+})();
+
 /* ---- 做法：和参考字典对账 ---- */
 console.log('\n--- 做法（和经典字典对账）---');
 (function () {
