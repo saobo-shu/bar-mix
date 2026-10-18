@@ -1482,6 +1482,26 @@ console.log('\n--- 蛋清、柠檬片这类不算"还缺一样" ---');
   console.log('  ' + (ok ? '✅' : '❌') + ' 皮斯科酸配齐三样：判成"现在就能做"，蛋清写成"可选"'
     + '（缺 ' + miss.length + ' 样）');
   if (!ok) bad('手边有什么', '蛋清被当成缺一样了');
+
+  /* 瓶装柠檬汁可以顶鲜柠檬，但要标“替”，不能当成完全一样 */
+  B.have.reset();
+  ['bourbon', 'syrup', 'lemon_bottle'].forEach(id => B.have.toggle(id));
+  const li = R.findIndex(r => r.zh === '威士忌酸');
+  const missSub = B.have.missingLabel(li);
+  const noFreshMiss = !missSub.some(x => x.indexOf('鲜柠檬') >= 0);
+  const htmlSub = els.haveOut.innerHTML;
+  const cardSub = (htmlSub.match(/<button[^>]*class="refcard[^"]*"[^>]*>[\s\S]*?<\/button>/g) || [])
+    .find(c => c.indexOf(R[li].zh) >= 0);
+  const markedSub = !!cardSub && cardSub.indexOf('瓶装柠檬汁') >= 0 && cardSub.indexOf('替') >= 0;
+  B.have.load(li);
+  const cupBottle = B.state.cup.get('lemon_bottle') || 0;
+  const cupFresh = B.state.cup.get('lemon') || 0;
+  const okSub = noFreshMiss && markedSub && cupBottle > 0 && cupFresh === 0;
+  console.log('  ' + (okSub ? '✅' : '❌')
+    + ' 瓶装柠檬汁替鲜柠檬：不算缺、卡片标“替”、装杯用瓶装（' + R[li].zh + '）');
+  if (!okSub) bad('手边有什么', '瓶装柠檬汁没被当成可替：miss=' + missSub.join('、')
+    + ' marked=' + markedSub + ' cup=' + cupBottle + '/' + cupFresh);
+
   B.have.reset();
 })();
 

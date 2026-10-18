@@ -1841,6 +1841,12 @@
       || c === 'tequila' || c === 'brandy' || c === 'otherbase';
   }
 
+  /* 材料级的替代：目前只收「瓶装柠檬汁顶鲜柠檬」这一条。
+     不放进类型表——酒按类型认，果汁不是酒；这里只做明确的近似替代。 */
+  var ING_SUB = {
+    lemon: { ids: ['lemon_bottle'], note: '香气和酸度会差一点，有鲜柠檬更好' }
+  };
+
   /* 这条需求，勾了的材料能不能满足；是"完全一样"还是"同组能替" */
   function needStatus(need, mine) {
     return needStatusWith(need, mine || Object.keys(state.have));
@@ -1850,7 +1856,17 @@
     if (need.pantry) return { ok: true, exact: true, hits: [] };
     if (need.id) {
       hits = mine.filter(function (id) { return id === need.id; });
-      return { ok: hits.length > 0, exact: hits.length > 0, hits: hits };
+      if (hits.length) return { ok: true, exact: true, hits: hits };
+      var sub = ING_SUB[need.id];
+      if (sub) {
+        var alt = mine.filter(function (id) {
+          return sub.ids.indexOf(id) >= 0 && BY_ID[id];
+        });
+        if (alt.length) {
+          return { ok: true, exact: false, hits: alt, subFor: need.id, subNote: sub.note };
+        }
+      }
+      return { ok: false, exact: false, hits: [] };
     }
     if (need.ids) {
       hits = mine.filter(function (id) { return need.ids.indexOf(id) >= 0; });
@@ -1937,9 +1953,14 @@
     (r.needs || []).forEach(function (nd) {
       if (nd.need.optional) return;
       var st = needStatus(nd.need, mine);
-      if (!st.ok || st.exact || !st.wantType || !st.hits.length) return;
-      out.push('配方一般是' + typeName(st.wantType) + '，你的'
-        + BY_ID[st.hits[0]].name.replace(/（.*?）/g, '') + '也能做，风味会不一样');
+      if (!st.ok || st.exact || !st.hits.length) return;
+      if (st.wantType) {
+        out.push('配方一般是' + typeName(st.wantType) + '，你的'
+          + BY_ID[st.hits[0]].name.replace(/（.*?）/g, '') + '也能做，风味会不一样');
+      } else if (st.subFor) {
+        out.push('配方要' + needLabel(nd) + '，你用'
+          + BY_ID[st.hits[0]].name.replace(/（.*?）/g, '') + '替；' + st.subNote);
+      }
     });
     return out;
   }
@@ -2060,10 +2081,13 @@
         }
         if (st.ok) {
           used.push(nd);
-          /* 同组不同类型 → 记一句"风味会不一样" */
+          /* 同组不同类型 → 记一句"风味会不一样"；材料近似替代 → 标"替" */
           if (!st.exact && st.wantType && st.hits.length) {
             swap.push('配方一般是' + typeName(st.wantType) + '，你的'
               + BY_ID[st.hits[0]].name.replace(/（.*?）/g, '') + '也能做，风味会不一样');
+          } else if (!st.exact && st.subFor && st.hits.length) {
+            swap.push('配方要' + needLabel(nd) + '，你用'
+              + BY_ID[st.hits[0]].name.replace(/（.*?）/g, '') + '替；' + st.subNote);
           }
           return;
         }
@@ -2232,7 +2256,19 @@
 
   /* 需求 → 具体用哪一瓶：优先用你勾了的那瓶 */
   function resolveNeedId(need) {
-    if (need.id) return BY_ID[need.id] ? need.id : '';
+    if (need.id) {
+      if (!BY_ID[need.id]) return '';
+      if (!state.have[need.id]) {
+        var sub = ING_SUB[need.id];
+        if (sub) {
+          var alt = sub.ids.filter(function (id) {
+            return state.have[id] && BY_ID[id];
+          })[0];
+          if (alt) return alt;
+        }
+      }
+      return need.id;
+    }
     if (need.ids) {
       var mine = need.ids.filter(function (id) { return state.have[id]; })[0];
       return mine || (BY_ID[need.ids[0]] ? need.ids[0] : '');
