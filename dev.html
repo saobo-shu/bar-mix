@@ -243,11 +243,7 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
       <input type="search" id="libSearch" class="havesearch" placeholder="搜材料名、品牌…（跨分类找）" aria-label="搜索材料">
       <button type="button" class="ghost" id="libClear">清空</button>
     </div>
-    <div class="catbar">
-      <button type="button" class="catnav" data-catnav="-1" aria-label="上一类">‹</button>
-      <nav class="cats" id="cats"></nav>
-      <button type="button" class="catnav" data-catnav="1" aria-label="下一类">›</button>
-    </div>
+    <nav class="cats" id="cats"></nav>
     <div class="grid" id="lib"></div>
     <p class="hint libfoot">每样材料都标了「放心买 / 注意 / 高风险」（判断标准是：<b>没冰箱的住处里，它买到手之后有多难伺候</b>）和「冷冻 / 冷藏 / 常温」（建议温度，决定它能把杯里的冰化掉多少）。点材料名可以看它的风味说明。</p>
   </section>

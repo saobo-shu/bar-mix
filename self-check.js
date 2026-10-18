@@ -228,15 +228,10 @@ console.log('\n--- 空杯入口 / 加料反馈 / 小杯子摘要 ---');
   console.log('  ' + (hasEntry && hasNodes ? '✅' : '❌')
     + ' 空杯两个入口 + 小杯子摘要 + toast 都在页面里');
   if (!(hasEntry && hasNodes)) bad('加料反馈', 'dev.html 缺少空杯入口/小杯子摘要/toast 节点');
-  const hasCatbar = /class="catbar"/.test(dev)
-    && /data-catnav="-1"/.test(dev) && /data-catnav="1"/.test(dev);
-  console.log('  ' + (hasCatbar ? '✅' : '❌') + ' 分类标签有左右箭头（桌面收成一行）');
-  if (!hasCatbar) bad('加料反馈', 'dev.html 缺少分类左右箭头');
-  els.cats.scrollLeft = 0;
-  fire({ catnav: '1' });
-  const catScrolled = els.cats.scrollLeft === 240;
-  console.log('  ' + (catScrolled ? '✅' : '❌') + ' 点分类箭头会横向滚动');
-  if (!catScrolled) bad('加料反馈', '分类箭头没有滚动：scrollLeft=' + els.cats.scrollLeft);
+  const cssNow = fs.readFileSync(path.join(__dirname, 'app.css'), 'utf8');
+  const catWrap = /\.cats\s*\{[^}]*flex-wrap:\s*wrap/.test(cssNow) && !/catnav/.test(dev);
+  console.log('  ' + (catWrap ? '✅' : '❌') + ' 分类标签自动换行，不再用左右箭头');
+  if (!catWrap) bad('加料反馈', '分类标签没有改成自动换行，或还残留箭头');
 
   B.load([]);
   const emptyMini = els.miniCup ? els.miniCup.innerHTML : '';

@@ -444,23 +444,13 @@ details.panel:not([open]) { padding-bottom: 13px; }
 .coderow .ghost { flex: 1; }
 
 /* ---------------- 材料库 ---------------- */
-.cats { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 9px; margin-bottom: 10px; scrollbar-width: none; }
-.cats::-webkit-scrollbar { display: none; }
-/* 分类标签 + 左右箭头：桌面也收成一行，别让 18 个标签铺三行 */
-.catbar { display: flex; align-items: center; gap: 4px; margin-bottom: 10px; }
-.catbar .cats { flex: 1; min-width: 0; margin-bottom: 0; padding-bottom: 0; }
-.catnav {
-  flex: none; width: 28px; height: 32px; border-radius: 8px;
-  border: 1px solid var(--line); background: var(--card2);
-  color: var(--muted); font-size: 16px; line-height: 1; padding: 0;
-}
-.catnav:active { color: var(--text); border-color: var(--muted); }
+.cats { display: flex; flex-wrap: wrap; gap: 7px; overflow: visible; padding-bottom: 0; margin-bottom: 10px; }
 .cat {
-  flex: none; padding: 6px 12px; border-radius: 999px; font-size: 13px;
+  flex: none; padding: 5px 10px; border-radius: 999px; font-size: 12px;
   background: var(--card2); border: 1px solid var(--line); color: var(--muted);
 }
 .cat.on { background: var(--amber); border-color: var(--amber); color: var(--on-ink); font-weight: 600; }
-.cat-sep { flex: none; width: 1px; height: 20px; background: var(--line); align-self: center; margin: 0 3px; }
+.cat-sep { display: none; }
 
 /* 材料名现在带品牌（"黑樱桃利口酒（Luxardo）"），卡片太窄会被挤成三行，
    右边那列标签又必须留位置，所以基准宽度从 140 提到 168 */
@@ -849,11 +839,11 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
   .stats { grid-template-columns: repeat(4, 1fr); }
   /* 桌面端分类标签改成"等宽网格"：16 个标签自动铺满、自动换行，
      永远不可能溢出；分隔线在网格布局里没意义，藏掉 */
-  /* 分类标签收成一行横滑，左右各有箭头；不再铺成三行网格 */
+  /* 分类标签自动换行：所有分类一次全显示，不做横向滚动 */
   .cats {
-    display: flex; flex-wrap: nowrap; overflow-x: auto;
+    display: flex; flex-wrap: wrap; overflow: visible;
   }
-  .cat { padding: 6px 12px; font-size: 12.5px; text-align: center; }
+  .cat { padding: 6px 11px; font-size: 12.5px; text-align: center; }
   .cat-sep { display: none; }
   .cols {
     grid-template-columns: minmax(0, 1.02fr) minmax(0, .98fr);
@@ -880,7 +870,7 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
     display: inline-flex; align-items: center; justify-content: center;
     min-height: 36px;
   }
-  .cat { padding: 8px 13px; }
+  .cat { padding: 7px 11px; }
   .gchip { padding: 7px 11px; }
   .moodbtn { min-height: 44px; }
   .mf-row .ghost { min-height: 34px; padding: 6px 10px; font-size: 12px; }

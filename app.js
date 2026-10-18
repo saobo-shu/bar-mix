@@ -3318,11 +3318,6 @@
       closeSaveDialog();
       return;
     }
-    if (t.dataset.catnav !== undefined) {
-      var cats = document.getElementById('cats');
-      if (cats) cats.scrollLeft += (+t.dataset.catnav) * 240;
-      return;
-    }
     /* 空杯两个入口 / 小杯子摘要 / toast 撤销 */
     if (t.dataset.gotoLib !== undefined) {
       var libPanel = document.getElementById('libPanel');
