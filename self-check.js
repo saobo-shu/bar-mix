@@ -951,6 +951,31 @@ console.log('\n--- 三种模式 ---');
       + '（预期 ' + NAMES[c[4]] + '）');
     if (!ok) bad('模式', c[0] + ' 被判成 ' + NAMES[got] + '，应该是 ' + NAMES[c[4]]);
   });
+
+  /* 无酒精不是高球/酸酒：单独一族、烈度不计、权重重新分配 */
+  B.state.glass = 'highball'; B.state.iceLevel = 'full';
+  B.state.taste = 'normal'; B.state.scheme = 'balanced';
+  B.load([['orange_juice', 60], ['soda', 90], ['syrup', 15]]);
+  const am = B.analyze(), sm = B.scores(), fm = B.familyOf(am);
+  const expectTotal = (0.38 * sm.balance + 0.22 * sm.structure + 0.32 * sm.complexity) / 0.92;
+  const noStrengthBar = els.subScores.innerHTML.indexOf('无酒精：浓度项不计') >= 0
+    && els.subScores.innerHTML.indexOf('占总分 0%') < 0;
+  const famSaysMock = (els.famLine.textContent || '').indexOf('无酒精') >= 0
+    && (els.famLine.textContent || '').indexOf('甜 : 酸') >= 0;
+  const okMock = fm.id === 'mocktail' && Math.abs(sm.total - expectTotal) < 0.2
+    && noStrengthBar && famSaysMock;
+  console.log('  ' + (okMock ? '✅' : '❌')
+    + ' 无酒精特调判成 Mocktail、浓度不计、平衡/结构/复杂度重新分权重（'
+    + sm.total + ' 分）');
+  if (!okMock) bad('模式', '无酒精特调还是按高球/酸酒算：fam=' + fm.id
+    + ' total=' + sm.total + ' expected=' + expectTotal.toFixed(1)
+    + ' bar=' + !noStrengthBar + ' famLine=' + famSaysMock);
+
+  B.load([['lime', 20], ['syrup', 15], ['soda', 100]]);
+  const fm2 = B.familyOf(B.analyze()).id;
+  console.log('  ' + (fm2 === 'mocktail' ? '✅' : '❌') + ' 处女酸酒（青柠+糖+苏打）也是 Mocktail，不是菲士');
+  if (fm2 !== 'mocktail') bad('模式', '无酒精酸酒被分到 ' + fm2);
+  B.load([]);
 })();
 
 /* ---- 酒精度：纯饮必须等于原瓶度数 ---- */

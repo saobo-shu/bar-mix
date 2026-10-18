@@ -5873,6 +5873,22 @@ var qrcode = function() {
     var b = scoreBalance(a), st = scoreStrength(a),
         stru = scoreStructure(a), cx = scoreComplexity(a.fd);
     var w = schemeOf(state.scheme).w;
+    /* 无酒精不计烈度：把浓度那 8% 按原比例分给平衡/结构/复杂度。
+       分数仍是 0–100，只是不再拿"没酒精"当缺陷。 */
+    if (!a.hasBase) {
+      var denom = w.balance + w.structure + w.complexity;
+      var wm = {
+        balance: w.balance / denom,
+        strength: 0,
+        structure: w.structure / denom,
+        complexity: w.complexity / denom
+      };
+      return {
+        balance: b, strength: 100, structure: stru, complexity: cx,
+        weight: wm,
+        total: wm.balance * b + wm.structure * stru + wm.complexity * cx
+      };
+    }
     return {
       balance: b, strength: st, structure: stru, complexity: cx,
       weight: w,
@@ -5893,11 +5909,14 @@ var qrcode = function() {
     hot: '热饮', neat: '纯饮', flip: '蛋类 Flip', cream: '奶类',
     fizz: '菲士 / 柯林斯', sour: '酸类', highball: '高球', long: '长饮',
     old_fashioned: '古典型', duo: '双料', spirit: '烈酒向',
-    rickey: 'Rickey', mule: '骡子 Mule', coffee: '咖啡'
+    rickey: 'Rickey', mule: '骡子 Mule', coffee: '咖啡', mocktail: '无酒精'
   };
   function familyOf(a) {
     if (a.isHot) return { id: 'hot', name: FAMILY_LABEL.hot };
     if (a.neatPour) return { id: 'neat', name: FAMILY_LABEL.neat };
+    /* 没有基酒（酒精 < 3ml）就是无酒精特调，不往酸酒/高球里塞。
+       单一样材料仍是"不是酒"，但家族也先记无酒精；评分另有 singleSoft 挡着。 */
+    if (!a.hasBase && a.nItems > 0) return { id: 'mocktail', name: FAMILY_LABEL.mocktail };
     if (a.eggMl > 0) return { id: 'flip', name: FAMILY_LABEL.flip };
     if (a.dairyFat) return { id: 'cream', name: FAMILY_LABEL.cream };
     /* 加了酸、也加了甜 → 酸酒骨架；有气泡就是菲士 / 柯林斯。
@@ -5984,6 +6003,15 @@ var qrcode = function() {
     var load = S + A;
     var over = Math.max(0, load - 42);
     var cap = clamp(1 - over / 22, 0.35, 1);
+    /* 无酒精：没有"酒体 : 稀释物"这回事。有酸有甜就按 Brix/TA 的酸酒尺，
+       否则按甜 : 酸；都不看基酒。 */
+    if (fam.id === 'mocktail') {
+      if (a.hasSourAdd && a.hasSweetAdd) {
+        var mb = sourBalance(a);
+        if (mb !== null) return mb * cap;
+      }
+      return balanceRatio(S, A, cw) * cap;
+    }
     /* 酸类 / 菲士：有物量数据就用 Brix/TA；没有就退回估值 */
     if (fam.id === 'sour' || fam.id === 'fizz') {
       var sb = sourBalance(a);
@@ -6221,6 +6249,7 @@ var qrcode = function() {
   }
 
   function strengthCaption(a) {
+    if (!a.hasBase) return '无酒精 · 不计浓度';
     var t = tasteBand(a.taste);
     var pos = a.abv < t.lo ? '比你的偏淡区间还低' : (a.abv > t.hi ? '比你的浓烈区间还高' : '落在你的合适区间里');
     return '你的口味：' + t.name + '（' + t.lo + '-' + t.hi + '%）· 你这杯 ' + a.abv.toFixed(1) + '%　' + pos;
@@ -6228,7 +6257,11 @@ var qrcode = function() {
 
   /* 给结构那一栏用的一句话：材料到底够不够冰 */
   function coldLabel(a) {
-    if (!a.hasBase) return '没有酒';
+    if (!a.hasBase) {
+      if (a.cold >= 0.55) return '材料够冰（无酒精）';
+      if (a.cold >= 0.2) return '材料偏凉（无酒精）';
+      return '材料不够冰（无酒精）';
+    }
     var t = a.baseTemp === 'frozen' ? '基酒冷冻'
       : (a.baseTemp === 'cold' ? '基酒冷藏' : '基酒常温');
     if (a.cold >= 0.55) return '材料够冰（' + t + '）';
@@ -6237,7 +6270,8 @@ var qrcode = function() {
   }
 
   function scoreStrength(a) {
-    if (!a.hasBase) return 76;
+    /* 无酒精不按酒精度扣分；总分里这一项权重也是 0（见 totalScore）。 */
+    if (!a.hasBase) return 100;
     var t = tasteBand(a.taste), abv = a.abv;
     if (abv >= t.lo && abv <= t.hi) return 100;
     if (abv < t.lo) return interp(abv / t.lo, [[0, 15], [0.35, 45], [0.6, 72], [0.82, 90], [1, 100]]);
@@ -6378,7 +6412,7 @@ var qrcode = function() {
     }
 
     if (!a.hasBase && a.nItems > 0)
-      add(100, 'tip', '这杯里没有基酒，是无酒精特调。烈度项按宽松标准算了，风味图照样有效。');
+      add(100, 'tip', '这杯没有酒精，浓度项不参与总分；平衡、结构、风味图照样有效。');
 
     if (a.nNonIce === 1 && a.nBase === 1)
       add(98, 'tip', '现在这是纯饮。同一瓶酒加 90ml 苏打水和一条柠檬皮，会变成一杯完全不同、也更适合住处的酒。');
@@ -6916,6 +6950,8 @@ var qrcode = function() {
     } else if (famNow.id === 'duo' && a.modMl > 0) {
       ratioCap = '按「双料」量：酒体 ' + Math.round(a.baseMl) + 'ml : 辅料 '
         + Math.round(a.modMl) + 'ml（约 ' + (a.baseMl / a.modMl).toFixed(1) + ' : 1）';
+    } else if (famNow.id === 'mocktail') {
+      ratioCap = '无酒精 · 按甜 : 酸 / 稀释量；不按酒体 : 稀释物';
     }
     /* 酸类 / 菲士的平衡已经改用 Brix/TA，说明也要跟着换；
        其余家族在覆盖率过半时把糖度/酸度附在后面。
@@ -6931,16 +6967,22 @@ var qrcode = function() {
     /* 每一项都标出它现在的权重——换了评分方案，这些数字会一起变 */
     var w = sc.weight, pc = function (x) { return Math.round(x * 100) + '%'; };
     /* 纯饮模式一根评分条都不留——说了不评分就别再写着"权重 32%" */
-    document.getElementById('subScores').innerHTML = (empty || neat || single) ? '' :
-      bar('平衡', b, '占总分 ' + pc(w.balance) + '　' + ratioCap) +
-      bar('复杂度', cx, '占总分 ' + pc(w.complexity) + '　激活了 ' + dimsOn + ' 种风味') +
-      bar('结构', stru, '占总分 ' + pc(w.structure) + '　'
-        + (a.hasIce ? iceLevelOf(state.iceLevel).name
-           : (glassOf(state.glass).ice === 'chilled' ? '冰镇·滤掉冰' : '没放冰')) + ' · '
-        + (a.hasFizzIng ? '有气泡' : '没有气泡') + ' · ' + glassOf(state.glass).name + ' 液体 '
-        + Math.round(a.liquid) + '/' + liquidMaxFor(glassOf(state.glass)) + 'ml'
-        + (a.isHot ? '' : ' · ' + coldLabel(a))) +
-      bar('浓度', st, '占总分 ' + pc(w.strength) + '　' + strengthCaption(a));
+    var scoreBars = '';
+    if (!empty && !neat && !single) {
+      scoreBars = bar('平衡', b, '占总分 ' + pc(w.balance) + '　' + ratioCap) +
+        bar('复杂度', cx, '占总分 ' + pc(w.complexity) + '　激活了 ' + dimsOn + ' 种风味') +
+        bar('结构', stru, '占总分 ' + pc(w.structure) + '　'
+          + (a.hasIce ? iceLevelOf(state.iceLevel).name
+             : (glassOf(state.glass).ice === 'chilled' ? '冰镇·滤掉冰' : '没放冰')) + ' · '
+          + (a.hasFizzIng ? '有气泡' : '没有气泡') + ' · ' + glassOf(state.glass).name + ' 液体 '
+          + Math.round(a.liquid) + '/' + liquidMaxFor(glassOf(state.glass)) + 'ml'
+          + (a.isHot ? '' : ' · ' + coldLabel(a)));
+      if (!a.hasBase)
+        scoreBars += '<p class="hint">无酒精：浓度项不计入总分，权重已分给平衡/复杂度/结构。</p>';
+      else
+        scoreBars += bar('浓度', st, '占总分 ' + pc(w.strength) + '　' + strengthCaption(a));
+    }
+    document.getElementById('subScores').innerHTML = scoreBars;
 
     /* 主导风味 */
     var tops = DIMS.map(function (d, i) { return { name: d.name, val: v[i] }; })
@@ -6961,7 +7003,8 @@ var qrcode = function() {
         var ruler = (fam.id === 'highball' || fam.id === 'long'
           || fam.id === 'rickey' || fam.id === 'mule') ? '酒体 : 稀释物'
           : ((fam.id === 'sour' || fam.id === 'fizz') ? 'Brix/TA（糖度与可滴定酸）'
-          : (fam.id === 'hot' ? '温度与浓度' : '甜酸与浓度'));
+          : (fam.id === 'mocktail' ? '甜 : 酸 + 稀释/气泡'
+          : (fam.id === 'hot' ? (a.hasBase ? '温度与浓度' : '温度与甜酸') : '甜酸与浓度')));
         famTxt = '这杯属于「' + fam.name + '」 · 平衡看 ' + ruler;
         if (state.recipeName && state.recipeFamily && fam.id !== state.recipeFamily) {
           famTxt += '　（原来是「' + (FAMILY_LABEL[state.recipeFamily] || state.recipeFamily) + '」）';
@@ -7961,7 +8004,7 @@ var qrcode = function() {
     var families = [['', '全部家族']].concat([
       ['sour', '酸类'], ['fizz', '菲士/柯林斯'], ['highball', '高球'], ['long', '长饮'],
       ['rickey', 'Rickey'], ['mule', '骡子'],
-      ['coffee', '咖啡'],
+      ['coffee', '咖啡'], ['mocktail', '无酒精'],
       ['old_fashioned', '古典型'], ['duo', '双料'], ['flip', '蛋类'], ['cream', '奶类'],
       ['spirit', '烈酒向']
     ].filter(function (x) { return counts[x[0]] > 0; }));
