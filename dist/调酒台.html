@@ -247,7 +247,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* 侧栏小贴士 */
 .sidetip { border: 1px dashed var(--line); border-radius: 10px; padding: 8px 9px; }
-.sidetip b { display: block; font-size: 10.5px; color: var(--amber); margin-bottom: 3px; }
+.sidetip-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; margin-bottom: 3px; }
+.sidetip-head b { font-size: 10.5px; color: var(--amber); }
+.tipnext { border: 0; background: transparent; color: var(--muted); font-size: 10px; padding: 0; }
+.tipnext:active { color: var(--amber); }
 .sidetip p { margin: 0; font-size: 10.5px; line-height: 1.55; color: var(--muted); }
 
 /* 侧栏：从这三杯开始 */
@@ -1062,7 +1065,7 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
       </div>
 
       <div class="sidetip">
-        <b>小贴士</b>
+        <div class="sidetip-head"><b>小贴士</b><button type="button" class="tipnext" data-tip-next="1">换一条 ↻</button></div>
         <p id="sideTip">冰越大化得越慢；便利店冰杯别把冰敲碎。</p>
       </div>
 
@@ -6812,14 +6815,18 @@ var qrcode = function() {
     '基酒放冷冻、饮料买冷藏，同一杯能少化 20-30ml 水。',
     '味美思开瓶要冷藏；没冰箱就买小瓶。',
     '酸和糖一起加，往往比只加糖更圆。',
-    '摇完先尝一小口，再决定要不要补糖或柠檬。'
+    '摇之前先尝一口混合液（有生蛋就别尝），太酸补糖、太甜补柠檬；摇完再尝一次看稀释。'
   ];
-  function renderSideTip() {
+  var sideTipIndex = -1;
+  function renderSideTip(step) {
     var el = document.getElementById('sideTip');
     if (!el) return;
-    var d = new Date();
-    var n = (d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % SIDE_TIPS.length;
-    el.textContent = SIDE_TIPS[n];
+    if (sideTipIndex < 0) {
+      var d = new Date();
+      sideTipIndex = (d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % SIDE_TIPS.length;
+    }
+    if (step) sideTipIndex = (sideTipIndex + step + SIDE_TIPS.length) % SIDE_TIPS.length;
+    el.textContent = SIDE_TIPS[sideTipIndex];
   }
   function renderSideStart() {
     var el = document.getElementById('sideStartList');
@@ -8783,6 +8790,10 @@ var qrcode = function() {
     if (t.dataset.sideTab !== undefined) {
       menuTab = t.dataset.sideTab; menuShow = MENU_PAGE;
       setPage('menu', true); renderMenu();
+      return;
+    }
+    if (t.dataset.tipNext !== undefined) {
+      renderSideTip(1);
       return;
     }
     if (t.dataset.sidePreset !== undefined) {

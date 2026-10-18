@@ -381,7 +381,8 @@ console.log('\n--- 侧栏：当前杯子 / 快捷入口 ---');
 (function () {
   const dev = fs.readFileSync(path.join(__dirname, 'dev.html'), 'utf8');
   const hasNodes = /id="sideCup"/.test(dev) && /id="sideScore"/.test(dev)
-    && /id="sideFavN"/.test(dev) && /data-side-tab="favs"/.test(dev);
+    && /id="sideFavN"/.test(dev) && /data-side-tab="favs"/.test(dev)
+    && /data-tip-next/.test(dev);
   console.log('  ' + (hasNodes ? '✅' : '❌') + ' 侧栏有当前杯子和快捷入口');
   if (!hasNodes) bad('侧栏', '侧栏缺少当前杯子/快捷入口节点');
 
@@ -407,6 +408,13 @@ console.log('\n--- 侧栏：当前杯子 / 快捷入口 ---');
   const okCount = Number(favN) >= 1 && els.sideTip.textContent.length > 4;
   console.log('  ' + (okCount ? '✅' : '❌') + ' 收藏数和小贴士都更新了');
   if (!okCount) bad('侧栏', '收藏数/小贴士没更新：' + favN + ' / ' + els.sideTip.textContent);
+
+  const tipBefore = els.sideTip.textContent;
+  fire({ tipNext: '1' });
+  const tipAfter = els.sideTip.textContent;
+  const okTipNext = tipBefore !== tipAfter;
+  console.log('  ' + (okTipNext ? '✅' : '❌') + ' 「换一条」确实会换小贴士');
+  if (!okTipNext) bad('侧栏', '小贴士「换一条」没有变化：' + tipBefore);
 
   fire({ sideTab: 'favs' });
   const okTab = B.page.current() === 'menu';

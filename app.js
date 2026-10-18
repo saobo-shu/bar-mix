@@ -1413,14 +1413,18 @@
     '基酒放冷冻、饮料买冷藏，同一杯能少化 20-30ml 水。',
     '味美思开瓶要冷藏；没冰箱就买小瓶。',
     '酸和糖一起加，往往比只加糖更圆。',
-    '摇完先尝一小口，再决定要不要补糖或柠檬。'
+    '摇之前先尝一口混合液（有生蛋就别尝），太酸补糖、太甜补柠檬；摇完再尝一次看稀释。'
   ];
-  function renderSideTip() {
+  var sideTipIndex = -1;
+  function renderSideTip(step) {
     var el = document.getElementById('sideTip');
     if (!el) return;
-    var d = new Date();
-    var n = (d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % SIDE_TIPS.length;
-    el.textContent = SIDE_TIPS[n];
+    if (sideTipIndex < 0) {
+      var d = new Date();
+      sideTipIndex = (d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % SIDE_TIPS.length;
+    }
+    if (step) sideTipIndex = (sideTipIndex + step + SIDE_TIPS.length) % SIDE_TIPS.length;
+    el.textContent = SIDE_TIPS[sideTipIndex];
   }
   function renderSideStart() {
     var el = document.getElementById('sideStartList');
@@ -3384,6 +3388,10 @@
     if (t.dataset.sideTab !== undefined) {
       menuTab = t.dataset.sideTab; menuShow = MENU_PAGE;
       setPage('menu', true); renderMenu();
+      return;
+    }
+    if (t.dataset.tipNext !== undefined) {
+      renderSideTip(1);
       return;
     }
     if (t.dataset.sidePreset !== undefined) {
