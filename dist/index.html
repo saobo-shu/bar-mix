@@ -189,9 +189,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .sidenav {
   position: sticky; top: 66px;
   display: flex; flex-direction: column; gap: 6px;
-  /* 给"Tips 贴底"留高度，但别在桌面大屏上扯出一整屏的空白 */
-  min-height: min(520px, calc(100vh - 96px));
+  /* 宽屏时侧栏一直到底，Tips 贴底；中间用当前杯子/快捷入口填 */
+  min-height: calc(100vh - 96px);
+  max-height: calc(100vh - 76px); overflow-y: auto; scrollbar-width: none;
 }
+.sidenav::-webkit-scrollbar { display: none; }
 .navitem {
   text-align: left; padding: 9px 11px; border-radius: 11px;
   background: var(--card2); border: 1px solid var(--line); color: var(--muted);
@@ -216,6 +218,47 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .navfold { width: 100%; margin-top: 2px; }
 .navbtn { display: inline-block; flex: none; padding: 4px 9px; font-size: 14px; line-height: 1.2; }
 .navback { display: none; }
+
+/* 侧栏：当前杯子 */
+.sidecup {
+  background: var(--card2); border: 1px solid var(--line); border-radius: 12px;
+  padding: 10px; display: flex; flex-direction: column; gap: 4px;
+}
+.sc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; font-size: 10.5px; color: var(--muted); }
+.sc-back { border: 0; background: transparent; color: var(--amber); font-size: 10.5px; padding: 0; white-space: nowrap; }
+.sc-main { display: flex; align-items: baseline; gap: 6px; }
+.sc-main b { font-size: 28px; line-height: 1; color: var(--amber); font-variant-numeric: tabular-nums; }
+.sc-main span { font-size: 10.5px; color: var(--muted); }
+.sc-meta { margin: 0; font-size: 11px; line-height: 1.45; color: var(--muted); }
+.sc-items { display: flex; flex-direction: column; gap: 2px; margin-top: 3px; }
+.sc-items div { display: flex; justify-content: space-between; gap: 6px; font-size: 10.5px; line-height: 1.45; color: var(--muted); }
+.sc-items b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+.sc-items .more { color: var(--muted); font-size: 10px; }
+
+/* 侧栏快捷入口 */
+.sidelinks { display: flex; flex-direction: column; gap: 4px; }
+.sidelink {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 6px;
+  text-align: left; padding: 6px 9px; border-radius: 9px;
+  background: transparent; border: 1px solid var(--line); color: var(--muted);
+}
+.sidelink b { font-size: 11.5px; color: var(--text); font-weight: 500; }
+.sidelink i { font-style: normal; font-size: 10px; color: var(--muted); }
+.sidelink:active { border-color: var(--muted); }
+
+/* 侧栏小贴士 */
+.sidetip { border: 1px dashed var(--line); border-radius: 10px; padding: 8px 9px; }
+.sidetip b { display: block; font-size: 10.5px; color: var(--amber); margin-bottom: 3px; }
+.sidetip p { margin: 0; font-size: 10.5px; line-height: 1.55; color: var(--muted); }
+
+/* 侧栏：从这三杯开始 */
+.sidestart { border: 1px solid var(--line); border-radius: 10px; padding: 8px 9px; }
+.sidestart b { display: block; font-size: 10.5px; color: var(--muted); margin-bottom: 4px; }
+.sidestart button {
+  display: block; width: 100%; text-align: left; padding: 4px 0;
+  border: 0; background: transparent; color: var(--text); font-size: 11px;
+}
+.sidestart button:active { color: var(--amber); }
 
 /* 页面切换：一次只显示一页 */
 .page { display: none; }
@@ -699,7 +742,7 @@ details.panel:not([open]) { padding-bottom: 13px; }
     position: fixed; top: 0; left: 0; bottom: 0; width: 252px; z-index: 60;
     padding: 14px 12px; background: var(--card); border-right: 1px solid var(--line);
     overflow-y: auto; transform: translateX(-103%); transition: transform .18s ease-out;
-    top: 0;
+    top: 0; min-height: 0; max-height: none;
   }
   body.navopen .sidenav { transform: none; }
   body.navopen .navback { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(0, 0, 0, .5); }
@@ -1000,6 +1043,31 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
       <button type="button" class="navitem" data-page="tonight"><b>今晚喝什么</b><i>挑一个心情，来三杯</i></button>
       <button type="button" class="navitem" data-page="menu"><b>酒单</b><i>191 款经典</i></button>
       <button type="button" class="ghost navfold" id="navFold">收起侧栏</button>
+
+      <!-- 侧栏里的当前杯子：宽屏时下面不再是一整块空白 -->
+      <div class="sidecup" id="sideCup">
+        <div class="sc-head"><span>当前杯子</span><button type="button" class="sc-back" data-goto-cup="1">回到杯子 ↑</button></div>
+        <div class="sc-main"><b id="sideScore">--</b><span id="sideBand">等待加料</span></div>
+        <p class="sc-meta" id="sideMeta">杯子是空的 · 从材料库点几样</p>
+        <div class="sc-items" id="sideItems"></div>
+      </div>
+
+      <div class="sidelinks">
+        <button type="button" class="sidelink" data-side-tab="favs"><b>我的收藏</b><i id="sideFavN">0</i></button>
+        <button type="button" class="sidelink" data-side-tab="mine"><b>我的特调</b><i id="sideMineN">0</i></button>
+        <button type="button" class="sidelink" data-goto-have="1"><b>手边有什么</b><i>看能做什么</i></button>
+      </div>
+
+      <div class="sidetip">
+        <b>小贴士</b>
+        <p id="sideTip">冰越大化得越慢；便利店冰杯别把冰敲碎。</p>
+      </div>
+
+      <div class="sidestart" id="sideStart">
+        <b>从这三杯开始</b>
+        <div id="sideStartList"></div>
+      </div>
+
       <button type="button" class="navitem is-mini" data-page="tips"><b>Tips</b><i>没冰箱也能调</i></button>
   </nav>
   <div class="navback" id="navBack" hidden></div>
@@ -6702,6 +6770,64 @@ var qrcode = function() {
       + '<button type="button" class="ghost mc-back" data-goto-cup="1">回到杯子 ↑</button>';
   }
 
+  /* 侧栏的当前杯子摘要：和主结果用同一份 analyze */
+  function renderSideCup(a, empty, total, band) {
+    var score = document.getElementById('sideScore');
+    if (!score) return;
+    var bandEl = document.getElementById('sideBand');
+    var meta = document.getElementById('sideMeta');
+    var items = document.getElementById('sideItems');
+    if (empty) {
+      score.textContent = '--';
+      if (bandEl) bandEl.textContent = '等待加料';
+      if (meta) meta.textContent = '杯子是空的 · 从材料库点几样';
+      if (items) items.innerHTML = '';
+      return;
+    }
+    score.textContent = Math.round(total);
+    if (bandEl) bandEl.textContent = band[1];
+    if (meta) meta.textContent = a.nItems + ' 样 · ' + Math.round(a.finalVol) + 'ml · ' + a.abv.toFixed(1) + '%';
+    if (!items) return;
+    var rows = [], n = 0;
+    state.cup.forEach(function (amt, id) {
+      var g = BY_ID[id];
+      if (!g || n >= 4) return;
+      rows.push('<div><span>' + esc(shortName(g)) + '</span><b>' + esc(fmtAmt(g, amt)) + '</b></div>');
+      n++;
+    });
+    if (state.cup.size > 4) rows.push('<div class="more">还有 ' + (state.cup.size - 4) + ' 样</div>');
+    items.innerHTML = rows.join('');
+  }
+  function renderSideCounts() {
+    var f = document.getElementById('sideFavN');
+    if (f) f.textContent = favs.length;
+    var m = document.getElementById('sideMineN');
+    if (m) m.textContent = myRecipes.length;
+  }
+  var SIDE_TIPS = [
+    '冰越大化得越慢；便利店冰杯别把冰敲碎。',
+    '基酒放冷冻、饮料买冷藏，同一杯能少化 20-30ml 水。',
+    '味美思开瓶要冷藏；没冰箱就买小瓶。',
+    '酸和糖一起加，往往比只加糖更圆。',
+    '摇完先尝一小口，再决定要不要补糖或柠檬。'
+  ];
+  function renderSideTip() {
+    var el = document.getElementById('sideTip');
+    if (!el) return;
+    var d = new Date();
+    var n = (d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % SIDE_TIPS.length;
+    el.textContent = SIDE_TIPS[n];
+  }
+  function renderSideStart() {
+    var el = document.getElementById('sideStartList');
+    if (!el) return;
+    var names = ['威士忌酸', '金汤力', '大都会'];
+    el.innerHTML = names.map(function (n) {
+      var i = PRESETS.findIndex(function (p) { return p.name === n; });
+      return i >= 0 ? '<button type="button" data-side-preset="' + i + '">' + esc(n) + '</button>' : '';
+    }).join('');
+  }
+
   function renderResult() {
     var a = analyze();
     var v = DIMS.map(function (d) { return clamp(a.fd[d.k] / d.ref, 0, 1); });
@@ -6867,6 +6993,9 @@ var qrcode = function() {
     renderMixBar(a);
     /* 材料库顶部的迷你摘要（和上面这些数同一份） */
     renderMiniCup(a, empty);
+    /* 侧栏的当前杯子摘要与收藏/特调数 */
+    renderSideCup(a, empty, total, band);
+    renderSideCounts();
 
     /* 这杯是哪条配方、这条配方的备注——原来备注挤在配方卡片里，
        现在卡片只留名字用料，备注挪到杯子下面（用户要求的） */
@@ -8324,6 +8453,7 @@ var qrcode = function() {
 
   function renderMenu() {
     renderMenuTabs(); renderMenuFilters(); renderMenuList(); renderMenuDetail();
+    renderSideCounts();
   }
 
   /* 把酒单里的配方装进杯子，并跳到调酒台 */
@@ -8425,6 +8555,7 @@ var qrcode = function() {
     renderCats(); renderLib(); renderCup(); renderResult();
     renderGlassPick(); renderTastePick(); renderIcePick(); renderSchemePick();
     renderMethodPick(); renderGlass(); renderHave(); renderGlassLegend();
+    renderSideTip(); renderSideStart();
   }
 
   /* ---------------------------------------------------------
@@ -8644,6 +8775,18 @@ var qrcode = function() {
 
     if (t.dataset.saveClose !== undefined) {
       closeSaveDialog();
+      return;
+    }
+    if (t.dataset.sideTab !== undefined) {
+      menuTab = t.dataset.sideTab; menuShow = MENU_PAGE;
+      setPage('menu', true); renderMenu();
+      return;
+    }
+    if (t.dataset.sidePreset !== undefined) {
+      presetLoad(+t.dataset.sidePreset);
+      setPage('bar', true);
+      var sideAnchor = document.getElementById('resultAnchor');
+      if (sideAnchor && sideAnchor.scrollIntoView) sideAnchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
     /* 空杯两个入口 / 小杯子摘要 / toast 撤销 */

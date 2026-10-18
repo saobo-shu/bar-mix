@@ -1374,6 +1374,64 @@
       + '<button type="button" class="ghost mc-back" data-goto-cup="1">回到杯子 ↑</button>';
   }
 
+  /* 侧栏的当前杯子摘要：和主结果用同一份 analyze */
+  function renderSideCup(a, empty, total, band) {
+    var score = document.getElementById('sideScore');
+    if (!score) return;
+    var bandEl = document.getElementById('sideBand');
+    var meta = document.getElementById('sideMeta');
+    var items = document.getElementById('sideItems');
+    if (empty) {
+      score.textContent = '--';
+      if (bandEl) bandEl.textContent = '等待加料';
+      if (meta) meta.textContent = '杯子是空的 · 从材料库点几样';
+      if (items) items.innerHTML = '';
+      return;
+    }
+    score.textContent = Math.round(total);
+    if (bandEl) bandEl.textContent = band[1];
+    if (meta) meta.textContent = a.nItems + ' 样 · ' + Math.round(a.finalVol) + 'ml · ' + a.abv.toFixed(1) + '%';
+    if (!items) return;
+    var rows = [], n = 0;
+    state.cup.forEach(function (amt, id) {
+      var g = BY_ID[id];
+      if (!g || n >= 4) return;
+      rows.push('<div><span>' + esc(shortName(g)) + '</span><b>' + esc(fmtAmt(g, amt)) + '</b></div>');
+      n++;
+    });
+    if (state.cup.size > 4) rows.push('<div class="more">还有 ' + (state.cup.size - 4) + ' 样</div>');
+    items.innerHTML = rows.join('');
+  }
+  function renderSideCounts() {
+    var f = document.getElementById('sideFavN');
+    if (f) f.textContent = favs.length;
+    var m = document.getElementById('sideMineN');
+    if (m) m.textContent = myRecipes.length;
+  }
+  var SIDE_TIPS = [
+    '冰越大化得越慢；便利店冰杯别把冰敲碎。',
+    '基酒放冷冻、饮料买冷藏，同一杯能少化 20-30ml 水。',
+    '味美思开瓶要冷藏；没冰箱就买小瓶。',
+    '酸和糖一起加，往往比只加糖更圆。',
+    '摇完先尝一小口，再决定要不要补糖或柠檬。'
+  ];
+  function renderSideTip() {
+    var el = document.getElementById('sideTip');
+    if (!el) return;
+    var d = new Date();
+    var n = (d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % SIDE_TIPS.length;
+    el.textContent = SIDE_TIPS[n];
+  }
+  function renderSideStart() {
+    var el = document.getElementById('sideStartList');
+    if (!el) return;
+    var names = ['威士忌酸', '金汤力', '大都会'];
+    el.innerHTML = names.map(function (n) {
+      var i = PRESETS.findIndex(function (p) { return p.name === n; });
+      return i >= 0 ? '<button type="button" data-side-preset="' + i + '">' + esc(n) + '</button>' : '';
+    }).join('');
+  }
+
   function renderResult() {
     var a = analyze();
     var v = DIMS.map(function (d) { return clamp(a.fd[d.k] / d.ref, 0, 1); });
@@ -1539,6 +1597,9 @@
     renderMixBar(a);
     /* 材料库顶部的迷你摘要（和上面这些数同一份） */
     renderMiniCup(a, empty);
+    /* 侧栏的当前杯子摘要与收藏/特调数 */
+    renderSideCup(a, empty, total, band);
+    renderSideCounts();
 
     /* 这杯是哪条配方、这条配方的备注——原来备注挤在配方卡片里，
        现在卡片只留名字用料，备注挪到杯子下面（用户要求的） */
@@ -2996,6 +3057,7 @@
 
   function renderMenu() {
     renderMenuTabs(); renderMenuFilters(); renderMenuList(); renderMenuDetail();
+    renderSideCounts();
   }
 
   /* 把酒单里的配方装进杯子，并跳到调酒台 */
@@ -3097,6 +3159,7 @@
     renderCats(); renderLib(); renderCup(); renderResult();
     renderGlassPick(); renderTastePick(); renderIcePick(); renderSchemePick();
     renderMethodPick(); renderGlass(); renderHave(); renderGlassLegend();
+    renderSideTip(); renderSideStart();
   }
 
   /* ---------------------------------------------------------
@@ -3316,6 +3379,18 @@
 
     if (t.dataset.saveClose !== undefined) {
       closeSaveDialog();
+      return;
+    }
+    if (t.dataset.sideTab !== undefined) {
+      menuTab = t.dataset.sideTab; menuShow = MENU_PAGE;
+      setPage('menu', true); renderMenu();
+      return;
+    }
+    if (t.dataset.sidePreset !== undefined) {
+      presetLoad(+t.dataset.sidePreset);
+      setPage('bar', true);
+      var sideAnchor = document.getElementById('resultAnchor');
+      if (sideAnchor && sideAnchor.scrollIntoView) sideAnchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
     /* 空杯两个入口 / 小杯子摘要 / toast 撤销 */

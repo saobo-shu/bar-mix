@@ -373,6 +373,54 @@ console.log('\n--- 一致性：空杯分数 / 收藏 / 预设残留 / 分享卡 
   B.load([]);
 })();
 
+/* ---- 侧栏：当前杯子 / 快捷入口 ---- */
+console.log('\n--- 侧栏：当前杯子 / 快捷入口 ---');
+(function () {
+  const dev = fs.readFileSync(path.join(__dirname, 'dev.html'), 'utf8');
+  const hasNodes = /id="sideCup"/.test(dev) && /id="sideScore"/.test(dev)
+    && /id="sideFavN"/.test(dev) && /data-side-tab="favs"/.test(dev);
+  console.log('  ' + (hasNodes ? '✅' : '❌') + ' 侧栏有当前杯子和快捷入口');
+  if (!hasNodes) bad('侧栏', '侧栏缺少当前杯子/快捷入口节点');
+
+  B.load([]);
+  const emptySide = els.sideScore.textContent === '--'
+    && (els.sideMeta.textContent || '').indexOf('空') >= 0;
+  console.log('  ' + (emptySide ? '✅' : '❌') + ' 空杯时侧栏写「-- / 杯子是空的」');
+  if (!emptySide) bad('侧栏', '空杯时侧栏没清空：' + els.sideScore.textContent + ' / ' + els.sideMeta.textContent);
+
+  B.preset(1);
+  const scoreText = els.sideScore.textContent;
+  const metaText = els.sideMeta.textContent || '';
+  const okSide = /^\d+$/.test(scoreText) && metaText.indexOf('样') >= 0
+    && metaText.indexOf('ml') >= 0 && metaText.indexOf('%') >= 0
+    && els.sideItems.innerHTML.indexOf('<div>') >= 0;
+  console.log('  ' + (okSide ? '✅' : '❌') + ' 有酒时侧栏跟着变成 '
+    + scoreText + ' 分 · ' + metaText);
+  if (!okSide) bad('侧栏', '有酒时侧栏没更新：' + scoreText + ' / ' + metaText);
+
+  B.menu.fav('黑俄罗斯');
+  const favN = els.sideFavN.textContent;
+  B.menu.fav('黑俄罗斯');
+  const okCount = Number(favN) >= 1 && els.sideTip.textContent.length > 4;
+  console.log('  ' + (okCount ? '✅' : '❌') + ' 收藏数和小贴士都更新了');
+  if (!okCount) bad('侧栏', '收藏数/小贴士没更新：' + favN + ' / ' + els.sideTip.textContent);
+
+  fire({ sideTab: 'favs' });
+  const okTab = B.page.current() === 'menu';
+  console.log('  ' + (okTab ? '✅' : '❌') + ' 点侧栏「我的收藏」直接进酒单收藏栏');
+  if (!okTab) bad('侧栏', '侧栏快捷入口没切到酒单');
+
+  const startHtml = els.sideStartList.innerHTML;
+  const okStart = /data-side-preset/.test(startHtml);
+  fire({ sidePreset: '1' });
+  const okPreset = B.state.recipeName === '威士忌酸' && B.state.cup.size > 0
+    && B.page.current() === 'bar';
+  console.log('  ' + (okStart && okPreset ? '✅' : '❌') + ' 「从这三杯开始」能直接装杯');
+  if (!(okStart && okPreset)) bad('侧栏', '侧栏三杯快捷入口没装杯');
+  B.page.set('bar');
+  B.load([]);
+})();
+
 /* ---- 苦精：2 滴不能等于 20ml 金巴利的苦 ---- */
 console.log('\n--- 苦精：2 滴 vs 20ml 金巴利 ---');
 (function () {

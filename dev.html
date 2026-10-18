@@ -101,6 +101,31 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
       <button type="button" class="navitem" data-page="tonight"><b>今晚喝什么</b><i>挑一个心情，来三杯</i></button>
       <button type="button" class="navitem" data-page="menu"><b>酒单</b><i>191 款经典</i></button>
       <button type="button" class="ghost navfold" id="navFold">收起侧栏</button>
+
+      <!-- 侧栏里的当前杯子：宽屏时下面不再是一整块空白 -->
+      <div class="sidecup" id="sideCup">
+        <div class="sc-head"><span>当前杯子</span><button type="button" class="sc-back" data-goto-cup="1">回到杯子 ↑</button></div>
+        <div class="sc-main"><b id="sideScore">--</b><span id="sideBand">等待加料</span></div>
+        <p class="sc-meta" id="sideMeta">杯子是空的 · 从材料库点几样</p>
+        <div class="sc-items" id="sideItems"></div>
+      </div>
+
+      <div class="sidelinks">
+        <button type="button" class="sidelink" data-side-tab="favs"><b>我的收藏</b><i id="sideFavN">0</i></button>
+        <button type="button" class="sidelink" data-side-tab="mine"><b>我的特调</b><i id="sideMineN">0</i></button>
+        <button type="button" class="sidelink" data-goto-have="1"><b>手边有什么</b><i>看能做什么</i></button>
+      </div>
+
+      <div class="sidetip">
+        <b>小贴士</b>
+        <p id="sideTip">冰越大化得越慢；便利店冰杯别把冰敲碎。</p>
+      </div>
+
+      <div class="sidestart" id="sideStart">
+        <b>从这三杯开始</b>
+        <div id="sideStartList"></div>
+      </div>
+
       <button type="button" class="navitem is-mini" data-page="tips"><b>Tips</b><i>没冰箱也能调</i></button>
   </nav>
   <div class="navback" id="navBack" hidden></div>
