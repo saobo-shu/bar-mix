@@ -230,11 +230,14 @@ main {
 .menutabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 9px; }
 .menufilters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px; }
 .menugrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
-.menudetail { background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
-/* 详情标题 + 关闭：贴着详情面板顶部，滚到多深都能关掉 */
+.menudetail { background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 0; }
+/* 详情标题 + 关闭：贴着详情面板顶部，滚到多深都能关掉。
+   外框不留内边距，头/尾自己铺满，滚动时内容不会从上下缝里露出来。 */
 #menuDetail > .panel-head {
   position: sticky; top: 0; z-index: 6;
-  background: var(--card2); padding-bottom: 8px;
+  margin: 0; padding: 12px 12px 8px;
+  background: var(--card2); border-bottom: 1px solid var(--line);
+  border-radius: 12px 12px 0 0;
 }
 .moodrow { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 12px; }
 .moodbtn {
@@ -351,14 +354,15 @@ main {
 /* 详情底部的主操作：sticky，读到一半也能直接装杯，不用再拉到最下面 */
 .detail-acts {
   position: sticky; bottom: 0; z-index: 4;
-  display: grid; gap: 6px; margin-top: 10px; padding: 8px 0 2px;
+  display: grid; gap: 6px; margin: 10px 0 0; padding: 8px 12px 12px;
   background: var(--card2); border-top: 1px solid var(--line);
+  border-radius: 0 0 12px 12px;
   box-shadow: 0 -10px 14px -14px rgba(0, 0, 0, .4);
 }
 .detail-acts .detail-primary { width: 100%; padding: 8px 11px; font-size: 13px; }
 .detail-secondary { display: flex; flex-wrap: wrap; gap: 6px; }
 .detail-secondary .ghost { flex: 1 1 auto; }
-.detail-body { padding-bottom: 2px; }
+.detail-body { padding: 0 12px 2px; }
 .menu-card-wrap { display: grid; gap: 12px; }
 .menucount { margin: 0 0 8px; }
 .menumore { margin-top: 9px; }
