@@ -203,6 +203,7 @@ console.log('\n--- 点击交互（模拟真实点击，不是读代码）---');
   const snap = els['cupList'].innerHTML;
   fire({}, 'div');
   console.log('  ' + (els['cupList'].innerHTML === snap ? '✅' : '❌') + ' 点无关的 div：没有副作用');
+  if (els['cupList'].innerHTML !== snap) bad('交互', '点无关的 div 产生了副作用');
 
   global.window.prompt = function () { return null; };
   fire({ act: 'plus', id: 'tanqueray' });
@@ -862,6 +863,7 @@ console.log('\n--- 纯饮判定 ---');
   });
   console.log('  ' + (wrong.length ? '❌ ' + wrong.length + ' 个经典配方被误判成纯饮：' + wrong.join('、')
     : '✅ ' + global.__PRESETS.length + ' 个经典配方，一个都没被误判成纯饮'));
+  if (wrong.length) bad('纯饮', wrong.length + ' 个经典配方被误判成纯饮：' + wrong.join('、'));
 
   const cases = [
     ['45ml 威士忌（纯饮）', [['bourbon', 45]], true],
@@ -899,6 +901,8 @@ console.log('\n--- 评分方案 ---');
       + parts.map(function (p) { return NAME[p[0]] + ' ' + Math.round(p[1] * 100) + '%'; }).join(' · ')
       + '　合计 ' + Math.round(sum * 100) + '%'
       + (top[0] === 'balance' ? '' : '　⚠ 最大权重不是平衡'));
+    /* 这条是硬规矩：只打印 ❌ 不够，必须让脚本以非零码退出 */
+    if (!ok) bad('评分方案', s.name + ' 的最大权重不是平衡，或权重合计不是 100%');
   });
 })();
 
@@ -1090,6 +1094,8 @@ B.load([]);
 
 /* 回归检查：每个面板都必须在启动时渲染出内容，防空面板。
    （"经典配方"面板已经从调酒台搬去酒单的「住处特调」栏，这里不再有它） */
+/* 面板渲染检查：先装一杯，子评分在空杯时是故意隐藏的 */
+B.preset(1);
 const panels = { cats: '分类', lib: '材料库', stats: '参数', subScores: '子评分' };
 let empty = [];
 Object.keys(panels).forEach(function (k) {
@@ -1097,6 +1103,7 @@ Object.keys(panels).forEach(function (k) {
 });
 console.log('\n--- 面板渲染检查 ---');
 console.log(empty.length ? '❌ 空白面板：' + empty.join('、') : '✅ 所有面板都渲染出了内容');
+if (empty.length) bad('渲染', '空白面板：' + empty.join('、'));
 
 /* 「住处特调」栏的 11 张卡片（原来挂在调酒台的那块） */
 B.menu.setTab('house');

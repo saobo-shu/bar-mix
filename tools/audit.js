@@ -35,6 +35,11 @@ const P = X.PRESETS, I = X.INGREDIENTS, GL = X.GLASSES, TASTE = X.TASTES, LV = X
 const byId = {};
 I.forEach(g => byId[g.id] = g);
 const defaultIce = g => (g.ice === 'inglass' ? 'full' : 'none');
+/* 六大基酒 + 其他基酒：以前这里写的是 cat === 'base'，库里根本没有这个分类，
+   于是"加基酒方向性"整段从来没跑过。 */
+const BASE_CATS = {
+  whisky: 1, gin: 1, rum: 1, vodka: 1, tequila: 1, brandy: 1, otherbase: 1
+};
 
 const problems = [];
 const notes = [];
@@ -79,9 +84,11 @@ console.log('跑了 ' + combos + ' 种组合（' + P.length + ' 配方 × ' + GL
 /* 把配方整体放大/缩小，比例没变 → 分数不该变。之前"用总量推理想浓度"就是死在这里。 */
 P.forEach(p => {
   const glass = p.glass || 'icecup';
-  const base = run(p.items, glass, defaultIce(GL.find(g => g.id === glass)), 'normal').r.total;
+  /* 做法必须跟着配方走，不然会沿用上一段留下的做法 */
+  const method = PM[p.name] || 'build';
+  const base = run(p.items, glass, defaultIce(GL.find(g => g.id === glass)), 'normal', method).r.total;
   [0.6, 1.6].forEach(k => {
-    const o = run(scale(p.items, k), glass, defaultIce(GL.find(g => g.id === glass)), 'normal');
+    const o = run(scale(p.items, k), glass, defaultIce(GL.find(g => g.id === glass)), 'normal', method);
     if (Math.abs(o.r.total - base) > 6)
       bad('缩放', p.name + ' ×' + k + ' 之后总分从 ' + base.toFixed(1) + ' 变成 ' + o.r.total.toFixed(1)
         + '（比例完全一样，不该差这么多）');
@@ -89,23 +96,45 @@ P.forEach(p => {
 });
 
 /* ---------------- C. 加基酒的方向性 ---------------- */
+/* 美国佬、加里波利这类本来就没有基酒（金巴利当主角），跳过是正常的。
+   先算"应该有几个配方能找到基酒"，再和实际命中数对账。 */
+const cExpected = P.filter(p => p.items.some(it => byId[it[0]] && BASE_CATS[byId[it[0]].cat])).length;
+let cCovered = 0;
 P.forEach(p => {
   const glass = GL.find(g => g.id === (p.glass || 'icecup'));
   const taste = TASTE[1];
-  const o = run(p.items, glass.id, defaultIce(glass), taste.id);
-  const baseItem = p.items.find(it => byId[it[0]] && byId[it[0]].cat === 'base');
+  const method = PM[p.name] || 'build';
+  const o = run(p.items, glass.id, defaultIce(glass), taste.id, method);
+  const baseItem = p.items.find(it => byId[it[0]] && BASE_CATS[byId[it[0]].cat]);
   if (!baseItem) return;
+  cCovered++;
   const plus = p.items.map(it => it[0] === baseItem[0] ? [it[0], it[1] + 30] : it);
-  const o2 = run(plus, glass.id, defaultIce(glass), taste.id);
+  const o2 = run(plus, glass.id, defaultIce(glass), taste.id, method);
   const d = o2.r.total - o.r.total;
   const tooWeak = o.a.abv < taste.lo, tooStrong = o.a.abv > taste.hi;
-  if (tooWeak && d < -0.5) bad('加酒方向', p.name + ' 偏淡（' + o.a.abv.toFixed(1) + '%）却没从加酒中获益（' + d.toFixed(1) + '）');
+  if (tooWeak) {
+    if (d < -1 && o2.r.strength <= o.r.strength)
+      bad('加酒方向', p.name + ' 偏淡（' + o.a.abv.toFixed(1) + '%），加酒后烈度分也没升，总分反而降 '
+        + d.toFixed(1));
+    else if (d < -1)
+      note('加酒方向', p.name + ' 偏淡，加酒后总分降 ' + d.toFixed(1)
+        + '，但烈度分升了（平衡取舍，不是奖励）');
+  }
   /* 偏烈还涨分只在小幅时算正常（加酒会稀释掉过量的甜），
      真正有问题的是"浓度分反而涨了"或者总分涨很多 */
-  if (tooStrong && (o2.r.strength > o.r.strength + 0.5 || d > 4))
-    bad('加酒方向', p.name + ' 偏烈（' + o.a.abv.toFixed(1) + '%）却因为加酒涨分（+' + d.toFixed(1)
-      + '，浓度 ' + o.r.strength + '→' + o2.r.strength + '）');
+  if (tooStrong) {
+    /* +1~2 分属于稀释/平衡的正常浮动；+4 以上才算"因为加酒被奖励" */
+    if (d > 4)
+      bad('加酒方向', p.name + ' 偏烈（' + o.a.abv.toFixed(1) + '%）却因为加酒涨分（+' + d.toFixed(1)
+        + '，浓度 ' + o.r.strength + '→' + o2.r.strength + '）');
+    else if (o2.r.strength > o.r.strength + 0.5)
+      note('加酒方向', p.name + ' 偏烈，加酒后总分只变化 ' + d.toFixed(1)
+        + '，烈度分浮动（' + o.r.strength + '→' + o2.r.strength + '）不算奖励');
+  }
 });
+/* 防止 C 段再次变成"看着在跑、其实一个配方都没找到基酒" */
+if (!cExpected || cCovered !== cExpected)
+  bad('加酒方向', '找到基酒的配方 ' + cCovered + '/' + cExpected + '——C 段可能又没跑');
 
 /* ---------------- D. 杯型方向性 ---------------- */
 P.forEach(p => {
@@ -209,3 +238,5 @@ if (notes.length) {
   notes.forEach(n => console.log('  · ' + n));
 }
 console.log('\n共 ' + problems.length + ' 个问题，' + notes.length + ' 条提示。');
+/* 发现问题必须以非零码退出，否则 npm run verify / GitHub Actions 会当成通过 */
+if (problems.length) process.exitCode = 1;
