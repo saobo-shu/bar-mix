@@ -14,7 +14,7 @@
 ## 改完必须跑这三条
 
 1. `node self-check.js` —— 单元与回归测试；失败会列出问题并以非零码退出
-2. `node tools/audit.js` —— 44 配方 × 7 杯型 × 3 冰量 × 3 口味全跑一遍，找自相矛盾
+2. `node tools/audit.js` —— 45 配方 × 8 杯型 × 3 冰量 × 3 口味（3240 组合）全跑一遍，找自相矛盾
 3. `node tools/build.js` —— 打包成 `dist/index.html` 和 `dist/调酒台.html`（单文件、离线可用）
 
 ## 模型上的硬规矩

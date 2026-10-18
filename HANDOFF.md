@@ -1,10 +1,13 @@
 # 交接（2026-10-16）
 
+> ⚠️ 这份是 2026-10-16 的交接记录，分支和“未提交”状态已经过时。
+> 当前状态看 `DEEPSEEK.md` 和 `git log -1`；下面保留当时的过程，方便追溯。
+
 给接手这轮工作的人（或下一个 AI）。**先读这份，再读 `SCORING.md` 和 `FAMILIES.md`——那两份是纲领，不是背景资料。**
 
 ## 当前状态
 
-- 分支：**`scoring-rework`**（main 保持可用，没推过线上）
+- 分支：**`main`**（当时的 `scoring-rework` 已合并；下面“未提交”是当时的记录）
 - 已提交：`224d50e` `d88171a` `c0a92fa`（评分连续化三步）、`21dca37` `2e18e1c`（家族文档+IBA核对）、`a8276a7`（IBA 脚本 WIP）
 - **未提交**（一整批一起提）：`FAMILIES.md`（署名）、`SCORING.md`、`README.md`、`dev.html`（署名 + iba script）、`tools/build.js`（内联 IBA）、`app.js` / `app.css`（IBA 第三个框 + 差异分档）、`data.js`（16 款配比审计）、`self-check.js`（IBA 映射 + 配比对齐）、`tools/fetch-iba.js`（解析 bug 修复）、`iba-recipes.js` + `tools/iba-recipes.json`（重抓后的数据）、`HANDOFF.md`
 - ~~`assets/`（5 张小红书封面）~~：用户 2026-10-17 说"不用留"，已从仓库删除；
@@ -16,8 +19,8 @@
 1. **评分连续化**（拆掉三处阈值悬崖）：复杂度维度计数、杯型度数区间（-18 分）、平衡分的四段硬切口。
    验收：蜂之膝 苏打水 40/45/50ml 从 92/88/92 变成 **95.7/95.5/95.3（平滑）**；长岛冰茶不再被误扣。
    遗留：干马天尼 + 苏打水仍略涨（79.6→80.8，原 +8.3），根因已定——**缺家族尺子**，不是参数问题。
-2. **IBA 官方配方抓下来了**：`tools/fetch-iba.js` → `tools/iba-recipes.json` + `iba-recipes.js`，**78 杯，和我们 191 条对上 76 杯**。
-   已内联进单文件（557KB），构建检查已豁免 iba-world.com 的来源 URL。
+2. **IBA 官方配方抓下来了**：`tools/fetch-iba.js` → `tools/iba-recipes.json` + `iba-recipes.js`，**78 杯（含 1 条官网重复页），和我们 191 条对上 77 杯**。
+   已内联进单文件（当时 557KB，当前约 607KB），构建检查已豁免 iba-world.com 的来源 URL。
 3. **署名**：调酒师是 **BoyanSHI**；文档已写，酒单界面已加来源说明。
 
 4. **第三个框「IBA 官方规格」做完了**（原计划的第一步）：详情页现在是三份来源并列——本站调校版（材料表）/ BoyanSHI 参考本（折起的原文）/ IBA 官方（卡片）。
