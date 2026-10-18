@@ -2677,6 +2677,35 @@ console.log('\n--- 配方码 ---');
   B.code.load(code); B.load([]);
 })();
 
+/* ---- 分享链接 / 二维码带这杯 ---- */
+console.log('\n--- 分享链接 / 二维码带这杯 ---');
+(function () {
+  const dev = fs.readFileSync(path.join(__dirname, 'dev.html'), 'utf8');
+  const mi = global.__REF.findIndex(function (r) { return r.zh === '莫吉托'; });
+  const spec = B.share.specFromRef(mi);
+  const code = spec.code;
+  const parsed = B.code.parse(code);
+  const link = B.share.link(code);
+  const qrText = B.share.qrTextFor(spec);
+  const qr = B.share.qrMatrix(qrText);
+  const ok = /^BM1-/.test(code) && parsed.ok && link.indexOf('?r=') >= 0
+    && qrText === link && qr && qr.count > 0;
+  console.log('  ' + (ok ? '✅' : '❌') + ' 分享卡二维码带这一杯：' + link.slice(0, 72) + '…');
+  if (!ok) bad('分享链接', '配方码/链接/二维码不一致：code=' + code + ' link=' + link + ' qr=' + qrText);
+
+  const hasBtn = /id="codeLink"/.test(dev);
+  console.log('  ' + (hasBtn ? '✅' : '❌') + ' 配方码弹层有「复制链接」按钮');
+  if (!hasBtn) bad('分享链接', '配方码弹层缺少 codeLink 按钮');
+
+  const pi = global.__PRESETS.findIndex(function (p) { return p.name === '莫吉托'; });
+  B.preset(pi);
+  const cupCode = B.share.specFromCup().code;
+  const cupOk = /^BM1-/.test(cupCode) && B.code.parse(cupCode).ok;
+  console.log('  ' + (cupOk ? '✅' : '❌') + ' 调酒台这杯也能生成同一套链接/二维码');
+  if (!cupOk) bad('分享链接', '调酒台的杯码不可用：' + cupCode);
+  B.load([]);
+})();
+
 /* ---- 物量化：糖度 °Bx / 可滴定酸 g/L ---- */
 console.log('\n--- 物量化（°Bx / 可滴定酸 g/L）---');
 (function () {

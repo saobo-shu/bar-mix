@@ -4000,6 +4000,19 @@
     if (out && out.value && msg) msg.textContent = copyText(out.value)
       ? '已复制 ✓' : '没能自动复制——长按上面那串字手动复制。';
   });
+  var codeLink = document.getElementById('codeLink');
+  if (codeLink) codeLink.addEventListener('click', function () {
+    var out = document.getElementById('codeOut');
+    var msg = document.getElementById('codeMsg');
+    if (!out || !out.value) {
+      if (msg) msg.textContent = '杯子是空的，先装一杯再复制链接。';
+      return;
+    }
+    var link = shareLinkOf(out.value);
+    if (msg) msg.textContent = copyText(link)
+      ? '链接已复制 ✓　发这个，对方点开就是这一杯。'
+      : '没能自动复制——长按这里手动复制：' + link;
+  });
   function loadFromCodeInput() {
     var inBox = document.getElementById('codeIn');
     var msg = document.getElementById('codeMsg');
@@ -4038,13 +4051,51 @@
   var CODE_RE = /BM1(?:-[A-Za-z0-9_.]+)+/;
 
   function makeRecipeCode() {
-    var parts = [];
+    var items = [];
     state.cup.forEach(function (amt, id) {
+      if (BY_ID[id] && amt > 0) items.push([id, amt]);
+    });
+    return buildRecipeCode(items, state.glass, state.iceLevel, state.method);
+  }
+  function buildRecipeCode(items, glass, ice, method) {
+    var parts = [];
+    (items || []).forEach(function (it) {
+      var id = it[0], amt = it[1];
       if (!BY_ID[id] || !(amt > 0)) return;
       parts.push(id + '.' + (Math.round(amt * 100) / 100));
     });
     if (!parts.length) return '';
-    return [CODE_VER, state.glass, state.iceLevel, state.method].concat(parts).join('-');
+    return [CODE_VER, glass, ice, method].concat(parts).join('-');
+  }
+  /* 酒单里的一杯 → 配方码：分享卡二维码用它，扫码直接打开同一杯。
+     有本站配比就用本站配比的量；没有就按参考本换算。 */
+  function recipeCodeFromRef(i) {
+    var r = REF_RECIPES[i];
+    if (!r) return '';
+    var d = presetDiffOf(r);
+    var items = [], glass, ice, method;
+    if (d) {
+      items = d.pre.items.slice();
+      glass = d.pre.glass || 'icecup';
+      ice = glassOf(glass).ice === 'inglass' ? 'full' : 'none';
+      method = PRESET_METHOD[d.pre.name] || methodFromRef(r.method);
+    } else {
+      r.needs.forEach(function (nd) {
+        var id = resolveNeedId(nd.need);
+        if (!id || !BY_ID[id]) return;
+        var g = BY_ID[id];
+        items.push([id, parseAmount(nd.a, g) || g.def]);
+      });
+      glass = glassFromRef(r);
+      ice = glassOf(glass).ice === 'inglass' ? (/无冰/.test(r.ice || '') ? 'none' : 'full') : 'none';
+      method = methodFromRef(r.method);
+    }
+    return buildRecipeCode(items, glass, ice, method);
+  }
+  /* 能手点开的链接：线上地址 + ?r=配方码。打不开线上的人，粘配方码也一样。 */
+  function shareLinkOf(code) {
+    if (!code) return SHARE_URL;
+    return SHARE_URL + (SHARE_URL.indexOf('?') >= 0 ? '&' : '?') + 'r=' + encodeURIComponent(code);
   }
 
   /* 不认识的杯子/冰量/做法一律拒绝——宁可报错，也不要装出一杯似是而非的酒。
@@ -4405,11 +4456,12 @@
     g.strokeStyle = SHARE_C.line; g.lineWidth = 2;
     g.beginPath(); g.moveTo(pad, footY); g.lineTo(SHARE_W - pad, footY); g.stroke();
     var qrSize = 196;
-    drawShareQr(g, SHARE_W - pad - qrSize, footY + 42, qrSize, SHARE_URL);
+    var qrText = s.code ? shareLinkOf(s.code) : SHARE_URL;
+    drawShareQr(g, SHARE_W - pad - qrSize, footY + 42, qrSize, qrText);
     g.fillStyle = SHARE_C.amber; g.font = '700 38px ' + SHARE_FONT;
     g.fillText('调酒台', pad, footY + 96);
     g.fillStyle = SHARE_C.prose; g.font = '400 30px ' + SHARE_FONT;
-    g.fillText('扫码打开，自己也能调一杯', pad, footY + 152);
+    g.fillText(s.code ? '扫码打开这一杯' : '扫码打开，自己也能调一杯', pad, footY + 152);
     g.fillStyle = SHARE_C.muted; g.font = '400 26px ' + SHARE_FONT;
     g.fillText('saobo-shu.github.io/bar-mix', pad, footY + 202);
     return true;
@@ -4463,7 +4515,8 @@
       keep: keepHintOf(its.map(function (x) { return x.id; })),
       glass: glassOf(pre ? pre.glass : glassFromRef(r)).name,
       abv: stat.abv,
-      dims: DIMS.map(function (x) { return clamp(stat.dims[x.k] / x.ref, 0, 1); })
+      dims: DIMS.map(function (x) { return clamp(stat.dims[x.k] / x.ref, 0, 1); }),
+      code: recipeCodeFromRef(i)
     };
   }
 
@@ -4500,7 +4553,8 @@
       keep: keepHintOf(items.map(function (x) { return x.id; })),
       glass: glassOf(state.glass).name,
       abv: a.abv,
-      dims: DIMS.map(function (x) { return clamp(a.fd[x.k] / x.ref, 0, 1); })
+      dims: DIMS.map(function (x) { return clamp(a.fd[x.k] / x.ref, 0, 1); }),
+      code: makeRecipeCode()
     };
   }
 
@@ -4541,6 +4595,9 @@
       draw: drawShareCard,
       qrMatrix: qrMatrixOf,
       qrText: function () { return SHARE_URL; },
+      qrTextFor: function (spec) { return (spec && spec.code) ? shareLinkOf(spec.code) : SHARE_URL; },
+      link: shareLinkOf,
+      codeFromRef: recipeCodeFromRef,
       open: openShareCard,
       close: closeShareCard,
       last: function () { return lastShareSpec; }

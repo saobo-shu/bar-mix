@@ -833,10 +833,10 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
      永远不可能溢出；分隔线在网格布局里没意义，藏掉 */
   .cats {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
     gap: 6px; overflow: visible;
   }
-  .cat { padding: 6px 4px; text-align: center; }
+  .cat { padding: 5px 3px; font-size: 12.5px; text-align: center; }
   .cat-sep { display: none; }
   .cols {
     grid-template-columns: minmax(0, 1.02fr) minmax(0, .98fr);
@@ -854,6 +854,19 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
      右栏就是普通的一栏，跟着页面正常滚动，任何情况下都盖不住东西。 */
   .ci-note { max-width: 22vw; }
   .big-score { font-size: 52px; }
+}
+
+@media (max-width: 979px) {
+  /* 手机上按钮要够得着：分类、杯型/口味、筛选、心情 */
+  .cat, .gchip {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 36px;
+  }
+  .cat { padding: 8px 13px; }
+  .gchip { padding: 7px 11px; }
+  .moodbtn { min-height: 44px; }
+  .mf-row .ghost { min-height: 34px; padding: 6px 10px; font-size: 12px; }
+  .mc-star, .tc-star { padding: 4px; }
 }
 
 @media (max-width: 380px) {

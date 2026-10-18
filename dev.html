@@ -533,10 +533,11 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
       <b>配方码</b>
       <button type="button" class="ghost" id="codeClose" data-code-close="1">关闭</button>
     </div>
-    <p class="hint">这串字就是你这一杯：材料、分量、杯型、冰量、做法。发给朋友，他打开这一页、粘到下面那格，就能装出一模一样的。</p>
+    <p class="hint">这串字就是你这一杯：材料、分量、杯型、冰量、做法。发给朋友，他打开这一页、粘到下面那格，就能装出一模一样的；也可以点「复制链接」，发一个打开就是这杯的网址。</p>
     <input type="text" id="codeOut" class="codefield" readonly aria-label="这一杯的配方码">
     <div class="coderow">
       <button type="button" class="ghost" id="codeCopy">再复制一次</button>
+      <button type="button" class="ghost" id="codeLink">复制链接</button>
     </div>
     <p class="hint">收到别人的码？粘到这里：</p>
     <input type="text" id="codeIn" class="codefield" placeholder="把配方码粘进来（BM1- 开头那一串）" aria-label="粘贴配方码">
