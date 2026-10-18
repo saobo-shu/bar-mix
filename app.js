@@ -512,9 +512,9 @@
     if (a.coffeeMl > 0 && a.liquid > 0 && a.coffeeMl / a.liquid >= 0.2)
       return { id: 'coffee', name: FAMILY_LABEL.coffee };
     if (a.liquid > 0 && a.juiceMl / a.liquid >= 0.35) return { id: 'long', name: FAMILY_LABEL.long };
-    if (a.sweetMl > 0 && a.fd.bitter > 0.5) return { id: 'old_fashioned', name: FAMILY_LABEL.old_fashioned };
+    if (a.hasSweetAdd && a.fd.bitter > 0.5) return { id: 'old_fashioned', name: FAMILY_LABEL.old_fashioned };
     if (a.modMl > 0) return { id: 'duo', name: FAMILY_LABEL.duo };
-    if (a.sweetMl > 0) return { id: 'old_fashioned', name: FAMILY_LABEL.old_fashioned };
+    if (a.hasSweetAdd) return { id: 'old_fashioned', name: FAMILY_LABEL.old_fashioned };
     return { id: 'spirit', name: FAMILY_LABEL.spirit };
   }
   /* 高球的平衡不是"甜:酸"，是"酒体 : 稀释物"。

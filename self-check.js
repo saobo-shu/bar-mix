@@ -2971,6 +2971,20 @@ console.log('\n--- 家族口径（换家族 = 换尺子，不奖励不惩罚）-
   console.log('  ' + (fDaq === 'sour' ? '✅' : '❌') + ' 参考本黛绮莉（用砂糖）仍然算酸类，不是烈酒向');
   if (fDaq !== 'sour') bad('家族', '用砂糖的黛绮莉被漏判成 ' + fDaq);
 
+  /* 古典的原始配方就是方糖：方糖体积 0，不能因此漏掉古典型 */
+  B.state.glass = 'rocks'; B.state.iceLevel = 'full';
+  B.state.method = 'build'; B.state.taste = 'normal';
+  B.load([['bourbon', 60], ['sugar_cube', 1], ['angostura', 2]]);
+  const fSugarOld = B.familyOf(B.analyze()).id;
+  console.log('  ' + (fSugarOld === 'old_fashioned' ? '✅' : '❌')
+    + ' 威士忌 + 方糖 + 苦精判成古典型（不是烈酒向）');
+  if (fSugarOld !== 'old_fashioned') bad('家族', '方糖古典被漏判成 ' + fSugarOld);
+  const classicPreset = global.__PRESETS.findIndex(p => p.name === '古典');
+  B.preset(classicPreset);
+  const fClassic = B.familyOf(B.analyze()).id;
+  console.log('  ' + (fClassic === 'old_fashioned' ? '✅' : '❌') + ' 预设「古典」仍是古典型');
+  if (fClassic !== 'old_fashioned') bad('家族', '预设古典被漏判成 ' + fClassic);
+
   const tommy = global.__REF.findIndex(r => r.zh === '汤米家的玛格丽特');
   B.have.load(tommy);
   const fTommy = B.familyOf(B.analyze()).id;
