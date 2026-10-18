@@ -282,6 +282,71 @@ console.log('\n--- 空杯入口 / 加料反馈 / 小杯子摘要 ---');
   B.load([]);
 })();
 
+/* ---- 一致性：空杯分数 / 收藏 / 预设残留 / 分享卡 / Tips ---- */
+console.log('\n--- 一致性：空杯分数 / 收藏 / 预设残留 / 分享卡 / Tips ---');
+(function () {
+  const dev = fs.readFileSync(path.join(__dirname, 'dev.html'), 'utf8');
+
+  /* 空杯时不要拿四项分数去装“这杯有 82 分” */
+  B.load([]);
+  const emptyScores = els.subScores.innerHTML;
+  console.log('  ' + (emptyScores === '' ? '✅' : '❌') + ' 空杯不显示四项分数');
+  if (emptyScores !== '') bad('空杯分数', '空杯时还渲染了分项条：' + emptyScores.slice(0, 60));
+  B.preset(1);
+  const scoresBack = els.subScores.innerHTML.indexOf('平衡') >= 0;
+  console.log('  ' + (scoresBack ? '✅' : '❌') + ' 有材料后四项分数回来');
+  if (!scoresBack) bad('空杯分数', '有材料后分项条没回来');
+
+  /* B&B / XYZ 没有中文名，收藏必须用 recipeName（英文名），不能存空字符串 */
+  B.menu.reset();
+  const bi = global.__REF.findIndex(function (r) { return r.en === 'B&B'; });
+  const xi = global.__REF.findIndex(function (r) { return r.en === 'XYZ'; });
+  fire({ fav: String(bi) });
+  fire({ fav: String(xi) });
+  const favsNow = B.menu.favs();
+  const okBB = favsNow.indexOf('B&B') >= 0 && favsNow.indexOf('XYZ') >= 0 && favsNow.indexOf('') < 0;
+  console.log('  ' + (okBB ? '✅' : '❌') + ' B&B / XYZ 的收藏星标真的能收藏');
+  if (!okBB) bad('收藏', 'B&B / XYZ 收藏没写进名字：' + JSON.stringify(favsNow));
+  B.menu.fav('B&B'); B.menu.fav('XYZ');
+
+  /* 点预设卡片：上一杯参考本的“还缺”/“替代品”不能残留 */
+  B.menu.reset();
+  const missIdx = global.__REF.findIndex(function (r, i) { return B.have.missing(i).length > 0; });
+  B.have.load(missIdx);
+  const hadMiss = B.state.refMiss.length > 0;
+  fire({ preset: '0' });
+  const noteHtml = els.recipeNote.innerHTML;
+  const okClear = hadMiss && B.state.refMiss.length === 0 && B.state.refNotStocked.length === 0
+    && noteHtml.indexOf('还缺') < 0;
+  console.log('  ' + (okClear ? '✅' : '❌') + ' 点预设卡片后不残留上一杯的「还缺」');
+  if (!okClear) bad('预设残留', '点预设后还留着上一杯的缺料提示：' + noteHtml.slice(0, 80));
+
+  /* 分享卡必须和页面用同一份数据：ABV + 雷达 + 做法 */
+  const mi = global.__REF.findIndex(function (r) { return r.zh === '莫吉托'; });
+  const pi = global.__PRESETS.findIndex(function (p) { return p.name === '莫吉托'; });
+  B.preset(pi);
+  const a = B.analyze();
+  const spec = B.share.specFromRef(mi);
+  const sugarRef = B.dims[0].ref;
+  const wantSugar = Math.max(0, Math.min(1, a.fd.sugar / sugarRef));
+  const okShareAbv = Math.abs(spec.abv - a.abv) < 0.05;
+  const okShareDim = spec.dims.length === 8 && Math.abs(spec.dims[0] - wantSugar) < 0.001;
+  const okShareHow = spec.how.indexOf('捣') < 0 && spec.how.indexOf('苏打水') >= 0;
+  const okShare = okShareAbv && okShareDim && okShareHow;
+  console.log('  ' + (okShare ? '✅' : '❌') + ' 分享卡跟页面同一份数：'
+    + spec.abv.toFixed(1) + '% / 雷达 / 做法');
+  if (!okShare) bad('分享卡', '分享卡和页面对不上：abv=' + spec.abv.toFixed(2)
+    + ' 页面=' + a.abv.toFixed(2) + ' dim=' + okShareDim + ' how=' + okShareHow);
+
+  /* Tips 家族表：双料的尺子是“酒 : 辅料 + 稀释度”，不是甜酸/浓度 */
+  const tipsOk = /<td>双料<\/td>[\s\S]*?<td>酒 : 辅料 \+ 稀释度<\/td>/.test(dev);
+  console.log('  ' + (tipsOk ? '✅' : '❌') + ' Tips 家族表里「双料」的尺子写对了');
+  if (!tipsOk) bad('Tips', 'Tips 家族表里双料还写着「甜酸 / 浓度」');
+
+  B.menu.reset();
+  B.load([]);
+})();
+
 /* ---- 做法：和参考字典对账 ---- */
 console.log('\n--- 做法（和经典字典对账）---');
 (function () {

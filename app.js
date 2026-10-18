@@ -1449,7 +1449,7 @@
     /* 每一项都标出它现在的权重——换了评分方案，这些数字会一起变 */
     var w = sc.weight, pc = function (x) { return Math.round(x * 100) + '%'; };
     /* 纯饮模式一根评分条都不留——说了不评分就别再写着"权重 32%" */
-    document.getElementById('subScores').innerHTML = (neat || single) ? '' :
+    document.getElementById('subScores').innerHTML = (empty || neat || single) ? '' :
       bar('平衡', b, '权重 ' + pc(w.balance) + '　' + ratioCap) +
       bar('复杂度', cx, '权重 ' + pc(w.complexity) + '　激活了 ' + dimsOn + ' 种风味') +
       bar('结构', stru, '权重 ' + pc(w.structure) + '　'
@@ -2331,7 +2331,7 @@
     var a = analyze();
     state.cup = keep.cup; state.glass = keep.glass;
     state.iceLevel = keep.ice; state.method = keep.method;
-    return (PRESET_STAT[p.name] = { family: familyOf(a), abv: a.abv });
+    return (PRESET_STAT[p.name] = { family: familyOf(a), abv: a.abv, dims: a.fd });
   }
 
   /* 每个家族在酒单里有多少杯（跟筛选口径一致：有本站配比就按本站配比算）。
@@ -2362,16 +2362,20 @@
       : r.needs.filter(function (nd) { return !nd.need.optional; })
           .map(function (nd) { return needLabel(nd); });
     var on = isFav(recipeName(r));
+    /* 卡片上的技法也要跟"摆出来的那份配方"走：有本站配比就用本站配比的做法，
+       不然会出现卡片写"搅拌"、点开详情写"兑和"（教父、马颈那几款）。 */
+    var tech = methodFromRef(d ? (PRESET_METHOD[d.pre.name] || r.method) : r.method);
+    var fizzNow = d ? presetFizzNames(d.pre) : refFizz(r);
     return '<button type="button" class="menucard" data-menu="' + i + '">'
       + '<span class="mc-top"><b>' + esc(recipeName(r)) + '</b><i>' + esc(r.zh ? (r.en || '') : '') + '</i>'
         + '<span class="mc-star' + (on ? ' on' : '') + '" data-fav="' + i + '" role="button" tabindex="0"'
         + ' title="' + (on ? '取消收藏' : '收藏') + '">' + (on ? '★' : '☆') + '</span></span>'
       + '<span class="mc-line">' + esc(use.slice(0, 4).join(' · ')) + (use.length > 4 ? ' 等' : '') + '</span>'
       /* 带气又要摇的：标签上直接写「气泡后加」，扫一眼就知道汤力水不能进摇壶 */
-      + '<span class="mc-meta"><i class="mc-tech t-' + methodFromRef(r.method)
-        + (refFizz(r).length && methodFromRef(r.method) !== 'build' ? ' mc-tech-bub' : '') + '">'
-        + (TECH_NAME[methodFromRef(r.method)] || '兑和')
-        + (refFizz(r).length && methodFromRef(r.method) !== 'build' ? ' · 气泡后加' : '') + '</i>'
+      + '<span class="mc-meta"><i class="mc-tech t-' + tech
+        + (fizzNow.length && tech !== 'build' ? ' mc-tech-bub' : '') + '">'
+        + (TECH_NAME[tech] || '兑和')
+        + (fizzNow.length && tech !== 'build' ? ' · 气泡后加' : '') + '</i>'
         /* 卡片上的材料行用的是本站配比（有的话），酒精度和样数也得跟它一致 */
         + Math.round(d ? presetStat(d.pre).abv : st.abv) + '% · '
         + (d ? d.pre.items.length : r.needs.length) + ' 样'
@@ -3323,7 +3327,7 @@
     if (t.dataset.fav !== undefined && t.dataset.fav !== null && t.dataset.fav !== '') {
       /* 星星在卡片里，别让它顺带打开详情 */
       var fr = REF_RECIPES[+t.dataset.fav];
-      if (fr) toggleFav(fr.zh);
+      if (fr) toggleFav(recipeName(fr));
       return;
     }
     if (t.dataset.menuLoad !== undefined) { loadRefFromMenu(+t.dataset.menuLoad); return; }
@@ -3356,7 +3360,7 @@
     }
     if (t.dataset.menuFavbtn !== undefined) {
       var fr2 = REF_RECIPES[+t.dataset.menuFavbtn];
-      if (fr2) toggleFav(fr2.zh);
+      if (fr2) toggleFav(recipeName(fr2));
       renderMenuDetail();
       return;
     }
@@ -3500,6 +3504,8 @@
       state.recipeFamily = familyOf(pa0).id;
       /* 备注挪到杯子下面显示（用户说挤在卡片里太乱） */
       state.recipeName = p.name; state.recipeSub = p.sub; state.recipeTip = p.tip || '';
+      /* 点预设卡片 = 换成这一杯，上一杯参考本的“还缺 / 替代品”不能留在这儿 */
+      state.refMiss = []; state.refNotStocked = [];
       state.swapOpen = false;
       renderCup(); renderResult(); renderLib(); renderGlassPick(); renderIcePick();
       renderMethodPick(); renderTastePick();
@@ -3756,6 +3762,15 @@
     });
     return out;
   }
+  /* 本站配比里带气的材料（莫吉托的苏打水就是参考本没写的） */
+  function presetFizzNames(p) {
+    var out = [];
+    (p.items || []).forEach(function (it) {
+      var g = BY_ID[it[0]];
+      if (g && (g.f.fizz || 0) >= GAS_MIN && out.indexOf(g.name) < 0) out.push(g.name);
+    });
+    return out;
+  }
   /* 调酒台那杯里的气泡材料 */
   function cupFizz() {
     var out = [];
@@ -3781,7 +3796,11 @@
     return '材料直接倒进' + glass + '搅两下' + ice + last;
   }
   function tonightHow(r) {
-    return howText(methodFromRef(r.method), glassOf(glassFromRef(r)), r.method, refFizz(r));
+    var d = presetDiffOf(r);
+    var m = d ? (PRESET_METHOD[d.pre.name] || r.method) : r.method;
+    var gl = glassOf(d ? d.pre.glass : glassFromRef(r));
+    var fizz = d ? presetFizzNames(d.pre) : refFizz(r);
+    return howText(methodFromRef(m), gl, m, fizz);
   }
 
   function tonightCard(i) {
@@ -4419,19 +4438,23 @@
     var r = REF_RECIPES[i];
     if (!r) return null;
     var d = presetDiffOf(r);
+    var pre = d ? d.pre : null;
     var nm = recipeName(r);
     var its = tonightItems(r);
+    /* 有本站配比就用本站配比的 ABV / 雷达；不能拿参考本的数去套——
+       莫吉托页面 15%，分享卡却写 24%，是用户一眼能看出的自相矛盾。 */
+    var stat = pre ? presetStat(pre) : refStat(i);
     return {
       name: nm,
       en: r.en || '',
       line: PICK_LINE[nm] || '',
       items: its,
       how: tonightHow(r),
-      note: (d && d.pre.tip) || r.note || '',
+      note: (pre && pre.tip) || r.note || '',
       keep: keepHintOf(its.map(function (x) { return x.id; })),
-      glass: glassOf(d ? d.pre.glass : glassFromRef(r)).name,
-      abv: refStat(i).abv,
-      dims: DIMS.map(function (x) { return clamp(refStat(i).dims[x.k] / x.ref, 0, 1); })
+      glass: glassOf(pre ? pre.glass : glassFromRef(r)).name,
+      abv: stat.abv,
+      dims: DIMS.map(function (x) { return clamp(stat.dims[x.k] / x.ref, 0, 1); })
     };
   }
 
