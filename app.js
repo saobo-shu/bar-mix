@@ -2349,26 +2349,37 @@
       && (st.acid >= 2 || st.fruit >= 4 || st.spice >= 4);
   }
 
+  /* 酒单卡片/筛选用的是"标准配方"的统计，不该受你当前改过的
+     瓶子度数、材料温度、手边勾选影响；算的时候临时清空这三样。 */
+  function withDefaultBottles(fn) {
+    var have = state.have, abv = state.abv, temps = state.temps;
+    state.have = {}; state.abv = {}; state.temps = {};
+    try { return fn(); }
+    finally { state.have = have; state.abv = abv; state.temps = temps; }
+  }
+
   function refStat(i) {
     if (REF_STAT[i]) return REF_STAT[i];
     var r = REF_RECIPES[i];
     var keep = { cup: state.cup, glass: state.glass, ice: state.iceLevel, method: state.method };
-    var cup = new Map();
-    r.needs.forEach(function (nd) {
-      /* 可选材料一般不计入统计（比如可省的柠檬皮）；
-         但蛋清/蛋黄是可选的"结构材料"——跳过蛋黄，波特菲利普就不算 Flip 了。 */
-      if (nd.need.optional && nd.need.id !== 'egg_yolk' && nd.need.id !== 'egg_white') return;
-      var id = resolveNeedId(nd.need);
-      if (!id || !BY_ID[id]) return;
-      var g = BY_ID[id];
-      cup.set(id, Math.round((parseAmount(nd.a, g) || g.def) * 10) / 10);
+    var a = withDefaultBottles(function () {
+      var cup = new Map();
+      r.needs.forEach(function (nd) {
+        /* 可选材料一般不计入统计（比如可省的柠檬皮）；
+           但蛋清/蛋黄是可选的"结构材料"——跳过蛋黄，波特菲利普就不算 Flip 了。 */
+        if (nd.need.optional && nd.need.id !== 'egg_yolk' && nd.need.id !== 'egg_white') return;
+        var id = resolveNeedId(nd.need);
+        if (!id || !BY_ID[id]) return;
+        var g = BY_ID[id];
+        cup.set(id, Math.round((parseAmount(nd.a, g) || g.def) * 10) / 10);
+      });
+      state.cup = cup;
+      state.glass = glassFromRef(r);
+      state.iceLevel = glassOf(state.glass).ice === 'inglass'
+        ? (/无冰/.test(r.ice || '') ? 'none' : 'full') : 'none';
+      state.method = methodFromRef(r.method);
+      return analyze();
     });
-    state.cup = cup;
-    state.glass = glassFromRef(r);
-    state.iceLevel = glassOf(state.glass).ice === 'inglass'
-      ? (/无冰/.test(r.ice || '') ? 'none' : 'full') : 'none';
-    state.method = methodFromRef(r.method);
-    var a = analyze();
     state.cup = keep.cup; state.glass = keep.glass;
     state.iceLevel = keep.ice; state.method = keep.method;
     var fams = {};
@@ -2396,13 +2407,15 @@
   function presetStat(p) {
     if (PRESET_STAT[p.name]) return PRESET_STAT[p.name];
     var keep = { cup: state.cup, glass: state.glass, ice: state.iceLevel, method: state.method };
-    var cup = new Map();
-    p.items.forEach(function (it) { cup.set(it[0], it[1]); });
-    state.cup = cup;
-    if (p.glass) state.glass = p.glass;
-    state.iceLevel = glassOf(state.glass).ice === 'inglass' ? 'full' : 'none';
-    state.method = PRESET_METHOD[p.name] || 'build';
-    var a = analyze();
+    var a = withDefaultBottles(function () {
+      var cup = new Map();
+      p.items.forEach(function (it) { cup.set(it[0], it[1]); });
+      state.cup = cup;
+      if (p.glass) state.glass = p.glass;
+      state.iceLevel = glassOf(state.glass).ice === 'inglass' ? 'full' : 'none';
+      state.method = PRESET_METHOD[p.name] || 'build';
+      return analyze();
+    });
     state.cup = keep.cup; state.glass = keep.glass;
     state.iceLevel = keep.ice; state.method = keep.method;
     return (PRESET_STAT[p.name] = { family: familyOf(a), abv: a.abv, dims: a.fd });
@@ -4186,6 +4199,15 @@
 
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') { closeShareCard(); closeCodeBox(); closeSaveDialog(); }
+    /* 收藏星标是 span[role=button]：键盘 Enter / Space 也要能切换 */
+    if (e.key === 'Enter' || e.key === ' ') {
+      var fav = e.target && e.target.closest ? e.target.closest('[data-fav]') : null;
+      if (fav) {
+        e.preventDefault();
+        var fr = REF_RECIPES[+fav.dataset.fav];
+        if (fr) toggleFav(recipeName(fr));
+      }
+    }
   });
 
   /* ---------------------------------------------------------
@@ -4222,27 +4244,29 @@
   /* 酒单里的一杯 → 配方码：分享卡二维码用它，扫码直接打开同一杯。
      有本站配比就用本站配比的量；没有就按参考本换算。 */
   function recipeCodeFromRef(i) {
-    var r = REF_RECIPES[i];
-    if (!r) return '';
-    var d = presetDiffOf(r);
-    var items = [], glass, ice, method;
-    if (d) {
-      items = d.pre.items.slice();
-      glass = d.pre.glass || 'icecup';
-      ice = glassOf(glass).ice === 'inglass' ? 'full' : 'none';
-      method = PRESET_METHOD[d.pre.name] || methodFromRef(r.method);
-    } else {
-      r.needs.forEach(function (nd) {
-        var id = resolveNeedId(nd.need);
-        if (!id || !BY_ID[id]) return;
-        var g = BY_ID[id];
-        items.push([id, parseAmount(nd.a, g) || g.def]);
-      });
-      glass = glassFromRef(r);
-      ice = glassOf(glass).ice === 'inglass' ? (/无冰/.test(r.ice || '') ? 'none' : 'full') : 'none';
-      method = methodFromRef(r.method);
-    }
-    return buildRecipeCode(items, glass, ice, method);
+    return withDefaultBottles(function () {
+      var r = REF_RECIPES[i];
+      if (!r) return '';
+      var d = presetDiffOf(r);
+      var items = [], glass, ice, method;
+      if (d) {
+        items = d.pre.items.slice();
+        glass = d.pre.glass || 'icecup';
+        ice = glassOf(glass).ice === 'inglass' ? 'full' : 'none';
+        method = PRESET_METHOD[d.pre.name] || methodFromRef(r.method);
+      } else {
+        r.needs.forEach(function (nd) {
+          var id = resolveNeedId(nd.need);
+          if (!id || !BY_ID[id]) return;
+          var g = BY_ID[id];
+          items.push([id, parseAmount(nd.a, g) || g.def]);
+        });
+        glass = glassFromRef(r);
+        ice = glassOf(glass).ice === 'inglass' ? (/无冰/.test(r.ice || '') ? 'none' : 'full') : 'none';
+        method = methodFromRef(r.method);
+      }
+      return buildRecipeCode(items, glass, ice, method);
+    });
   }
   /* 能手点开的链接：线上地址 + ?r=配方码。打不开线上的人，粘配方码也一样。 */
   function shareLinkOf(code) {
@@ -4810,6 +4834,8 @@
     /* 酒单：给自检和调试用 */
     menu: {
       render: renderMenu,
+      /* 自检/调试：清掉酒单统计缓存 */
+      resetStats: function () { REF_STAT = {}; PRESET_STAT = {}; FAMILY_COUNTS = null; },
       list: function () { return menuList().length; },
       /* 筛完之后剩哪些配方（自检要逐条核对技法过滤得准不准） */
       listRefs: function () { return menuList().map(function (x) { return x.r; }); },

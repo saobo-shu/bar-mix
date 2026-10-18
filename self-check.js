@@ -432,6 +432,59 @@ console.log('\n--- 侧栏：当前杯子 / 快捷入口 ---');
   B.load([]);
 })();
 
+/* ---- 酒单统计：不夹带当前 ABV/温度/手边勾选，缓存重算一致 ---- */
+console.log('\n--- 酒单统计：缓存与当前设置 ---');
+(function () {
+  const wi = global.__REF.findIndex(function (r) { return r.zh === '威士忌酸'; });
+  B.state.abv = {}; B.state.temps = {}; B.state.have = {};
+  B.menu.resetStats();
+  const baseRef = B.menu.stat(wi).abv;
+  const baseSpec = B.share.specFromRef(wi).abv;
+
+  B.state.abv = { bourbon: 60 };
+  B.state.temps = { bourbon: 'frozen' };
+  B.state.have = { laphroaig: 1 };
+  B.menu.resetStats();
+  const changedRef = B.menu.stat(wi).abv;
+  const changedSpec = B.share.specFromRef(wi).abv;
+
+  const okRef = Math.abs(baseRef - changedRef) < 0.001;
+  const okSpec = Math.abs(baseSpec - changedSpec) < 0.001;
+  console.log('  ' + (okRef && okSpec ? '✅' : '❌')
+    + ' 酒单统计无视当前 ABV/温度/手边勾选：'
+    + baseRef.toFixed(1) + '% → ' + changedRef.toFixed(1) + '%');
+  if (!(okRef && okSpec)) bad('酒单缓存',
+    '酒单统计夹带了当前设置：ref ' + baseRef + '→' + changedRef + ' / spec ' + baseSpec + '→' + changedSpec);
+
+  B.state.abv = {}; B.state.temps = {}; B.state.have = {};
+  B.menu.resetStats();
+  B.load([]);
+})();
+
+/* ---- 键盘：收藏星标 Enter/Space ---- */
+console.log('\n--- 键盘：收藏星标 ---');
+(function () {
+  const bi = global.__REF.findIndex(function (r) { return r.en === 'B&B'; });
+  if (B.menu.favs().indexOf('B&B') >= 0) B.menu.fav('B&B');
+  const favEl = {
+    dataset: { fav: String(bi) },
+    closest: function (sel) { return sel === '[data-fav]' ? this : null; }
+  };
+  const keyHandler = global.document._handlers.keydown;
+  keyHandler({ key: 'Enter', target: favEl, preventDefault: function () {} });
+  const okKey = B.menu.favs().indexOf('B&B') >= 0;
+  console.log('  ' + (okKey ? '✅' : '❌') + ' 收藏星标按 Enter 能切换');
+  if (!okKey) bad('键盘', '收藏星标不响应 Enter');
+  B.menu.fav('B&B');
+
+  const cssText = fs.readFileSync(path.join(__dirname, 'app.css'), 'utf8');
+  const touchOk = /\.cat, \.gchip\s*\{[^}]*min-height:\s*44px/.test(cssText)
+    && /\.mc-star, \.tc-star\s*\{[^}]*min-width:\s*44px/.test(cssText)
+    && /\.mf-row \.ghost\s*\{[^}]*min-height:\s*44px/.test(cssText);
+  console.log('  ' + (touchOk ? '✅' : '❌') + ' 手机分类/杯型/筛选/收藏星标到 44px');
+  if (!touchOk) bad('触控', '手机按钮没有到 44px');
+})();
+
 /* ---- 苦精：2 滴不能等于 20ml 金巴利的苦 ---- */
 console.log('\n--- 苦精：2 滴 vs 20ml 金巴利 ---');
 (function () {

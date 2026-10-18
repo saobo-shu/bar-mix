@@ -171,6 +171,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .navitem:active { transform: scale(.99); }
 .navbtn { display: inline-block; flex: none; padding: 4px 9px; font-size: 14px; line-height: 1.2; }
 .navback { display: none; }
+.mc-star:focus-visible, .tc-star:focus-visible,
+.sidelink:focus-visible, .navitem:focus-visible,
+.cat:focus-visible, .gchip:focus-visible {
+  outline: 2px solid var(--amber); outline-offset: 2px;
+}
 
 /* 侧栏：当前杯子 */
 .sidecup {
@@ -912,13 +917,17 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
   /* 手机上按钮要够得着：分类、杯型/口味、筛选、心情 */
   .cat, .gchip {
     display: inline-flex; align-items: center; justify-content: center;
-    min-height: 36px;
+    min-height: 44px;
   }
   .cat { padding: 7px 11px; }
   .gchip { padding: 7px 11px; }
   .moodbtn { min-height: 44px; }
-  .mf-row .ghost { min-height: 34px; padding: 6px 10px; font-size: 12px; }
-  .mc-star, .tc-star { padding: 4px; }
+  .mf-row .ghost { min-height: 44px; padding: 6px 10px; font-size: 12px; }
+  .sidelink { min-height: 44px; }
+  .mc-star, .tc-star {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 44px; min-height: 44px; padding: 0;
+  }
 }
 
 @media (min-width: 1500px) {
