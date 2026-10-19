@@ -422,7 +422,7 @@ var INGREDIENTS = [
   /* ---------------- 甜味 ---------------- */
   { id:'syrup', cat:'sweet', name:'白糖浆（1:1 自制）', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
     f:{sugar:9,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:0,body:1},
-    note:'白糖+等量热水搅到化开，装瓶常温能放两三周。比直接放糖化得开。' },
+    note:'白糖+等量热水搅到化开，装瓶常温能放两三周。比直接放糖化得开。没有糖浆时，15ml 约等于 1.5 块方糖；方糖不带水，体积会小一点。' },
   { id:'honey_syrup', cat:'sweet', name:'蜂蜜糖浆（1:1）', unit:'ml', mlu:1, def:15, step:5, abv:0, src:'rt',
     f:{sugar:9,acid:0,bitter:0,booze:0,fruit:0,spice:4,fizz:0,body:3},
     note:'做青霉素、热托蒂的灵魂。纯蜂蜜太稠，兑一半热水就好用了。替 3:1 蜂蜜糖浆时按 1.5 倍量（15ml → 22.5ml），会淡一点。' },
@@ -452,7 +452,7 @@ var INGREDIENTS = [
     note:'把本来要扔的柠檬皮切条拌白糖，腌 6-12 小时，糖会把皮里的香油逼出来。滤掉皮就是香气最浓的糖浆，常温能放一个月。' },
   { id:'sugar_cube', cat:'sweet', name:'方糖 / 白砂糖', unit:'块', mlu:0, def:1, step:1, abv:0, src:'rt',
     f:{sugar:7,acid:0,bitter:0,booze:0,fruit:0,spice:0,fizz:0,body:0},
-    note:'配几滴水慢慢压碎，就是古典最原始的做法。' },
+    note:'配几滴水慢慢压碎，就是古典最原始的做法。1 块约等于 10ml 1:1 糖浆；替 15ml 糖浆用 1.5 块，方糖不带水，体积会少约 10ml。' },
   { id:'coke', cat:'mixer', name:'可乐', unit:'ml', mlu:1, def:90, step:5, abv:0, src:'near',
     f:{sugar:9,acid:2,bitter:0,booze:0,fruit:0,spice:2,fizz:5,body:1},
     note:'不要买无糖的，代糖在酒里会发苦。' },

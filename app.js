@@ -1888,23 +1888,57 @@
   }
 
   /* 材料级的替代：只收明确的近似替代，不放进酒的类型表。
-     瓶装柠檬汁同时能顶黄柠檬和青柠；莫林比 1:1 单糖浆甜，按 80% 量用。 */
+     一个需求可以有多条替代（例如糖浆：莫林或方糖），按顺序取用户有的。
+     scale 是"等甜度"的 ml→ml 比例；convert 用于单位不同的替代（方糖↔糖浆）。 */
   var ING_SUB = {
-    lemon: { ids: ['lemon_bottle'], note: '香气和酸度会差一点，有鲜柠檬更好' },
-    lime: { ids: ['lemon_bottle'], note: '青柠的香气会少一截，酸度也略低；有鲜青柠更好' },
+    lemon: { alts: [{ id: 'lemon_bottle', note: '香气和酸度会差一点，有鲜柠檬更好' }] },
+    lime: { alts: [{ id: 'lemon_bottle', note: '青柠的香气会少一截，酸度也略低；有鲜青柠更好' }] },
     syrup: {
-      ids: ['monin'], scale: 0.8,
-      note: '莫林比 1:1 单糖浆甜，先按 80% 的量用（15ml 单糖浆 → 12ml 莫林），不够甜再补'
+      alts: [
+        {
+          id: 'monin', scale: 0.8,
+          note: '莫林比 1:1 单糖浆甜，先按 80% 的量用（15ml 单糖浆 → 12ml 莫林），不够甜再补'
+        },
+        {
+          id: 'sugar_cube',
+          /* 1 块方糖 ≈ 10ml 1:1 糖浆；15ml 糖浆 → 1.5 块（半块为最小步进） */
+          convert: function (ml) { return Math.max(0.5, Math.round(ml / 5) / 2); },
+          note: '1 块方糖 ≈ 10ml 1:1 糖浆；15ml 糖浆 ≈ 1.5 块。方糖不带水，体积会少约 10ml，甜度接近'
+        }
+      ]
     },
     honey_syrup_31: {
-      ids: ['honey_syrup'], scale: 1.5,
-      note: '1:1 蜂蜜糖浆比 3:1 稀，按 150% 的量用（15ml 3:1 → 22.5ml 1:1），风味会淡一点'
+      alts: [{
+        id: 'honey_syrup', scale: 1.5,
+        note: '1:1 蜂蜜糖浆比 3:1 稀，按 150% 的量用（15ml 3:1 → 22.5ml 1:1），风味会淡一点'
+      }]
+    },
+    sugar_cube: {
+      alts: [{
+        id: 'syrup',
+        convert: function (n) { return Math.round(n * 10 * 10) / 10; },
+        note: '1 块方糖 ≈ 10ml 1:1 糖浆；糖浆自带水，体积会多一点'
+      }]
     }
   };
-  function subScaleFor(need, id) {
-    if (!need || !need.id || id === need.id) return 1;
-    var sub = ING_SUB[need.id];
-    return sub && sub.scale ? sub.scale : 1;
+  function subAlts(needId) {
+    var s = ING_SUB[needId];
+    if (!s) return [];
+    if (s.alts) return s.alts;
+    return (s.ids || []).map(function (id) {
+      return { id: id, scale: s.scale || 1, note: s.note };
+    });
+  }
+  function subAlt(needId, id) {
+    var alts = subAlts(needId);
+    for (var i = 0; i < alts.length; i++) if (alts[i].id === id) return alts[i];
+    return null;
+  }
+  function subAmount(needId, id, origAmt) {
+    var alt = subAlt(needId, id);
+    if (!alt) return origAmt;
+    if (alt.convert) return alt.convert(origAmt);
+    return origAmt * (alt.scale || 1);
   }
 
   /* 这条需求，勾了的材料能不能满足；是"完全一样"还是"同组能替" */
@@ -1917,13 +1951,11 @@
     if (need.id) {
       hits = mine.filter(function (id) { return id === need.id; });
       if (hits.length) return { ok: true, exact: true, hits: hits };
-      var sub = ING_SUB[need.id];
-      if (sub) {
-        var alt = mine.filter(function (id) {
-          return sub.ids.indexOf(id) >= 0 && BY_ID[id];
-        });
-        if (alt.length) {
-          return { ok: true, exact: false, hits: alt, subFor: need.id, subNote: sub.note };
+      var alts = subAlts(need.id);
+      for (var ai = 0; ai < alts.length; ai++) {
+        var alt = alts[ai];
+        if (mine.indexOf(alt.id) >= 0 && BY_ID[alt.id]) {
+          return { ok: true, exact: false, hits: [alt.id], subFor: need.id, subNote: alt.note };
         }
       }
       return { ok: false, exact: false, hits: [] };
@@ -2353,12 +2385,9 @@
     if (need.id) {
       if (!BY_ID[need.id]) return '';
       if (!state.have[need.id]) {
-        var sub = ING_SUB[need.id];
-        if (sub) {
-          var alt = sub.ids.filter(function (id) {
-            return state.have[id] && BY_ID[id];
-          })[0];
-          if (alt) return alt;
+        var alts = subAlts(need.id);
+        for (var ai = 0; ai < alts.length; ai++) {
+          if (state.have[alts[ai].id] && BY_ID[alts[ai].id]) return alts[ai].id;
         }
       }
       return need.id;
@@ -2409,7 +2438,9 @@
       var id = resolveNeedId(nd.need);
       if (!id || !BY_ID[id]) return;
         var g = BY_ID[id];
-      var amt = (parseAmount(nd.a, g) || g.def) * subScaleFor(nd.need, id);
+      var orig = nd.need.id && BY_ID[nd.need.id] ? BY_ID[nd.need.id] : g;
+      var base = parseAmount(nd.a, orig) || orig.def;
+      var amt = (nd.need.id && id !== nd.need.id) ? subAmount(nd.need.id, id, base) : base;
       state.cup.set(id, Math.round(amt * 10) / 10);
     });
     var gid = glassFromRef(r);
@@ -4033,12 +4064,14 @@
       var id = resolveNeedId(nd.need);
       var g = BY_ID[id];
       var amt = String(nd.a || '');
-      var scale = subScaleFor(nd.need, id);
-      if (g && scale !== 1 && g.unit === 'ml') {
-        var ml = (parseAmount(nd.a, g) || g.def) * scale;
-        amt = (Math.round(ml * 10) / 10) + 'ml';
+      var name = needLabel(nd);
+      if (nd.need.id && id !== nd.need.id && g) {
+        var orig = BY_ID[nd.need.id] || g;
+        var base = parseAmount(nd.a, orig) || orig.def;
+        amt = fmtAmt(g, subAmount(nd.need.id, id, base));
+        name = shortName(g);
       }
-      return { id: id, name: (nd.need.id && id !== nd.need.id && g) ? shortName(g) : needLabel(nd), amt: amt,
+      return { id: id, name: name, amt: amt,
         have: needStatusWith(nd.need, mine).ok };
     });
   }

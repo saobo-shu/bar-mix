@@ -1589,6 +1589,44 @@ console.log('\n--- 蛋清、柠檬片这类不算"还缺一样" ---');
   if (!okHoney) bad('手边有什么', '1:1 蜂蜜替 3:1 不对：miss=' + missHoney.join('、')
     + ' marked=' + markedHoney + ' cup=' + cupHoney + '/' + cupHoney31);
 
+  /* 15ml 糖浆 ≈ 1.5 块方糖；方糖不带水 */
+  B.have.reset();
+  ['bourbon', 'lemon', 'sugar_cube'].forEach(id => B.have.toggle(id));
+  const missSugar = B.have.missingLabel(wi);
+  const noSyrupMiss2 = !missSugar.some(x => x.indexOf('糖浆') >= 0);
+  const cardSugar = (els.haveOut.innerHTML.match(/<button[^>]*class="refcard[^"]*"[^>]*>[\s\S]*?<\/button>/g) || [])
+    .find(c => c.indexOf('威士忌酸') >= 0);
+  const markedSugar = !!cardSugar && cardSugar.indexOf('方糖') >= 0
+    && cardSugar.indexOf('1.5 块') >= 0 && cardSugar.indexOf('替') >= 0;
+  B.have.load(wi);
+  const cupSugarCube = B.state.cup.get('sugar_cube') || 0;
+  const cupSyrup2 = B.state.cup.get('syrup') || 0;
+  const okSugar = noSyrupMiss2 && markedSugar
+    && Math.abs(cupSugarCube - 1.5) < 0.01 && cupSyrup2 === 0;
+  console.log('  ' + (okSugar ? '✅' : '❌')
+    + ' 方糖替 1:1 糖浆：标“替”、15ml → 1.5 块、提示少 10ml 水');
+  if (!okSugar) bad('手边有什么', '方糖替糖浆不对：miss=' + missSugar.join('、')
+    + ' marked=' + markedSugar + ' cup=' + cupSugarCube + '/' + cupSyrup2);
+
+  /* 反向：1 块方糖 ≈ 10ml 糖浆 */
+  B.have.reset();
+  ['rum', 'lime', 'syrup'].forEach(id => B.have.toggle(id));
+  const dai2 = R.findIndex(r => r.zh === '黛绮莉');
+  const missCube = B.have.missingLabel(dai2);
+  const noCubeMiss = !missCube.some(x => x.indexOf('方糖') >= 0);
+  const cardCube = (els.haveOut.innerHTML.match(/<button[^>]*class="refcard[^"]*"[^>]*>[\s\S]*?<\/button>/g) || [])
+    .find(c => c.indexOf('黛绮莉') >= 0);
+  const markedCube = !!cardCube && cardCube.indexOf('糖浆') >= 0 && cardCube.indexOf('替') >= 0;
+  B.have.load(dai2);
+  const cupSyrup3 = B.state.cup.get('syrup') || 0;
+  const cupCube2 = B.state.cup.get('sugar_cube') || 0;
+  const okCube = noCubeMiss && markedCube
+    && Math.abs(cupSyrup3 - 10) < 0.01 && cupCube2 === 0;
+  console.log('  ' + (okCube ? '✅' : '❌')
+    + ' 1 块方糖 → 10ml 糖浆：反向也标“替”');
+  if (!okCube) bad('手边有什么', '方糖反向替糖浆不对：miss=' + missCube.join('、')
+    + ' marked=' + markedCube + ' cup=' + cupSyrup3 + '/' + cupCube2);
+
   /* 莫林甘蔗糖浆不是风味糖浆：参考本里不该把香草等风味糖浆指到它 */
   const moninRefs = R.filter(r => r.needs.some(nd => nd.need.id === 'monin')).length;
   console.log('  ' + (moninRefs === 0 ? '✅' : '❌')
