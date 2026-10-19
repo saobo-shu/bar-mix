@@ -2289,8 +2289,8 @@ console.log('\n--- 酒单 ---');
   const lineDuo = famLineOf([['gin', 30], ['campari', 30], ['vermouth', 30]]);
   const lineSour = famLineOf([['bourbon', 45], ['lemon', 20], ['syrup', 15]]);
   const lineHb = famLineOf([['gin', 45], ['tonic', 120], ['lime', 10]]);
-  const okDuoLine = lineDuo.indexOf('双料') >= 0 && lineDuo.indexOf('甜酸与浓度') >= 0;
-  const okSourLine = lineSour.indexOf('酸类') >= 0 && lineSour.indexOf('Brix/TA') >= 0;
+  const okDuoLine = lineDuo.indexOf('双料') >= 0 && lineDuo.indexOf('酒 : 辅料') >= 0;
+  const okSourLine = lineSour.indexOf('酸类') >= 0 && lineSour.indexOf('甜 : 酸') >= 0;
   const okHbLine = lineHb.indexOf('高球') >= 0 && lineHb.indexOf('酒体 : 稀释物') >= 0;
   console.log('  ' + (okDuoLine ? '✅' : '❌') + ' 自己配的双料：' + lineDuo);
   console.log('  ' + (okSourLine ? '✅' : '❌') + ' 自己配的酸类：' + lineSour);
@@ -2315,8 +2315,9 @@ console.log('\n--- 酒单 ---');
     + ' / 马天尼 ' + mart.balance + ' / 辅料压倒 ' + heavy.balance + ' / 只洗个杯 ' + wash.balance);
   if (!okDuoScore) bad('家族', '双料的平衡没按酒:辅料量');
   const duoCap = els['subScores'].innerHTML;
-  const okDuoCap = duoCap.indexOf('按「双料」量') >= 0 && duoCap.indexOf('酒体') >= 0;
-  console.log('  ' + (okDuoCap ? '✅' : '❌') + ' 双料的平衡说明写的是「酒体 : 辅料」');
+  const okDuoCap = duoCap.indexOf('酒体 ') >= 0 && duoCap.indexOf('辅料 ') >= 0
+    && duoCap.indexOf('参考 1:2–8:1') >= 0;
+  console.log('  ' + (okDuoCap ? '✅' : '❌') + ' 双料的平衡说明写的是「酒体 : 辅料」和参考区间');
   if (!okDuoCap) bad('家族', '双料的平衡说明没换过来');
 
   /* 热材料 ≠ 热饮：意式浓缩马天尼用现冲咖啡，但摇和、滤冰出品是冷的 */
@@ -2409,7 +2410,7 @@ console.log('\n--- 酒单 ---');
   /* Tips 里的家族对照表 */
   const tipsHtml = fs.readFileSync(path.join(dir, 'dev.html'), 'utf8');
   const okTips = tipsHtml.indexOf('家族对照表') >= 0 && tipsHtml.indexOf('酒体 : 稀释物') >= 0
-    && tipsHtml.indexOf('Brix/TA') >= 0 && tipsHtml.indexOf('Rickey') >= 0 && tipsHtml.indexOf('骡子') >= 0;
+    && tipsHtml.indexOf('甜 : 酸') >= 0 && tipsHtml.indexOf('Rickey') >= 0 && tipsHtml.indexOf('骡子') >= 0;
   console.log('  ' + (okTips ? '✅' : '❌') + ' Tips 里有家族对照表（含两种平衡尺子）');
   if (!okTips) bad('酒单', 'Tips 里缺家族对照表');
 
@@ -3111,12 +3112,13 @@ console.log('\n--- 物量化（°Bx / 可滴定酸 g/L）---');
     if (!okPartial) bad('物量化', '未知材料没有拉低覆盖率');
   }
 
-  /* 界面：覆盖率够就把糖度/酸度写出来 */
+  /* 界面：覆盖率够就说人话“甜 : 酸 + 参考区间”，不端 Brix/TA */
   run([['bourbon', 45], ['lemon', 20], ['syrup', 15]], 'rocks', 'full');
   const cap = els['subScores'].innerHTML;
-  const okShow = cap.indexOf('°Bx') >= 0 && cap.indexOf('可滴定酸') >= 0;
-  console.log('  ' + (okShow ? '✅' : '❌') + ' 平衡那一条下面写出了糖度 / 可滴定酸');
-  if (!okShow) bad('物量化', '界面上没显示糖度 / 可滴定酸');
+  const okShow = cap.indexOf('甜 : 酸') >= 0 && cap.indexOf('参考 0.68–1.05') >= 0
+    && cap.indexOf('Brix/TA') < 0;
+  console.log('  ' + (okShow ? '✅' : '❌') + ' 平衡那一条下面写的是甜:酸和参考区间，不是 Brix/TA');
+  if (!okShow) bad('物量化', '界面上没换成甜:酸/参考区间');
 
   /* 给下一步用：44 个预设的 Brix/TA 分布（这次只量，不改分数） */
   const rows = [];
@@ -3152,18 +3154,19 @@ console.log('\n--- 物量化（°Bx / 可滴定酸 g/L）---');
   if (!okPeak) bad('物量化', '酸类平衡没有按 Brix/TA 走：' + c5.toFixed(1) + '/' + c15.toFixed(1) + '/' + c30.toFixed(1));
 
   const capSour = els['subScores'].innerHTML;
-  const okSourCap = capSour.indexOf('Brix/TA') >= 0 && capSour.indexOf('经典中位') >= 0;
-  console.log('  ' + (okSourCap ? '✅' : '❌') + ' 酸类的平衡说明写出了 Brix/TA 和经典中位');
+  const okSourCap = capSour.indexOf('甜 : 酸') >= 0 && capSour.indexOf('酸类参考') >= 0
+    && capSour.indexOf('0.86') >= 0 && capSour.indexOf('Brix/TA') < 0;
+  console.log('  ' + (okSourCap ? '✅' : '❌') + ' 酸类的平衡说明写的是甜:酸、酸类参考和 0.86 中位');
   if (!okSourCap) bad('物量化', '酸类的平衡说明没换过来');
 
-  /* 数据覆盖不够时退回旧判据（不显示 Brix/TA 的结论） */
+  /* 数据覆盖不够时退回旧判据（不显示“按糖/酸克数”的结论） */
   run([['bourbon', 45], ['lemon', 20], ['syrup', 15], ['malibu', 30]], 'rocks', 'full');
   const fb = B.analyze();
   const fbCap = els['subScores'].innerHTML;
-  const okFallback = fb.chemCoverage < 0.85 && fbCap.indexOf('Brix/TA') < 0
+  const okFallback = fb.chemCoverage < 0.85 && fbCap.indexOf('按糖/酸克数') < 0
     && isFinite(B.scores().balance);
   console.log('  ' + (okFallback ? '✅' : '❌') + ' 数据覆盖不足时退回估值判据（覆盖率 '
-    + Math.round(fb.chemCoverage * 100) + '%，不写 Brix/TA）');
+    + Math.round(fb.chemCoverage * 100) + '%，不写糖/酸克数）');
   if (!okFallback) bad('物量化', '覆盖不足时没有退回旧判据');
 })();
 
@@ -3260,8 +3263,9 @@ console.log('\n--- 家族口径（换家族 = 换尺子，不奖励不惩罚）-
   /* 高球那根评分条的说明必须换成"酒体 : 稀释物"，不能再拿甜酸比解释 */
   run('highball', 'full', [['tanqueray', 45], ['tonic', 120], ['lime', 10]], 'build');
   const cap = els['subScores'].innerHTML;
-  const okCap = cap.indexOf('按「高球」量') >= 0 && cap.indexOf('酒体') >= 0;
-  console.log('  ' + (okCap ? '✅' : '❌') + ' 高球的平衡条写的是「酒体 : 稀释物」，不是甜酸比');
+  const okCap = cap.indexOf('酒体 ') >= 0 && cap.indexOf(': 稀释物 ') >= 0
+    && cap.indexOf('参考 1 : 1.7–5') >= 0;
+  console.log('  ' + (okCap ? '✅' : '❌') + ' 高球的平衡条写的是「酒体 : 稀释物」和参考区间，不是甜酸比');
   if (!okCap) bad('家族', '高球的平衡说明没换过来');
 
   /* 莫吉托按参考本用 60ml 朗姆，14.9%——高球杯的上限是 15，不该被判"杯子不配" */

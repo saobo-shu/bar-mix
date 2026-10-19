@@ -1519,38 +1519,50 @@
           ? '杯子里只有「' + a.singleName + '」。它本身是材料，不是调酒——给它加一份基酒（威士忌、朗姆、伏特加、金酒都行）和一点酸，它才变成一杯酒。'
           : band[2]));
 
-    /* 光给一个分数看不出来为什么，所以每一项下面都标出它的依据 */
-    var cwv = a.f.acid + 0.4 * a.f.bitter;
+    /* 光给一个分数看不出来为什么，所以每一项下面都标出它的依据。
+       用户看不懂 Brix/TA，所以这里只说“甜 : 酸”和“参考区间”；
+       Brix/TA 仍留在数据和文档里，不再端到用户面前。 */
     var cwd = a.fd.acid + 0.4 * a.fd.bitter;
     var ratio = cwd > 0.5 ? a.fd.sugar / cwd : 0;
     var load = a.fd.sugar + a.fd.acid;
-    var ratioCap = cwd > 0.5
-      ? '甜 : 酸 ≈ ' + ratio.toFixed(1) + ' : 1　酸度 ' + a.fd.acid.toFixed(0) + '（经典 1-22）　总量 '
-        + load.toFixed(0) + (load > 42 ? '　⚠ 超过经典的浓上限 41' : '')
-      : '没有明显的酸甜';
+    var ratioCap = '没有明显的酸甜';
+    if (cwd > 0.5) {
+      var rv = ratio < 0.8 ? '偏酸' : (ratio > 1.9 ? '偏甜' : '在参考区间');
+      ratioCap = '甜 : 酸 ≈ ' + ratio.toFixed(1) + ' : 1（风味估值）· 参考 0.8–1.9 · ' + rv
+        + (load > 42 ? ' · 糖酸总量偏高' : '');
+    }
     if (a.neatPour) ratioCap = '纯饮：没有配料，按香气层次和厚度判断（不套"甜 : 酸"那套）';
     /* 高球 / 长饮换了一把尺子：这里也要跟着换说法，不然会拿甜酸比去解释一个
        按"酒体 : 稀释物"打的分。 */
     var famNow = familyOf(a);
     if (famNow.id === 'highball' || famNow.id === 'long'
         || famNow.id === 'rickey' || famNow.id === 'mule') {
-      ratioCap = '按「' + famNow.name + '」量：酒体 ' + Math.round(a.baseMl + a.modMl)
-        + 'ml : 稀释物 ' + Math.round(a.mixerMl + a.juiceMl + a.sourMl + a.sweetMl) + 'ml';
-    } else if (famNow.id === 'duo' && a.modMl > 0) {
-      ratioCap = '按「双料」量：酒体 ' + Math.round(a.baseMl) + 'ml : 辅料 '
-        + Math.round(a.modMl) + 'ml（约 ' + (a.baseMl / a.modMl).toFixed(1) + ' : 1）';
-    } else if (famNow.id === 'mocktail') {
-      ratioCap = '无酒精 · 按甜 : 酸 / 稀释量；不按酒体 : 稀释物';
+      var hbSp = Math.round(a.baseMl + a.modMl);
+      var hbMix = Math.round(a.mixerMl + a.juiceMl + a.sourMl + a.sweetMl);
+      if (hbSp > 0 && hbMix > 0) {
+        var hbR = hbSp / hbMix;
+        var hbV = hbR < 0.2 ? '酒体偏多' : (hbR > 0.588 ? '偏淡' : '在参考区间');
+        ratioCap = '酒体 ' + hbSp + 'ml : 稀释物 ' + hbMix + 'ml（约 1 : '
+          + (hbMix / hbSp).toFixed(1) + '）· 参考 1 : 1.7–5 · ' + hbV;
+      } else {
+        ratioCap = '酒体 ' + hbSp + 'ml · 没有稀释物';
+      }
+    } else if (famNow.id === 'duo' && a.modMl > 0 && a.baseMl > 0) {
+      var dr = a.baseMl / a.modMl;
+      var dv = dr < 0.45 ? '辅料偏多' : (dr > 8 ? '辅料偏少' : '在参考区间');
+      ratioCap = '酒体 ' + Math.round(a.baseMl) + 'ml : 辅料 '
+        + Math.round(a.modMl) + 'ml（约 ' + dr.toFixed(1) + ' : 1）· 参考 1:2–8:1 · ' + dv;
     }
-    /* 酸类 / 菲士的平衡已经改用 Brix/TA，说明也要跟着换；
-       其余家族在覆盖率过半时把糖度/酸度附在后面。
-       覆盖率不够就不写——宁可不显示，也不拿一堆估值装成实测。 */
-    if ((famNow.id === 'sour' || famNow.id === 'fizz') && a.ta > 1 && a.chemCoverage >= 0.85) {
-      ratioCap = '糖度 ' + a.brix.toFixed(1) + ' °Bx · 可滴定酸 ' + a.ta.toFixed(1)
-        + ' g/L　→ Brix/TA ' + (a.brix / a.ta).toFixed(2) + '（80 杯经典中位 0.86）';
-    } else if (a.chemCoverage > 0.5) {
-      ratioCap += '　｜糖度 ' + a.brix.toFixed(1) + ' °Bx · 可滴定酸 ' + a.ta.toFixed(1) + ' g/L'
-        + (a.chemCoverage < 0.85 ? '（部分估值）' : '');
+    /* 酸类 / 菲士的平衡用糖/酸克数算，但用“甜 : 酸”说人话；
+       覆盖率不够就不写结论——宁可不显示，也不拿估值装实测。 */
+    if ((famNow.id === 'sour' || famNow.id === 'fizz' || famNow.id === 'mocktail')
+        && a.ta > 1 && a.chemCoverage >= 0.85
+        && (famNow.id !== 'mocktail' || (a.hasSourAdd && a.hasSweetAdd))) {
+      var bta = a.brix / a.ta;
+      var bv = bta < 0.68 ? '偏酸' : (bta > 1.05 ? '偏甜' : '在参考区间');
+      ratioCap = '甜 : 酸 ≈ ' + bta.toFixed(2) + ' : 1（按糖/酸克数）· '
+        + (famNow.id === 'mocktail' ? '无酒精参考' : famNow.name + '参考')
+        + ' 0.68–1.05（中位 0.86）· ' + bv;
     }
     var dimsOn = DIMS.filter(function (d) { return a.fd[d.k] > 2; }).length;
     /* 每一项都标出它现在的权重——换了评分方案，这些数字会一起变 */
@@ -1591,9 +1603,10 @@
         var fam = familyOf(a);
         var ruler = (fam.id === 'highball' || fam.id === 'long'
           || fam.id === 'rickey' || fam.id === 'mule') ? '酒体 : 稀释物'
-          : ((fam.id === 'sour' || fam.id === 'fizz') ? 'Brix/TA（糖度与可滴定酸）'
+          : ((fam.id === 'sour' || fam.id === 'fizz') ? '甜 : 酸（糖度与酸度）'
+          : (fam.id === 'duo' ? '酒 : 辅料'
           : (fam.id === 'mocktail' ? '甜 : 酸 + 稀释/气泡'
-          : (fam.id === 'hot' ? (a.hasBase ? '温度与浓度' : '温度与甜酸') : '甜酸与浓度')));
+          : (fam.id === 'hot' ? (a.hasBase ? '温度与浓度' : '温度与甜酸') : '甜酸与浓度'))));
         famTxt = '这杯属于「' + fam.name + '」 · 平衡看 ' + ruler;
         if (state.recipeName && state.recipeFamily && fam.id !== state.recipeFamily) {
           famTxt += '　（原来是「' + (FAMILY_LABEL[state.recipeFamily] || state.recipeFamily) + '」）';
@@ -2883,8 +2896,10 @@
           return '<p class="hint">家族：<b>' + esc(fam.name) + '</b>'
             + (fam.id === 'highball' || fam.id === 'long'
                 || fam.id === 'rickey' || fam.id === 'mule'
-                ? '　平衡看「酒体 : 稀释物」' : (fam.id === 'sour' || fam.id === 'fizz'
-                ? '　平衡看 Brix/TA' : ''))
+                ? '　平衡看「酒体 : 稀释物」'
+                : (fam.id === 'duo' ? '　平衡看「酒 : 辅料」'
+                : (fam.id === 'sour' || fam.id === 'fizz' ? '　平衡看「甜 : 酸」'
+                : (fam.id === 'mocktail' ? '　平衡看「甜 : 酸 + 稀释/气泡」' : ''))))
             + (pre ? '（按本站这一份）' : '（按参考本）') + '</p>';
         })()
       /* 一句话定位：只有推荐的 51 款有（data.js 的 PICK_LINE） */
