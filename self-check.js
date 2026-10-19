@@ -1548,6 +1548,23 @@ console.log('\n--- 蛋清、柠檬片这类不算"还缺一样" ---');
   if (!okLime) bad('手边有什么', '瓶装柠檬汁没替成青柠：miss=' + missLime.join('、')
     + ' marked=' + markedLime + ' cup=' + cupLimeBottle + '/' + cupLime);
 
+  /* 酒单点「装进杯子」= 原配方；手边有什么点进来才替换 */
+  B.have.reset();
+  B.have.toggle('lemon_bottle');
+  const xyz = R.findIndex(r => r.en === 'XYZ');
+  fire({ menuLoadref: String(xyz) });
+  const menuLime = B.state.cup.get('lime') || 0;
+  const menuBottle = B.state.cup.get('lemon_bottle') || 0;
+  B.have.load(xyz);
+  const haveLime = B.state.cup.get('lime') || 0;
+  const haveBottle = B.state.cup.get('lemon_bottle') || 0;
+  const okMenuOriginal = menuLime > 0 && menuBottle === 0
+    && haveBottle > 0 && haveLime === 0;
+  console.log('  ' + (okMenuOriginal ? '✅' : '❌')
+    + ' 酒单装杯用原配方（鲜青柠），手边有什么才用瓶装柠檬汁');
+  if (!okMenuOriginal) bad('装杯', '酒单和手边的替用混了：menu=' + menuLime + '/'
+    + menuBottle + ' have=' + haveLime + '/' + haveBottle);
+
   /* 莫林替单糖浆：算可替，但甜度高，装杯时按 80% 量 */
   B.have.reset();
   ['bourbon', 'lemon', 'monin'].forEach(id => B.have.toggle(id));

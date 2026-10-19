@@ -7894,19 +7894,24 @@ var qrcode = function() {
   }
 
   /* 点一条配方：按标准配方整杯装好（缺的那几样也装，好让你看到差什么） */
-  function loadRefRecipe(i) {
+  function loadRefRecipe(i, useHave) {
     var r = REF_RECIPES[i];
     if (!r) return;
+    /* 酒单里点「装进杯子」= 原配方；手边有什么点进来才用你的材料/替代。
+       临时清空 have 让 resolveNeedId 选标准代表瓶和原配方材料。 */
+    var savedHave = state.have;
+    if (!useHave) state.have = {};
     state.cup.clear();
     r.needs.forEach(function (nd) {
       var id = resolveNeedId(nd.need);
       if (!id || !BY_ID[id]) return;
-        var g = BY_ID[id];
+      var g = BY_ID[id];
       var orig = nd.need.id && BY_ID[nd.need.id] ? BY_ID[nd.need.id] : g;
       var base = parseAmount(nd.a, orig) || orig.def;
       var amt = (nd.need.id && id !== nd.need.id) ? subAmount(nd.need.id, id, base) : base;
       state.cup.set(id, Math.round(amt * 10) / 10);
     });
+    state.have = savedHave;
     var gid = glassFromRef(r);
     if (gid) state.glass = gid;
     state.iceLevel = glassOf(state.glass).ice === 'inglass'
@@ -9178,7 +9183,8 @@ var qrcode = function() {
     }
     /* 点一条参考配方：装进杯子 */
     if (t.dataset.ref !== undefined && t.dataset.ref !== null && t.dataset.ref !== '') {
-      loadRefRecipe(+t.dataset.ref);
+      /* 从「手边有什么」点进来：允许用你的瓶子和替代材料 */
+      loadRefRecipe(+t.dataset.ref, true);
       return;
     }
 
@@ -10456,7 +10462,7 @@ var qrcode = function() {
       missingLabel: function (i) { return missingOf(REF_RECIPES[i]).map(needLabel); },
       used: function (i) { return usedOf(REF_RECIPES[i]).length; },
       buy: buySuggest,
-      load: loadRefRecipe,
+      load: function (i) { loadRefRecipe(i, true); },
       parse: parseAmount
     },
     /* ③ 材料库的搜索：给自检和调试用 */
