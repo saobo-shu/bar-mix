@@ -1769,6 +1769,9 @@
      ========================================================= */
   var HAVE_KEY = 'barmix.have.v1';
   var haveQuery = '';
+  var HAVE_BASE_KEY = 'barmix.haveBaseOnly';
+  var haveBaseOnly = true;
+  try { haveBaseOnly = localStorage.getItem(HAVE_BASE_KEY) !== '0'; } catch (e) {}
   var libQuery = '';          /* ③ 材料库的搜索词 */
   var haveOpen = {};          /* 哪一组展开了（默认每组只画前 8 条） */
   var HAVE_SHOW = 8;
@@ -1884,11 +1887,21 @@
       || c === 'tequila' || c === 'brandy' || c === 'otherbase';
   }
 
-  /* 材料级的替代：目前只收「瓶装柠檬汁顶鲜柠檬」这一条。
-     不放进类型表——酒按类型认，果汁不是酒；这里只做明确的近似替代。 */
+  /* 材料级的替代：只收明确的近似替代，不放进酒的类型表。
+     瓶装柠檬汁同时能顶黄柠檬和青柠；莫林比 1:1 单糖浆甜，按 80% 量用。 */
   var ING_SUB = {
-    lemon: { ids: ['lemon_bottle'], note: '香气和酸度会差一点，有鲜柠檬更好' }
+    lemon: { ids: ['lemon_bottle'], note: '香气和酸度会差一点，有鲜柠檬更好' },
+    lime: { ids: ['lemon_bottle'], note: '青柠的香气会少一截，酸度也略低；有鲜青柠更好' },
+    syrup: {
+      ids: ['monin'], scale: 0.8,
+      note: '莫林比 1:1 单糖浆甜，先按 80% 的量用（15ml 单糖浆 → 12ml 莫林），不够甜再补'
+    }
   };
+  function subScaleFor(need, id) {
+    if (!need || !need.id || id === need.id) return 1;
+    var sub = ING_SUB[need.id];
+    return sub && sub.scale ? sub.scale : 1;
+  }
 
   /* 这条需求，勾了的材料能不能满足；是"完全一样"还是"同组能替" */
   function needStatus(need, mine) {
@@ -1933,6 +1946,28 @@
       return { ok: hits.length > 0, exact: hits.length > 0, hits: hits };
     }
     return { ok: false, exact: false, hits: [] };
+  }
+
+  /* 这条需求是不是"基酒"；只有基酒才参与"用手头基酒优先"的筛选。 */
+  function isBaseNeed(n) {
+    if (!n) return false;
+    if (n.type) return isSpiritCat(catOfType(n.type));
+    if (n.family) return !!FAMILY_TYPES[n.family];
+    if (n.ids) return n.ids.some(function (id) { return BY_ID[id] && isBase(BY_ID[id]); });
+    if (n.id) return !!(BY_ID[n.id] && isBase(BY_ID[n.id]));
+    if (n.cat) return isBase({ cat: n.cat });
+    return false;
+  }
+  /* 一杯酒必须"用上至少一瓶你勾的基酒"，而且不能缺别的必需基酒。
+     像加里波利（金巴利 + 橙汁，没有基酒）这种，勾了朗姆时也不该混进来。 */
+  function baseNeedsOk(r, mine) {
+    var has = false, ok = true;
+    (r.needs || []).forEach(function (nd) {
+      if (nd.need.optional || !isBaseNeed(nd.need)) return;
+      has = true;
+      if (!needStatus(nd.need, mine).ok) ok = false;
+    });
+    return has && ok;
   }
 
   /* 缺的那一样，界面上叫什么 */
@@ -2112,7 +2147,11 @@
     var rows = [];
     /* 勾了哪些只取一次，别在每次判断需求时都重建一遍数组（191 份配方 × 5 条需求） */
     var mine = Object.keys(state.have);
+    var baseChecked = mine.filter(function (id) { return BY_ID[id] && isBase(BY_ID[id]); });
+    var useBaseFilter = haveBaseOnly && baseChecked.length > 0;
     REF_RECIPES.forEach(function (r, i) {
+      /* 勾了基酒：先排除"缺基酒"的配方，别让只有朗姆的人被推荐金酒。 */
+      if (useBaseFilter && !baseNeedsOk(r, mine)) return;
       /* 每条需求只判断一次：以前是 miss、used、替用提醒、大类提醒各算一遍，
          191 份配方 × 5 条需求被反复判断三四次——这才是那 47ms 的来源。 */
       var miss = [], used = [], opt = [], swap = [], fam = [];
@@ -2191,6 +2230,14 @@
         html += '<button type="button" class="ghost refmore" data-havemore="' + g.k + '">收起</button>';
     });
     out.innerHTML = html || '<p class="hint haveempty">勾了的材料还凑不出经典配方——再勾几样试试。</p>';
+    var baseHint = haveBaseOnly
+      ? (baseChecked.length
+          ? '<p class="hint havebasehint">只推用得上你的基酒：'
+            + esc(baseChecked.map(function (id) { return shortName(BY_ID[id]); }).join('、'))
+            + '。取消勾选可看全部。</p>'
+          : '<p class="hint havebasehint">勾一瓶基酒后，这里会自动只推用得上它的配方。</p>')
+      : '';
+    out.innerHTML = baseHint + out.innerHTML;
   }
 
   function renderHave() { renderHaveCats(); renderHaveList(); renderHaveResult(); }
@@ -2357,8 +2404,8 @@
     r.needs.forEach(function (nd) {
       var id = resolveNeedId(nd.need);
       if (!id || !BY_ID[id]) return;
-      var g = BY_ID[id];
-      var amt = parseAmount(nd.a, g) || g.def;
+        var g = BY_ID[id];
+      var amt = (parseAmount(nd.a, g) || g.def) * subScaleFor(nd.need, id);
       state.cup.set(id, Math.round(amt * 10) / 10);
     });
     var gid = glassFromRef(r);
@@ -3808,6 +3855,15 @@
     if (box) box.addEventListener('input', function () { haveQuery = this.value; renderHaveList(); });
     var clr = document.getElementById('haveClear');
     if (clr) clr.addEventListener('click', function () { state.have = {}; saveHave(); renderHave(); });
+    var hb = document.getElementById('haveBaseOnly');
+    if (hb) {
+      hb.checked = haveBaseOnly;
+      hb.addEventListener('change', function () {
+        haveBaseOnly = hb.checked;
+        try { localStorage.setItem(HAVE_BASE_KEY, haveBaseOnly ? '1' : '0'); } catch (e) {}
+        renderHave();
+      });
+    }
   })();
 
   /* ---------------------------------------------------------
@@ -3970,7 +4026,15 @@
     }
     var mine = Object.keys(state.have);
     return r.needs.filter(function (nd) { return !nd.need.optional; }).map(function (nd) {
-      return { id: resolveNeedId(nd.need), name: needLabel(nd), amt: String(nd.a || ''),
+      var id = resolveNeedId(nd.need);
+      var g = BY_ID[id];
+      var amt = String(nd.a || '');
+      var scale = subScaleFor(nd.need, id);
+      if (g && scale !== 1 && g.unit === 'ml') {
+        var ml = (parseAmount(nd.a, g) || g.def) * scale;
+        amt = (Math.round(ml * 10) / 10) + 'ml';
+      }
+      return { id: id, name: (nd.need.id && id !== nd.need.id && g) ? shortName(g) : needLabel(nd), amt: amt,
         have: needStatusWith(nd.need, mine).ok };
     });
   }
@@ -4874,6 +4938,13 @@
     have: {
       recipes: REF_RECIPES,
       reset: function () { state.have = {}; renderHave(); },
+      setBaseOnly: function (v) {
+        haveBaseOnly = !!v;
+        var cb = document.getElementById('haveBaseOnly');
+        if (cb) cb.checked = haveBaseOnly;
+        try { localStorage.setItem(HAVE_BASE_KEY, haveBaseOnly ? '1' : '0'); } catch (e) {}
+        renderHave();
+      },
       toggle: function (id) {
         if (state.have[id]) delete state.have[id]; else state.have[id] = 1;
         renderHave();

@@ -1374,6 +1374,7 @@ console.log('\n--- 类型：同组能替要标注，不能替就算缺 ---');
 (function () {
   const strip = s => String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   const R = global.__REF;
+  B.have.setBaseOnly(false);   /* 这一段专门测“缺基酒也要画出来”，先关掉基酒筛选 */
   const cardOf = (name) => (els.haveOut.innerHTML.match(/<button[^>]*class="refcard[^"]*"[^>]*>[\s\S]*?<\/button>/g) || [])
     .find(c => c.indexOf('>' + name + '<') >= 0 || c.indexOf(name) >= 0);
   const martini = R.findIndex(r => r.zh === '马天尼');
@@ -1467,6 +1468,7 @@ console.log('\n--- 类型：同组能替要标注，不能替就算缺 ---');
   if (orderBad) bad('手边有什么', '排序没有按"用上你最多"来');
 
   B.have.reset();
+  B.have.setBaseOnly(true);
 })();
 
 /* ---- 点缀和"口感"类不算缺（用户：威士忌酸带不带蛋清都能喝）---- */
@@ -1527,6 +1529,73 @@ console.log('\n--- 蛋清、柠檬片这类不算"还缺一样" ---');
   if (!okSub) bad('手边有什么', '瓶装柠檬汁没被当成可替：miss=' + missSub.join('、')
     + ' marked=' + markedSub + ' cup=' + cupBottle + '/' + cupFresh);
 
+  /* 瓶装柠檬汁也能顶青柠（但青柠香气不同） */
+  B.have.reset();
+  ['rum', 'syrup', 'lemon_bottle'].forEach(id => B.have.toggle(id));
+  const dai = R.findIndex(r => r.zh === '黛绮莉');
+  const missLime = B.have.missingLabel(dai);
+  const noLimeMiss = !missLime.some(x => x.indexOf('青柠') >= 0);
+  const cardLime = (els.haveOut.innerHTML.match(/<button[^>]*class="refcard[^"]*"[^>]*>[\s\S]*?<\/button>/g) || [])
+    .find(c => c.indexOf('黛绮莉') >= 0);
+  const markedLime = !!cardLime && cardLime.indexOf('瓶装柠檬汁') >= 0 && cardLime.indexOf('替') >= 0;
+  B.have.load(dai);
+  const cupLimeBottle = B.state.cup.get('lemon_bottle') || 0;
+  const cupLime = B.state.cup.get('lime') || 0;
+  const okLime = noLimeMiss && markedLime && cupLimeBottle > 0 && cupLime === 0;
+  console.log('  ' + (okLime ? '✅' : '❌')
+    + ' 瓶装柠檬汁也能替青柠：不算缺、标“替”、装杯用瓶装（黛绮莉）');
+  if (!okLime) bad('手边有什么', '瓶装柠檬汁没替成青柠：miss=' + missLime.join('、')
+    + ' marked=' + markedLime + ' cup=' + cupLimeBottle + '/' + cupLime);
+
+  /* 莫林替单糖浆：算可替，但甜度高，装杯时按 80% 量 */
+  B.have.reset();
+  ['bourbon', 'lemon', 'monin'].forEach(id => B.have.toggle(id));
+  const wi = R.findIndex(r => r.zh === '威士忌酸');
+  const missMonin = B.have.missingLabel(wi);
+  const noSyrupMiss = !missMonin.some(x => x.indexOf('糖浆') >= 0);
+  const cardMonin = (els.haveOut.innerHTML.match(/<button[^>]*class="refcard[^"]*"[^>]*>[\s\S]*?<\/button>/g) || [])
+    .find(c => c.indexOf('威士忌酸') >= 0);
+  const markedMonin = !!cardMonin && cardMonin.indexOf('莫林') >= 0
+    && cardMonin.indexOf('80%') >= 0 && cardMonin.indexOf('替') >= 0;
+  B.have.load(wi);
+  const cupMonin = B.state.cup.get('monin') || 0;
+  const cupSyrup = B.state.cup.get('syrup') || 0;
+  const okMonin = noSyrupMiss && markedMonin
+    && Math.abs(cupMonin - 12) < 0.01 && cupSyrup === 0;
+  console.log('  ' + (okMonin ? '✅' : '❌')
+    + ' 莫林替单糖浆：标“替”、提醒 80% 量、装杯 12ml 而不是 15ml');
+  if (!okMonin) bad('手边有什么', '莫林替单糖浆不对：miss=' + missMonin.join('、')
+    + ' marked=' + markedMonin + ' cup=' + cupMonin + '/' + cupSyrup);
+
+  /* 只推用得上我基酒的：只有朗姆时，加里波利（无基酒）和金酒配方都不该混进来 */
+  const devHtml = fs.readFileSync(path.join(__dirname, 'dev.html'), 'utf8');
+  const hasBaseToggle = /id="haveBaseOnly"/.test(devHtml);
+  console.log('  ' + (hasBaseToggle ? '✅' : '❌') + ' 手边有什么有「只推用得上我基酒的」开关');
+  if (!hasBaseToggle) bad('手边有什么', '缺少基酒优先开关');
+  B.have.reset();
+  ['rum', 'campari', 'orange_juice'].forEach(id => B.have.toggle(id));
+  const gall = R.findIndex(r => r.zh.indexOf('加里波利') >= 0 || r.en === 'Gallipoli');
+  B.have.setBaseOnly(false);
+  const gallAll = gall >= 0 && els.haveOut.innerHTML.indexOf(R[gall].zh) >= 0;
+  B.have.setBaseOnly(true);
+  const gallFiltered = gall >= 0 && els.haveOut.innerHTML.indexOf(R[gall].zh) < 0;
+  const baseHint = els.haveOut.innerHTML.indexOf('只推用得上你的基酒') >= 0;
+
+  B.have.reset();
+  ['rum', 'campari', 'vermouth'].forEach(id => B.have.toggle(id));
+  const neg = R.findIndex(r => r.zh === '尼格罗尼');
+  B.have.setBaseOnly(false);
+  const negAll = neg >= 0 && els.haveOut.innerHTML.indexOf('尼格罗尼') >= 0;
+  B.have.setBaseOnly(true);
+  const negFiltered = neg >= 0 && els.haveOut.innerHTML.indexOf('尼格罗尼') < 0;
+  const okBase = gallAll && gallFiltered && negAll && negFiltered && baseHint;
+  console.log('  ' + (okBase ? '✅' : '❌')
+    + ' 只有朗姆时，「手头基酒优先」过滤掉加里波利（无基酒）和尼格罗尼（缺金酒）');
+  if (!okBase) bad('手边有什么', '基酒优先筛选不对：gall=' + gall
+    + ' all=' + gallAll + ' filtered=' + gallFiltered
+    + ' neg=' + negAll + '/' + negFiltered + ' hint=' + baseHint);
+
+  B.have.setBaseOnly(true);
   B.have.reset();
 })();
 

@@ -630,6 +630,11 @@ details.panel:not([open]) { padding-bottom: 13px; }
 }
 .havesearch::placeholder { color: var(--muted); }
 .havecount { margin: 0 0 8px; }
+.haveopt {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin: 0 0 8px; font-size: 12px; color: var(--muted); cursor: pointer;
+}
+.haveopt input { width: 16px; height: 16px; accent-color: var(--amber); }
 /* 选材料的网格照材料库那套，窄栏里一行两个就够 */
 .havepick .cats { margin-bottom: 8px; }
 .havepick .grid { grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); }
