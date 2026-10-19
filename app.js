@@ -1769,9 +1769,18 @@
      ========================================================= */
   var HAVE_KEY = 'barmix.have.v1';
   var haveQuery = '';
-  var HAVE_BASE_KEY = 'barmix.haveBaseOnly';
-  var haveBaseOnly = true;
-  try { haveBaseOnly = localStorage.getItem(HAVE_BASE_KEY) !== '0'; } catch (e) {}
+  var HAVE_BASE_KEY = 'barmix.haveBaseMode';
+  var haveBaseMode = 'priority';
+  try {
+    var savedBaseMode = localStorage.getItem(HAVE_BASE_KEY);
+    if (savedBaseMode === 'only' || savedBaseMode === 'priority') {
+      haveBaseMode = savedBaseMode;
+    } else {
+      /* 兼容上一版布尔开关：旧版勾上=硬过滤，取消=不过滤 */
+      var oldBaseOnly = localStorage.getItem('barmix.haveBaseOnly');
+      if (oldBaseOnly !== null) haveBaseMode = oldBaseOnly === '0' ? 'priority' : 'only';
+    }
+  } catch (e) {}
   var libQuery = '';          /* ③ 材料库的搜索词 */
   var haveOpen = {};          /* 哪一组展开了（默认每组只画前 8 条） */
   var HAVE_SHOW = 8;
@@ -1891,8 +1900,8 @@
      一个需求可以有多条替代（例如糖浆：莫林或方糖），按顺序取用户有的。
      scale 是"等甜度"的 ml→ml 比例；convert 用于单位不同的替代（方糖↔糖浆）。 */
   var ING_SUB = {
-    lemon: { alts: [{ id: 'lemon_bottle', note: '香气和酸度会差一点，有鲜柠檬更好' }] },
-    lime: { alts: [{ id: 'lemon_bottle', note: '青柠的香气会少一截，酸度也略低；有鲜青柠更好' }] },
+    lemon: { alts: [{ id: 'lemon_bottle', note: '香气和酸度会差一点，先按原量，尝了不够酸再补 5ml' }] },
+    lime: { alts: [{ id: 'lemon_bottle', note: '青柠的香气会少一截，酸度也略低；先按原量，尝了不够酸再补 5ml' }] },
     syrup: {
       alts: [
         {
@@ -1918,6 +1927,12 @@
         id: 'syrup',
         convert: function (n) { return Math.round(n * 10 * 10) / 10; },
         note: '1 块方糖 ≈ 10ml 1:1 糖浆；糖浆自带水，体积会多一点'
+      }]
+    },
+    demerara: {
+      alts: [{
+        id: 'syrup', scale: 1,
+        note: '1:1 白糖浆可以顶，按同样 ml 量用；少了焦糖/糖蜜味，颜色也会浅一点'
       }]
     }
   };
@@ -2184,10 +2199,12 @@
     /* 勾了哪些只取一次，别在每次判断需求时都重建一遍数组（191 份配方 × 5 条需求） */
     var mine = Object.keys(state.have);
     var baseChecked = mine.filter(function (id) { return BY_ID[id] && isBase(BY_ID[id]); });
-    var useBaseFilter = haveBaseOnly && baseChecked.length > 0;
+    var useBaseOnly = haveBaseMode === 'only' && baseChecked.length > 0;
+    var useBasePriority = haveBaseMode === 'priority' && baseChecked.length > 0;
     REF_RECIPES.forEach(function (r, i) {
-      /* 勾了基酒：先排除"缺基酒"的配方，别让只有朗姆的人被推荐金酒。 */
-      if (useBaseFilter && !baseNeedsOk(r, mine)) return;
+      /* 只看：缺基酒的直接不画；优先：都画，但把用得上基酒的排前面。 */
+      var baseOk = baseNeedsOk(r, mine);
+      if (useBaseOnly && !baseOk) return;
       /* 每条需求只判断一次：以前是 miss、used、替用提醒、大类提醒各算一遍，
          191 份配方 × 5 条需求被反复判断三四次——这才是那 47ms 的来源。 */
       var miss = [], used = [], opt = [], swap = [], fam = [];
@@ -2226,12 +2243,13 @@
       if (!used.length) return;
       rows.push({
         r: r, i: i, miss: miss, opt: opt, used: used,
-        swap: swap, fam: fam,
+        swap: swap, fam: fam, baseOk: baseOk,
         pick: !!r.pick, n: r.needs.length
       });
     });
-    /* 排序：用上你最多的 → 缺得最少的 → 材料少的 → 推荐款（推荐只做平手规则） */
+    /* 排序：优先模式先用得上基酒的 → 用上你最多的 → 缺得最少的 → 材料少的 → 推荐款 */
     rows.sort(function (a, b) {
+      if (useBasePriority && a.baseOk !== b.baseOk) return a.baseOk ? -1 : 1;
       if (a.used.length !== b.used.length) return b.used.length - a.used.length;
       if (a.miss.length !== b.miss.length) return a.miss.length - b.miss.length;
       if (a.n !== b.n) return a.n - b.n;
@@ -2266,17 +2284,28 @@
         html += '<button type="button" class="ghost refmore" data-havemore="' + g.k + '">收起</button>';
     });
     out.innerHTML = html || '<p class="hint haveempty">勾了的材料还凑不出经典配方——再勾几样试试。</p>';
-    var baseHint = haveBaseOnly
-      ? (baseChecked.length
-          ? '<p class="hint havebasehint">只推用得上你的基酒：'
-            + esc(baseChecked.map(function (id) { return shortName(BY_ID[id]); }).join('、'))
-            + '。无基酒/无酒精配方也会被过滤；取消勾选可看全部。</p>'
-          : '<p class="hint havebasehint">勾一瓶基酒后，这里会自动只推用得上它的配方。</p>')
-      : '';
+    var baseNames = baseChecked.map(function (id) { return shortName(BY_ID[id]); }).join('、');
+    var baseHint = '';
+    if (baseChecked.length) {
+      baseHint = haveBaseMode === 'only'
+        ? '<p class="hint havebasehint">只推用得上你的基酒：' + esc(baseNames)
+          + '。无基酒/无酒精配方也会被过滤；取消勾选可看全部。</p>'
+        : '<p class="hint havebasehint">优先推用得上你的基酒：' + esc(baseNames)
+          + '；同一档里排前面，其他配方仍保留。</p>';
+    } else {
+      baseHint = '<p class="hint havebasehint">勾一瓶基酒后，这里会自动优先/只推用得上它的配方。</p>';
+    }
     out.innerHTML = baseHint + out.innerHTML;
   }
 
   function renderHave() { renderHaveCats(); renderHaveList(); renderHaveResult(); }
+  function applyBaseMode(v) {
+    haveBaseMode = v === 'only' ? 'only' : 'priority';
+    var radios = document.querySelectorAll('input[name="haveBaseMode"]');
+    for (var i = 0; i < radios.length; i++) radios[i].checked = radios[i].value === haveBaseMode;
+    try { localStorage.setItem(HAVE_BASE_KEY, haveBaseMode); } catch (e) {}
+    renderHave();
+  }
   /* 连点材料时，结果列表等手停下来再算（90ms）——省掉中间那几次重算 */
   var haveTimer = 0;
   function scheduleHaveResult() {
@@ -3890,14 +3919,14 @@
     if (box) box.addEventListener('input', function () { haveQuery = this.value; renderHaveList(); });
     var clr = document.getElementById('haveClear');
     if (clr) clr.addEventListener('click', function () { state.have = {}; saveHave(); renderHave(); });
-    var hb = document.getElementById('haveBaseOnly');
-    if (hb) {
-      hb.checked = haveBaseOnly;
-      hb.addEventListener('change', function () {
-        haveBaseOnly = hb.checked;
-        try { localStorage.setItem(HAVE_BASE_KEY, haveBaseOnly ? '1' : '0'); } catch (e) {}
-        renderHave();
-      });
+    var modeRadios = document.querySelectorAll('input[name="haveBaseMode"]');
+    for (var mi = 0; mi < modeRadios.length; mi++) {
+      (function (radio) {
+        radio.checked = radio.value === haveBaseMode;
+        radio.addEventListener('change', function () {
+          if (radio.checked) applyBaseMode(radio.value);
+        });
+      })(modeRadios[mi]);
     }
   })();
 
@@ -4975,13 +5004,8 @@
     have: {
       recipes: REF_RECIPES,
       reset: function () { state.have = {}; renderHave(); },
-      setBaseOnly: function (v) {
-        haveBaseOnly = !!v;
-        var cb = document.getElementById('haveBaseOnly');
-        if (cb) cb.checked = haveBaseOnly;
-        try { localStorage.setItem(HAVE_BASE_KEY, haveBaseOnly ? '1' : '0'); } catch (e) {}
-        renderHave();
-      },
+      setBaseMode: function (v) { applyBaseMode(v); },
+      setBaseOnly: function (v) { applyBaseMode(v ? 'only' : 'priority'); },
       toggle: function (id) {
         if (state.have[id]) delete state.have[id]; else state.have[id] = 1;
         renderHave();

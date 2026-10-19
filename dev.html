@@ -313,7 +313,11 @@ if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol || '')
           <button type="button" class="ghost" id="haveClear">清空</button>
         </div>
         <p class="hint havecount" id="haveCount"></p>
-        <label class="haveopt"><input type="checkbox" id="haveBaseOnly" checked> 只推用得上我基酒的</label>
+        <div class="haveopt" role="group" aria-label="基酒匹配方式">
+          <span>基酒：</span>
+          <label><input type="radio" name="haveBaseMode" value="priority"> 优先</label>
+          <label><input type="radio" name="haveBaseMode" value="only"> 只看</label>
+        </div>
         <nav class="cats" id="haveCats"></nav>
         <div class="grid" id="haveList"></div>
       </div>

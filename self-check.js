@@ -1454,7 +1454,8 @@ console.log('\n--- 类型：同组能替要标注，不能替就算缺 ---');
     + (brand.length ? '（出现了：' + brand.join('、') + '）' : ''));
   if (!ok6) bad('手边有什么', '买单建议里出现了品牌，或者没给建议');
 
-  /* 7. 排序：每个分组里，"用上你最多的"排前面 */
+  /* 7. 排序：每个分组里，"用上你最多的"排前面（先切到硬过滤，避免基酒优先重排干扰） */
+  B.have.setBaseOnly(true);
   B.have.reset();
   ['gin', 'lime', 'syrup', 'soda', 'coke'].forEach(id => B.have.toggle(id));
   const chunks = els.haveOut.innerHTML.split('<div class="refgroup">').slice(1);
@@ -1627,25 +1628,51 @@ console.log('\n--- 蛋清、柠檬片这类不算"还缺一样" ---');
   if (!okCube) bad('手边有什么', '方糖反向替糖浆不对：miss=' + missCube.join('、')
     + ' marked=' + markedCube + ' cup=' + cupSyrup3 + '/' + cupCube2);
 
+  /* 红糖糖浆 → 1:1 白糖浆：同 ml 量，标风味差一点 */
+  B.have.reset();
+  ['jameson', 'coffee_hot', 'cream', 'syrup'].forEach(id => B.have.toggle(id));
+  const irish = R.findIndex(r => r.zh === '爱尔兰咖啡');
+  const missDem = B.have.missingLabel(irish);
+  const noDemMiss = !missDem.some(x => x.indexOf('红糖') >= 0);
+  const cardDem = (els.haveOut.innerHTML.match(/<button[^>]*class="refcard[^"]*"[^>]*>[\s\S]*?<\/button>/g) || [])
+    .find(c => c.indexOf('爱尔兰咖啡') >= 0);
+  const markedDem = !!cardDem && cardDem.indexOf('白糖浆') >= 0
+    && cardDem.indexOf('焦糖') >= 0 && cardDem.indexOf('替') >= 0;
+  B.have.load(irish);
+  const cupDemSyrup = B.state.cup.get('syrup') || 0;
+  const cupDem = B.state.cup.get('demerara') || 0;
+  const okDem = noDemMiss && markedDem
+    && Math.abs(cupDemSyrup - 15) < 0.01 && cupDem === 0;
+  console.log('  ' + (okDem ? '✅' : '❌')
+    + ' 红糖糖浆用 1:1 白糖浆替：同 ml 量、标少了焦糖味');
+  if (!okDem) bad('手边有什么', '红糖糖浆替用不对：miss=' + missDem.join('、')
+    + ' marked=' + markedDem + ' cup=' + cupDemSyrup + '/' + cupDem);
+
   /* 莫林甘蔗糖浆不是风味糖浆：参考本里不该把香草等风味糖浆指到它 */
   const moninRefs = R.filter(r => r.needs.some(nd => nd.need.id === 'monin')).length;
   console.log('  ' + (moninRefs === 0 ? '✅' : '❌')
     + ' 参考本里没有把风味糖浆指到莫林甘蔗糖浆（' + moninRefs + ' 条）');
   if (moninRefs) bad('材料', '还有 ' + moninRefs + ' 条参考本把风味糖浆指到了 monin');
 
-  /* 只推用得上我基酒的：只有朗姆时，加里波利（无基酒）和金酒配方都不该混进来 */
+  /* 只推用得上我基酒的：两种模式，优先/只看 */
   const devHtml = fs.readFileSync(path.join(__dirname, 'dev.html'), 'utf8');
-  const hasBaseToggle = /id="haveBaseOnly"/.test(devHtml);
-  console.log('  ' + (hasBaseToggle ? '✅' : '❌') + ' 手边有什么有「只推用得上我基酒的」开关');
-  if (!hasBaseToggle) bad('手边有什么', '缺少基酒优先开关');
+  const hasBaseToggle = /name="haveBaseMode"/.test(devHtml)
+    && /value="priority"/.test(devHtml) && /value="only"/.test(devHtml);
+  console.log('  ' + (hasBaseToggle ? '✅' : '❌') + ' 手边有什么有「优先 / 只看」两个基酒选项');
+  if (!hasBaseToggle) bad('手边有什么', '缺少基酒优先/只看选项');
   B.have.reset();
-  ['rum', 'campari', 'orange_juice'].forEach(id => B.have.toggle(id));
+  ['rum', 'campari', 'orange_juice', 'coke', 'lime'].forEach(id => B.have.toggle(id));
   const gall = R.findIndex(r => r.zh.indexOf('加里波利') >= 0 || r.en === 'Gallipoli');
+  const cuba = R.findIndex(r => r.zh === '自由古巴');
   B.have.setBaseOnly(false);
   const gallAll = gall >= 0 && els.haveOut.innerHTML.indexOf(R[gall].zh) >= 0;
+  const priorityHint = els.haveOut.innerHTML.indexOf('优先推用得上你的基酒') >= 0;
+  const orderBase = cuba >= 0 && gall >= 0
+    && els.haveOut.innerHTML.indexOf(R[cuba].zh) >= 0
+    && els.haveOut.innerHTML.indexOf(R[cuba].zh) < els.haveOut.innerHTML.indexOf(R[gall].zh);
   B.have.setBaseOnly(true);
   const gallFiltered = gall >= 0 && els.haveOut.innerHTML.indexOf(R[gall].zh) < 0;
-  const baseHint = els.haveOut.innerHTML.indexOf('只推用得上你的基酒') >= 0;
+  const onlyHint = els.haveOut.innerHTML.indexOf('只推用得上你的基酒') >= 0;
 
   B.have.reset();
   ['rum', 'campari', 'vermouth'].forEach(id => B.have.toggle(id));
@@ -1654,12 +1681,14 @@ console.log('\n--- 蛋清、柠檬片这类不算"还缺一样" ---');
   const negAll = neg >= 0 && els.haveOut.innerHTML.indexOf('尼格罗尼') >= 0;
   B.have.setBaseOnly(true);
   const negFiltered = neg >= 0 && els.haveOut.innerHTML.indexOf('尼格罗尼') < 0;
-  const okBase = gallAll && gallFiltered && negAll && negFiltered && baseHint;
+  const okBase = gallAll && gallFiltered && negAll && negFiltered
+    && priorityHint && onlyHint && orderBase;
   console.log('  ' + (okBase ? '✅' : '❌')
-    + ' 只有朗姆时，「手头基酒优先」过滤掉加里波利（无基酒）和尼格罗尼（缺金酒）');
-  if (!okBase) bad('手边有什么', '基酒优先筛选不对：gall=' + gall
+    + ' 「优先」保留加里波利/尼格罗尼但把自由古巴排前，「只看」把两者过滤');
+  if (!okBase) bad('手边有什么', '基酒两种模式不对：gall=' + gall
     + ' all=' + gallAll + ' filtered=' + gallFiltered
-    + ' neg=' + negAll + '/' + negFiltered + ' hint=' + baseHint);
+    + ' neg=' + negAll + '/' + negFiltered
+    + ' hint=' + priorityHint + '/' + onlyHint + ' order=' + orderBase);
 
   B.have.setBaseOnly(true);
   B.have.reset();
