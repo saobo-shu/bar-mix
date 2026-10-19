@@ -89,14 +89,14 @@ const EXACT = {
   '红酒': { id: 'red_wine' },
   '干香槟': { id: 'sparkling_wine' },
   '干型起泡酒': { id: 'sparkling_wine' },
-  /* 糖浆：本库没有的风味糖浆，用糖浆/对应利口酒近似 */
+  /* 糖浆：本库没有的风味糖浆，用白糖浆近似 */
   '菠萝糖浆': { id: 'syrup', approx: 1 },
   '蔓越莓糖浆': { id: 'syrup', approx: 1 },
   '杏仁糖浆': { id: 'syrup', approx: 1 },
   '椰子糖浆': { id: 'syrup', approx: 1 },
   '树莓糖浆': { id: 'syrup', approx: 1 },
   '红枣糖浆': { id: 'syrup', approx: 1 },
-  '香草糖浆': { id: 'monin' },
+  '香草糖浆': { id: 'syrup', approx: 1 },
   '红糖浆': { id: 'demerara' },
   '德梅拉拉糖浆': { id: 'demerara' },
   /* 其余零碎 */

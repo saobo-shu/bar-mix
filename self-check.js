@@ -1560,12 +1560,40 @@ console.log('\n--- 蛋清、柠檬片这类不算"还缺一样" ---');
   B.have.load(wi);
   const cupMonin = B.state.cup.get('monin') || 0;
   const cupSyrup = B.state.cup.get('syrup') || 0;
-  const okMonin = noSyrupMiss && markedMonin
+  const moninName = B.BY_ID.monin.name;
+  const moninNamed = moninName.indexOf('甘蔗') >= 0 && moninName.indexOf('风味') < 0;
+  const okMonin = noSyrupMiss && markedMonin && moninNamed
     && Math.abs(cupMonin - 12) < 0.01 && cupSyrup === 0;
   console.log('  ' + (okMonin ? '✅' : '❌')
-    + ' 莫林替单糖浆：标“替”、提醒 80% 量、装杯 12ml 而不是 15ml');
+    + ' 莫林甘蔗糖浆替单糖浆：标“替”、提醒 80% 量、装杯 12ml 而不是 15ml');
   if (!okMonin) bad('手边有什么', '莫林替单糖浆不对：miss=' + missMonin.join('、')
-    + ' marked=' + markedMonin + ' cup=' + cupMonin + '/' + cupSyrup);
+    + ' marked=' + markedMonin + ' name=' + moninName + ' cup=' + cupMonin + '/' + cupSyrup);
+
+  /* 1:1 蜂蜜糖浆替 3:1：按 150% 量 */
+  B.have.reset();
+  ['gin', 'lemon', 'honey_syrup'].forEach(id => B.have.toggle(id));
+  const bee = R.findIndex(r => r.zh === '蜂之膝');
+  const missHoney = B.have.missingLabel(bee);
+  const noHoneyMiss = !missHoney.some(x => x.indexOf('蜂蜜') >= 0);
+  const cardHoney = (els.haveOut.innerHTML.match(/<button[^>]*class="refcard[^"]*"[^>]*>[\s\S]*?<\/button>/g) || [])
+    .find(c => c.indexOf('蜂之膝') >= 0);
+  const markedHoney = !!cardHoney && cardHoney.indexOf('蜂蜜糖浆') >= 0
+    && cardHoney.indexOf('150%') >= 0 && cardHoney.indexOf('替') >= 0;
+  B.have.load(bee);
+  const cupHoney = B.state.cup.get('honey_syrup') || 0;
+  const cupHoney31 = B.state.cup.get('honey_syrup_31') || 0;
+  const okHoney = noHoneyMiss && markedHoney
+    && Math.abs(cupHoney - 22.5) < 0.01 && cupHoney31 === 0;
+  console.log('  ' + (okHoney ? '✅' : '❌')
+    + ' 1:1 蜂蜜糖浆替 3:1：标“替”、按 150% 量、装杯 22.5ml');
+  if (!okHoney) bad('手边有什么', '1:1 蜂蜜替 3:1 不对：miss=' + missHoney.join('、')
+    + ' marked=' + markedHoney + ' cup=' + cupHoney + '/' + cupHoney31);
+
+  /* 莫林甘蔗糖浆不是风味糖浆：参考本里不该把香草等风味糖浆指到它 */
+  const moninRefs = R.filter(r => r.needs.some(nd => nd.need.id === 'monin')).length;
+  console.log('  ' + (moninRefs === 0 ? '✅' : '❌')
+    + ' 参考本里没有把风味糖浆指到莫林甘蔗糖浆（' + moninRefs + ' 条）');
+  if (moninRefs) bad('材料', '还有 ' + moninRefs + ' 条参考本把风味糖浆指到了 monin');
 
   /* 只推用得上我基酒的：只有朗姆时，加里波利（无基酒）和金酒配方都不该混进来 */
   const devHtml = fs.readFileSync(path.join(__dirname, 'dev.html'), 'utf8');

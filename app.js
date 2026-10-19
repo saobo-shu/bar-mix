@@ -1895,6 +1895,10 @@
     syrup: {
       ids: ['monin'], scale: 0.8,
       note: '莫林比 1:1 单糖浆甜，先按 80% 的量用（15ml 单糖浆 → 12ml 莫林），不够甜再补'
+    },
+    honey_syrup_31: {
+      ids: ['honey_syrup'], scale: 1.5,
+      note: '1:1 蜂蜜糖浆比 3:1 稀，按 150% 的量用（15ml 3:1 → 22.5ml 1:1），风味会淡一点'
     }
   };
   function subScaleFor(need, id) {
@@ -2234,7 +2238,7 @@
       ? (baseChecked.length
           ? '<p class="hint havebasehint">只推用得上你的基酒：'
             + esc(baseChecked.map(function (id) { return shortName(BY_ID[id]); }).join('、'))
-            + '。取消勾选可看全部。</p>'
+            + '。无基酒/无酒精配方也会被过滤；取消勾选可看全部。</p>'
           : '<p class="hint havebasehint">勾一瓶基酒后，这里会自动只推用得上它的配方。</p>')
       : '';
     out.innerHTML = baseHint + out.innerHTML;
