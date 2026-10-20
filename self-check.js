@@ -54,12 +54,14 @@ global.localStorage = {
 const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
             fs.readFileSync(path.join(dir, 'ref-recipes.js'), 'utf8') + '\n' +
             fs.readFileSync(path.join(dir, 'iba-recipes.js'), 'utf8') + '\n' +
+            fs.readFileSync(path.join(dir, 'photos.js'), 'utf8') + '\n' +
             fs.readFileSync(path.join(dir, 'qrcode.js'), 'utf8') + '\n' +
             fs.readFileSync(path.join(dir, 'app.js'), 'utf8') + '\n' +
             'global.__PRESETS = PRESETS; global.__I = INGREDIENTS; global.__PH = PH; global.__SCHEMES = SCORING_SCHEMES; global.__G = GLASSES; global.__PM = PRESET_METHOD;'
             + ' global.__TEMPS = TEMPS; global.__TD = TEMP_DEFAULT; global.__TF = TEMP; global.__TC = TEMP_CYCLE;'
             + ' global.__METHODS = METHODS; global.__REF = REF_RECIPES; global.__CATS = CATS;'
             + ' global.__IBA = IBA_RECIPES;'
+            + ' global.__PHOTOS = COCKTAIL_PHOTOS;'
             + ' global.__OPT = OPTIONAL_ING; global.__HOUSE = HOUSE_PRESETS;'
             + ' global.__MAP = REF_PRESET_MAP; global.__SWAP = SWAP_NOTE;'
             + ' global.__ORIGIN = ORIGIN; global.__PICKLINE = PICK_LINE;';
@@ -3442,6 +3444,34 @@ console.log('\n--- IBA 官方规格（第三个版本）---');
       || !SWALLOW.test('Honey syrup 2-3 quarter size sliced fresh ginger')) {
     bad('IBA 解析', '吞行检测规则自己失效了——那两条老 bug 都没认出来');
   }
+})();
+
+/* ---- 酒单 AI 示意图 ---- */
+console.log('\n--- 酒单 AI 示意图 ---');
+(function () {
+  const ph = global.__PHOTOS;
+  const keys = Object.keys(ph).sort(function (a, b) { return +a - +b; });
+  const badPaths = [];
+  keys.forEach(function (k) {
+    ['thumb', 'full'].forEach(function (f) {
+      const p = path.join(dir, ph[k][f]);
+      if (!fs.existsSync(p)) badPaths.push(ph[k][f]);
+    });
+  });
+  const okCount = keys.length === 191 && keys[0] === '0' && keys[190] === '190';
+  console.log('  ' + (okCount && !badPaths.length ? '✅' : '❌')
+    + ' 191 款都有 thumb/full WebP（' + keys.length + ' 条，缺 '
+    + badPaths.length + ' 个文件）');
+  if (!okCount || badPaths.length) bad('图片', 'AI 图映射/文件不完整：' + badPaths.slice(0, 3).join('、'));
+
+  B.page.set('menu'); B.menu.open(0);
+  const detail = els.menuDetail.innerHTML || '';
+  const cards = els.menuList.innerHTML || '';
+  const okUi = detail.indexOf('md-photo') >= 0 && detail.indexOf('paper-plane.webp') >= 0
+    && cards.indexOf('mc-photo') >= 0;
+  console.log('  ' + (okUi ? '✅' : '❌') + ' 酒单卡片和详情页都接上了 AI 图');
+  if (!okUi) bad('图片', '酒单卡片/详情页没有接上 AI 图');
+  B.menu.reset(); B.page.set('bar');
 })();
 
 console.log('\n================ 自检结果 ================');

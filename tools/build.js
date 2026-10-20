@@ -16,6 +16,7 @@ const css = read('app.css');
 const dataJs = read('data.js');
 const refJs = read('ref-recipes.js');
 const ibaJs = read('iba-recipes.js');    /* IBA 官方配方，tools/fetch-iba.js 生成 */
+const photosJs = read('photos.js');      /* 酒单 AI 示意图路径，assets/.../manifest.json 生成 */
 const qrJs = read('qrcode.js');          /* 二维码生成（MIT，见文件头的版权声明） */
 const appJs = read('app.js');
 
@@ -35,6 +36,7 @@ html = html.replace(/<link rel="stylesheet" href="app\.css">\s*/, '');
 html = html.replace(/<script src="data\.js"><\/script>\s*/, '');
 html = html.replace(/<script src="ref-recipes\.js"><\/script>\s*/, '');
 html = html.replace(/<script src="iba-recipes\.js"><\/script>\s*/, '');
+html = html.replace(/<script src="photos\.js"><\/script>\s*/, '');
 html = html.replace(/<script src="qrcode\.js"><\/script>\s*/, '');
 html = html.replace(/<script src="app\.js"><\/script>\s*/, '');
 
@@ -55,6 +57,7 @@ html = html.replace('</body>', () =>
   '<script>\n' + safe(dataJs) + '\n</script>\n' +
   '<script>\n' + safe(refJs) + '\n</script>\n' +
   '<script>\n' + safe(ibaJs) + '\n</script>\n' +
+  '<script>\n' + safe(photosJs) + '\n</script>\n' +
   '<script>\n' + safe(qrJs) + '\n</script>\n' +
   '<script>\n' + safe(appJs) + '\n</script>\n</body>');
 
@@ -62,9 +65,22 @@ fs.mkdirSync(dist, { recursive: true });
 fs.writeFileSync(path.join(dist, 'index.html'), html, 'utf8');
 fs.writeFileSync(path.join(dist, '调酒台.html'), html, 'utf8');
 
+/* 酒单 AI 示意图：只拷 800/400 WebP 和 manifest，不拷 1024 母版 */
+const photoSrc = path.join(dir, 'assets', 'cocktails-ai');
+const photoDst = path.join(dist, 'assets', 'cocktails-ai');
+fs.mkdirSync(photoDst, { recursive: true });
+['full', 'thumb'].forEach(f => {
+  const from = path.join(photoSrc, f), to = path.join(photoDst, f);
+  if (fs.existsSync(from)) fs.cpSync(from, to, { recursive: true });
+});
+['manifest.json', 'README.md'].forEach(f => {
+  const from = path.join(photoSrc, f);
+  if (fs.existsSync(from)) fs.copyFileSync(from, path.join(photoDst, f));
+});
+
 /* 自检：产物里不该再有任何本地文件引用 */
 const leftovers = [];
-['app.css', 'app.js', 'data.js', 'ref-recipes.js', 'qrcode.js'].forEach(f => {
+['app.css', 'app.js', 'data.js', 'ref-recipes.js', 'photos.js', 'qrcode.js'].forEach(f => {
   if (html.includes('"' + f + '"') || html.includes("'" + f + "'")) leftovers.push(f);
 });
 const scripts = (html.match(/<script/g) || []).length;
@@ -73,7 +89,7 @@ const closes = (html.match(/<\/script>/g) || []).length;
 console.log('产物：dist/index.html 和 dist/调酒台.html');
 const kb = (s) => (Buffer.byteLength(s, 'utf8') / 1024).toFixed(1);
 console.log('  大小 ' + kb(html) + ' KB　（原始文件合计 '
-+ kb(css + dataJs + refJs + ibaJs + qrJs + appJs) + ' KB）');
++ kb(css + dataJs + refJs + ibaJs + photosJs + qrJs + appJs) + ' KB）');
 console.log('  <script> ' + scripts + ' 个，</script> ' + closes + ' 个' + (scripts === closes ? '　配平 ✓' : '　⚠ 不配平'));
 console.log('  残留的本地文件引用：' + (leftovers.length ? leftovers.join('、') + ' ⚠' : '无 ✓'));
 /* 外部请求：只允许百度统计那一处（文件里其它 http 都是 XML 命名空间之类的死字符串）。

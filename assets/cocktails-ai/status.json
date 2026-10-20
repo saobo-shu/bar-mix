@@ -1,0 +1,14 @@
+{
+  "total": 191,
+  "done": 191,
+  "remaining": 0,
+  "failed": [],
+  "last_batch": "merge",
+  "note": "manifest 191 条，index 统一为 REF_RECIPES 1-based 位置号（1-191，唯一）",
+  "optimized": {
+    "full": 191,
+    "thumb": 191,
+    "full_format": "webp 800 q80",
+    "thumb_format": "webp 400 q76"
+  }
+}

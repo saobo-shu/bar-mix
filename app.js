@@ -2648,8 +2648,14 @@
      而且收藏会互相顶掉（两条都叫空字符串） */
   function recipeName(r) { return (r && (r.zh || r.en)) || '（未命名）'; }
 
+  function photoFor(i) {
+    if (typeof COCKTAIL_PHOTOS === 'undefined' || !COCKTAIL_PHOTOS) return null;
+    return COCKTAIL_PHOTOS[String(i)] || null;
+  }
+
   function menuCard(i) {
     var r = REF_RECIPES[i], st = refStat(i);
+    var ph = photoFor(i);
     var d = presetDiffOf(r);
     var use = d
       ? d.pre.items.filter(function (it) { return BY_ID[it[0]]; })
@@ -2662,6 +2668,9 @@
     var tech = methodFromRef(d ? (PRESET_METHOD[d.pre.name] || r.method) : r.method);
     var fizzNow = d ? presetFizzNames(d.pre) : refFizz(r);
     return '<button type="button" class="menucard" data-menu="' + i + '">'
+      + (ph ? '<span class="mc-photo"><img src="' + esc(ph.thumb) + '" alt="'
+        + esc(recipeName(r) + ' AI 示意图') + '" loading="lazy" decoding="async">'
+        + '<i class="mc-ai" title="AI 示意图">AI</i></span>' : '')
       + '<span class="mc-top"><b>' + esc(recipeName(r)) + '</b><i>' + esc(r.zh ? (r.en || '') : '') + '</i>'
         + '<span class="mc-star' + (on ? ' on' : '') + '" data-fav="' + i + '" role="button" tabindex="0"'
         + ' title="' + (on ? '取消收藏' : '收藏') + '">' + (on ? '★' : '☆') + '</span></span>'
@@ -2862,6 +2871,7 @@
     }
     if (page) page.classList.add('hasdetail');
     var i = openRecipe, r = REF_RECIPES[i], st = refStat(i);
+    var ph = photoFor(i);
     /* 有我们调好的版本就用我们的：材料表、备注都换成那份 */
     var d = presetDiffOf(r);
     var pre = d ? d.pre : null;
@@ -2888,6 +2898,9 @@
     box.innerHTML = '<div class="panel-head"><h2>' + esc(recipeName(r)) + '　'
       + '<span class="hint">' + esc(r.en || '') + '</span></h2>'
       + '<button type="button" class="ghost" data-menu-close="1">关闭</button></div>'
+      + (ph ? '<div class="md-photo"><img src="' + esc(ph.full) + '" alt="'
+        + esc(recipeName(r) + ' AI 示意图') + '" loading="lazy" decoding="async">'
+        + '<span class="md-ai">AI 示意图 · 实际杯具/材料可能不同</span></div>' : '')
       + '<div class="detail-body">'
       + '<p class="hint">' + esc(pre ? (PRESET_METHOD[pre.name] ? methodName({ method: PRESET_METHOD[pre.name] }) : methodName(r)) : methodName(r))
         + ' · ' + esc(pre ? glassOf(pre.glass).name : glassOf(glassFromRef(r)).name)

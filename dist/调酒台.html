@@ -303,6 +303,27 @@ main {
   background: var(--card2); border: 1px solid var(--line);
 }
 .menucard:active { transform: scale(.99); }
+.mc-photo {
+  position: relative; display: block; width: 100%; aspect-ratio: 1 / 1;
+  overflow: hidden; border-radius: 8px; margin-bottom: 6px; background: var(--bg);
+}
+.mc-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.mc-ai {
+  position: absolute; right: 5px; bottom: 5px;
+  font-style: normal; font-size: 9px; line-height: 1.5;
+  padding: 0 5px; border-radius: 999px;
+  color: #fff; background: rgba(0, 0, 0, .52); letter-spacing: .02em;
+}
+.md-photo {
+  position: relative; display: block; width: 100%; aspect-ratio: 1 / 1;
+  overflow: hidden; background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.md-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.md-ai {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 5px 10px; font-size: 10px; color: #fff;
+  background: linear-gradient(transparent, rgba(0, 0, 0, .55));
+}
 .mc-top { display: flex; align-items: baseline; gap: 6px; }
 .mc-top b { font-size: 13.5px; font-weight: 600; color: var(--text); }
 .mc-top i { font-style: normal; font-size: 10px; color: var(--muted); flex: 1; min-width: 0;
@@ -3117,6 +3138,967 @@ var REF_RECIPES = [{"zh":"纸飞机","en":"Paper Plane","cat":"经典","method":
 /* 生成物，不要手改：node tools/fetch-iba.js
    来源 IBA 官网 https://iba-world.com/，抓取日期 2026-10-16 */
 var IBA_RECIPES = [{"slug":"paper-plane","en":"Paper Plane","cat":"New Era","ingredients":[{"am":30,"unit":"ml","name":"Bourbon Whiskey"},{"am":30,"unit":"ml","name":"Amaro Nonino"},{"am":30,"unit":"ml","name":"Aperol"},{"am":30,"unit":"ml","name":"Fresh Lemon Juice"}],"method":"Pour all ingredients into cocktail shaker, shake well with ice, strain into chilled cocktail glass.","garnish":"N/A","url":"https://iba-world.com/paper-plane/"},{"slug":"long-island-iced-tea","en":"Long Island Iced Tea","cat":"Contemporary Classics","ingredients":[{"am":15,"unit":"ml","name":"Vodka"},{"am":15,"unit":"ml","name":"Tequila"},{"am":15,"unit":"ml","name":"White rum"},{"am":15,"unit":"ml","name":"Gin"},{"am":15,"unit":"ml","name":"Cointreau"},{"am":25,"unit":"ml","name":"Lemon juice"},{"am":30,"unit":"ml","name":"Simple syrup"},{"am":null,"unit":"","name":"Top with Cola"}],"method":"Add all ingredients into highball glass filled with ice.\nStir gently.","garnish":"Garnish with lemon slice (Optional).","url":"https://iba-world.com/long-island-iced-tea/"},{"slug":"zombie","en":"Zombie","cat":"Contemporary Classics","ingredients":[{"am":45,"unit":"ml","name":"Jamaican dark rum"},{"am":45,"unit":"ml","name":"Gold Puerto Rican rum"},{"am":30,"unit":"ml","name":"Demerara Rum"},{"am":20,"unit":"ml","name":"Fresh lime juice"},{"am":15,"unit":"ml","name":"Falernum"},{"am":15,"unit":"ml","name":"Donn’s Mix*"},{"am":1,"unit":"tsp","name":"Grenadine syrup"},{"am":1,"unit":"dash","name":"Angostura bitters"},{"am":6,"unit":"drops","name":"Pernod"}],"method":"Add all ingredients into an electric blender with 170 grams of cracked ice.\nWith pulse bottom blend for a few seconds. Serve in a tall tumbler glass.\nNote:\n*Donn’s Mix: 2 parts of fresh yellow grapefruit and 1 part of cinnamon syrup","garnish":"Garnish with mint leaves.","url":"https://iba-world.com/zombie/"},{"slug":"cosmopolitan","en":"Cosmopolitan","cat":"Contemporary Classics","ingredients":[{"am":40,"unit":"ml","name":"Vodka Citron"},{"am":15,"unit":"ml","name":"Cointreau"},{"am":15,"unit":"ml","name":"Fresh Lime Juice"},{"am":30,"unit":"ml","name":"Cranberry Juice"}],"method":"Add all ingredients into cocktail shaker filled with ice.\nShake well and strain into large cocktail glass.","garnish":"Garnish with lemon twist.","url":"https://iba-world.com/cosmopolitan/"},{"slug":"pina-colada","en":"Pina Colada","cat":"Contemporary Classics","ingredients":[{"am":50,"unit":"ml","name":"White Rum"},{"am":30,"unit":"ml","name":"Coconut Cream"},{"am":50,"unit":"ml","name":"Fresh Pineapple Juice"}],"method":"Blend all the ingredients with ice in a electric blender,\npour into a large glass and serve with straws.\nNote:\nHistorically a few drops of fresh lime juice was added to taste. 4 slices of fresh pineapple can be used instead of juice","garnish":"Garnish with a slice of pineapple with a cocktail cherry.","url":"https://iba-world.com/pina-colada/"},{"slug":"negroni","en":"Negroni","cat":"The unforgettables","ingredients":[{"am":30,"unit":"ml","name":"Gin"},{"am":30,"unit":"ml","name":"Bitter Campari"},{"am":30,"unit":"ml","name":"Sweet Red Vermouth"}],"method":"Pour all ingredients directly into chilled old fashioned glass filled with ice.\nStir gently.","garnish":"Garnish with half orange slice.","url":"https://iba-world.com/negroni/"},{"slug":"penicillin","en":"Penicillin","cat":"New Era","ingredients":[{"am":60,"unit":"ml","name":"Blended scotch whisky"},{"am":7.5,"unit":"ml","name":"Lagavulin 16y"},{"am":22.5,"unit":"ml","name":"Fresh lemon juice"},{"am":22.5,"unit":"ml","name":"Honey syrup"},{"am":null,"unit":"","name":"2-3 quarter size sliced fresh ginger"}],"method":"Muddle fresh ginger in a shaker and add the remaining ingredients except for the Islay single malt whisky.\nFill the shaker with ice and shake.\nFine train into a chilled Old Fashioned glass with ice.\nFloat the single malt whisky on top.","garnish":"Garnish with candied ginger slices.","url":"https://iba-world.com/penicillin/"},{"slug":"bees-knees","en":"Bee’s Knees","cat":"New Era","ingredients":[{"am":52.5,"unit":"ml","name":"Dry Gin"},{"am":2,"unit":"teaspoons","name":"Honey Syrup"},{"am":22.5,"unit":"ml","name":"Fresh Lemon Juice"},{"am":22.5,"unit":"ml","name":"Fresh Orange Juice"}],"method":"Stir honey with lemon and orange juices until it dissolves, add gin and shake with ice. Strain into a chilled cocktail glass.","garnish":"Optionally garnish with a lemon or orange zest.","url":"https://iba-world.com/bees-knees/"},{"slug":"espresso-martini","en":"Espresso Martini","cat":"New Era","ingredients":[{"am":50,"unit":"ml","name":"Vodka"},{"am":30,"unit":"ml","name":"Kahlúa"},{"am":10,"unit":"ml","name":"Sugar Syrup"},{"am":null,"unit":"","name":"1 strong Espresso"}],"method":"Pour all ingredients into cocktail shaker, shake well with ice, strain into chilled cocktail glass.","garnish":"3 coffee beans","url":"https://iba-world.com/espresso-martini/"},{"slug":"dry-martini","en":"Dry Martini","cat":"The unforgettables","ingredients":[{"am":60,"unit":"ml","name":"Gin"},{"am":10,"unit":"ml","name":"Dry Vermouth"}],"method":"Pour all ingredients into mixing glass with ice cubes. Stir well.\nStrain into chilled martini cocktail glass.","garnish":"Squeeze oil from lemon peel onto the drink, or garnish with a green olives if requested.","url":"https://iba-world.com/dry-martini/"},{"slug":"manhattan","en":"Manhattan","cat":"The unforgettables","ingredients":[{"am":50,"unit":"ml","name":"Rye Whiskey"},{"am":20,"unit":"ml","name":"Sweet Red Vermouth"},{"am":1,"unit":"dash","name":"Angostura Bitters"}],"method":"Pour all ingredients into mixing glass with ice cubes.\nStir well. Strain into chilled cocktail glass.","garnish":"Garnish with cocktail cherry.","url":"https://iba-world.com/manhattan/"},{"slug":"mojito","en":"Mojito","cat":"Contemporary Classics","ingredients":[{"am":45,"unit":"ml","name":"White Cuban Ron"},{"am":20,"unit":"ml","name":"Fresh Lime Juice"},{"am":6,"unit":"pcs","name":"Mint Sprigs"},{"am":2,"unit":"tsp","name":"White Cane Sugar"},{"am":null,"unit":"","name":"Soda Water"}],"method":"Mix mint springs with sugar and lime juice.\nAdd splash of soda water and fill the glass with ice.\nPour the rum and top with soda water. Light stir to involve all ingredients.","garnish":"Garnish with sprigs of mint and slice of lime.","url":"https://iba-world.com/mojito/"},{"slug":"whiskey-sour","en":"Whiskey Sour","cat":"The unforgettables","ingredients":[{"am":45,"unit":"ml","name":"Bourbon Whiskey"},{"am":25,"unit":"ml","name":"Fresh Lemon Juice"},{"am":20,"unit":"ml","name":"Sugar Syrup"},{"am":null,"unit":"","name":"Few Drops of Egg White (Optional)"}],"method":"Pour all ingredients into cocktail shaker filled with ice. Shake well.\nStrain into cobbler glass. If served “On the rocks”, strain ingredients\ninto old fashioned glass filled with ice.\nNOTE:\nIf egg white is used shake little harder to release and incorporate the foam from the egg white.","garnish":"Garnish with half orange slice and maraschino cherry, optionally use orange zest.","url":"https://iba-world.com/whiskey-sour/"},{"slug":"old-fashioned","en":"Old Fashioned","cat":"The unforgettables","ingredients":[{"am":45,"unit":"ml","name":"Bourbon or Rye Whiskey"},{"am":null,"unit":"","name":"1 Sugar Cube"},{"am":null,"unit":"","name":"Few Dashes Angostura Bitters"},{"am":null,"unit":"","name":"Few Dashes Plain Water"}],"method":"Place sugar cube in old fashioned glass and saturate with bitter, add few dashes of plain water. Muddle until dissolved. Fill the glass with ice cubes and add whiskey.\nStir gently.","garnish":"Garnish with orange slice or zest, and a cocktail cherry.","url":"https://iba-world.com/old-fashioned/"},{"slug":"daiquiri","en":"Daiquiri","cat":"The unforgettables","ingredients":[{"am":60,"unit":"ml","name":"White Cuban Ron"},{"am":20,"unit":"ml","name":"Fresh Lime Juice"},{"am":2,"unit":"bar spoons","name":"Superfine Sugar"}],"method":"In a cocktail shaker add all ingredients. Stir well to dissolve the sugar.\nAdd ice and shake. Strain into chilled cocktail glass.","garnish":"N/A","url":"https://iba-world.com/daiquiri/"},{"slug":"margarita","en":"Margarita","cat":"Contemporary Classics","ingredients":[{"am":50,"unit":"ml","name":"Tequila 100% Agave"},{"am":20,"unit":"ml","name":"Triple Sec"},{"am":15,"unit":"ml","name":"Freshly Squeezed Lime Juice"}],"method":"Add all ingredients into a shaker with ice.\nShake and strain into a chilled cocktail glass.","garnish":"Half salt rim (Optional).","url":"https://iba-world.com/margarita/"},{"slug":"moscow-mule","en":"Moscow Mule","cat":"Contemporary Classics","ingredients":[{"am":45,"unit":"ml","name":"Smirnoff Vodka"},{"am":120,"unit":"ml","name":"Ginger Beer"},{"am":10,"unit":"ml","name":"Fresh lime juice"}],"method":"In an Mule Cup or rocks glass, combine the vodka and ginger beer.\nAdd lime juice and gently stir to involve all ingredients.","garnish":"Garnish with a lime slice.","url":"https://iba-world.com/moscow-mule/"},{"slug":"boulevardier","en":"Boulevardier","cat":"The unforgettables","ingredients":[{"am":45,"unit":"ml","name":"Bourbon or Rye Whiskey"},{"am":30,"unit":"ml","name":"Bitter Campari"},{"am":30,"unit":"ml","name":"Sweet Red Vermouth"}],"method":"Pour all ingredients into mixing glass with ice cubes.\nStir well. Strain into chilled cocktail glass.","garnish":"Garnish with a orange zest, optionally a lemon zest.","url":"https://iba-world.com/boulevardier/"},{"slug":"french-martini","en":"French Martini","cat":"New Era","ingredients":[{"am":45,"unit":"ml","name":"Vodka"},{"am":15,"unit":"ml","name":"Raspberry Liqueur"},{"am":15,"unit":"ml","name":"Fresh Pineapple Juice"}],"method":"Pour all ingredients into cocktail shaker, shake well with ice, strain into chilled cocktail glass.","garnish":"Squeeze oil from lemon peel onto the drink.","url":"https://iba-world.com/french-martini/"},{"slug":"caipirinha","en":"Caipirinha","cat":"Contemporary Classics","ingredients":[{"am":60,"unit":"ml","name":"Cachaça"},{"am":null,"unit":"","name":"1 Lime cut into small wedges"},{"am":4,"unit":"teaspoons","name":"White Cane Sugar"}],"method":"Place lime and sugar into a double old fashioned glass and muddle gently.\nFill the glass with cracked ice and add Cachaça. Stir gently to involve ingredients.\nNote:\nCaipiroska - Instead of Cachaça use Vodka;\nCaipirissima - Instead of Cachaça use Rum.\nCaipirão - Instead of Cachaça use Licor Beirão.","garnish":"N/A","url":"https://iba-world.com/caipirinha/"},{"slug":"sazerac","en":"Sazerac","cat":"The unforgettables","ingredients":[{"am":50,"unit":"ml","name":"Cognac"},{"am":10,"unit":"ml","name":"Absinthe"},{"am":null,"unit":"","name":"1 Sugar Cube"},{"am":2,"unit":"dashes","name":"Peychaud's Bitters"}],"method":"Rinse a chilled old-fashioned glass with the absinthe, add crushed ice and set it aside. Stir the remaining ingredients over ice in a mixing glass.\nDiscard the ice and any excess absinthe from the prepared glass, strain the mixed drink into the glass.\nNOTE:\nThe original recipe changed after the American Civil War, Rye Whiskey substituted Cognac as it became hard to obtain.","garnish":"Garnish with lemon zest.","url":"https://iba-world.com/sazerac/"},{"slug":"tommys-margarita","en":"Tommy's Margarita","cat":"New Era","ingredients":[{"am":60,"unit":"ml","name":"Tequila 100% agave"},{"am":30,"unit":"ml","name":"Fresh Lime Juice"},{"am":30,"unit":"ml","name":"Agave Nectar"}],"method":"Pour all ingredients into a cocktail shaker, shake well with ice, strain into chilled rocks glass filled with ice.","garnish":"Garnish with a lime slice.","url":"https://iba-world.com/tommys-margarita/"},{"slug":"mai-tai","en":"Mai-Tai","cat":"Contemporary Classics","ingredients":[{"am":30,"unit":"ml","name":"Amber Jamaican Rum"},{"am":30,"unit":"ml","name":"Martinique Molasses Rhum*"},{"am":15,"unit":"ml","name":"Orange Curacao"},{"am":15,"unit":"ml","name":"Orgeat Syrup (Almond)"},{"am":30,"unit":"ml","name":"Fresh Squeezed Lime Juice"},{"am":7.5,"unit":"ml","name":"Simple Syrup"}],"method":"Add all ingredients into a shaker with ice.\nShake and pour into a double rocks glass or an highball glass.\n* The Martinique molasses rum used by Trader Vic was not an Agricole Rhum but a type of “rummy” from molasses.","garnish":"Garnish with pineapple spear, mint leaves and lime peel.","url":"https://iba-world.com/mai-tai/"},{"slug":"americano","en":"Americano","cat":"The unforgettables","ingredients":[{"am":30,"unit":"ml","name":"Bitter Campari"},{"am":30,"unit":"ml","name":"Sweet Red Vermouth"},{"am":null,"unit":"","name":"A splash of Soda Water"}],"method":"Mix the ingredients directly in an old fashioned glass filled with ice cubes.\nAdd a splash of Soda Water. Stir gently.","garnish":"Garnish with half orange slice and a lemon zest.","url":"https://iba-world.com/americano/"},{"slug":"black-russian","en":"Black Russian","cat":"Contemporary Classics","ingredients":[{"am":50,"unit":"ml","name":"Vodka"},{"am":20,"unit":"ml","name":"Coffee Liqueur"}],"method":"Pour the ingredients into the old fashioned glass filled with ice cubes.\nStir gently. strain ingredients into old fashioned glass filled with ice.\nNOTE:\nWHITE RUSSIAN – Float fresh cream on the top and stir in slowly.","garnish":"N/A","url":"https://iba-world.com/black-russian/"},{"slug":"singapore-sling","en":"Singapore Sling","cat":"Contemporary Classics","ingredients":[{"am":30,"unit":"ml","name":"Gin"},{"am":15,"unit":"ml","name":"Cherry Sangue Morlacco"},{"am":7.5,"unit":"ml","name":"Cointreau"},{"am":7.5,"unit":"ml","name":"DOM Bénédictine"},{"am":120,"unit":"ml","name":"Fresh Pineapple Juice"},{"am":15,"unit":"ml","name":"Fresh Lime Juice"},{"am":10,"unit":"ml","name":"Grenadine Syrup"},{"am":null,"unit":"","name":"A dash of Angostura bitters"}],"method":"Pour all ingredients into cocktail shaker filled with ice cubes.\nShake well.\nStrain into Hurricane glass.","garnish":"Garnish with pineapple and maraschino cherry.","url":"https://iba-world.com/singapore-sling/"},{"slug":"horses-neck","en":"Horse’s Neck","cat":"Contemporary Classics","ingredients":[{"am":40,"unit":"ml","name":"Cognac"},{"am":120,"unit":"ml","name":"Ginger Ale"},{"am":null,"unit":"","name":"Dash of Angostura Bitters (optional)"}],"method":"Pour Cognac and ginger ale directly into highball glass with ice cubes.\nStir gently.\nIf preferred, add dashes of Angostura Bitter.","garnish":"Garnish with rind of one lemon spiral.","url":"https://iba-world.com/horses-neck/"},{"slug":"paloma","en":"Paloma","cat":"New Era","ingredients":[{"am":50,"unit":"ml","name":"100% Agave Tequila"},{"am":5,"unit":"ml","name":"Fresh lime"},{"am":null,"unit":"","name":"A pinch of Salt"},{"am":100,"unit":"ml","name":"Pink Grapefruit Soda"}],"method":"Poor the tequila into a highball glass, squeeze the lime juice.\nAdd ice and salt, fill up pink grapefruit soda.\nStir gently.","garnish":"Garnish with a slice of lime.","url":"https://iba-world.com/paloma/"},{"slug":"mint-julep","en":"Mint Julep","cat":"Contemporary Classics","ingredients":[{"am":60,"unit":"ml","name":"Bourbon Whiskey"},{"am":null,"unit":"","name":"4 fresh Mint sprigs"},{"am":1,"unit":"tsp","name":"Powdered Sugar"},{"am":2,"unit":"tsp","name":"Water"}],"method":"In Julep Stainless Steel Cup gently muddle the mint with sugar and water.\nFill the glass with cracked ice, add the Bourbon and stir well until the cup frosts.","garnish":"Garnish with a mint sprig.","url":"https://iba-world.com/mint-julep/"},{"slug":"bramble","en":"Bramble","cat":"New Era","ingredients":[{"am":50,"unit":"ml","name":"Gin"},{"am":25,"unit":"ml","name":"Fresh Lemon Juice"},{"am":12.5,"unit":"ml","name":"Sugar Syrup"},{"am":15,"unit":"ml","name":"Crème de Mûre"}],"method":"Pour all ingredients into cocktail shaker except the Crème de Mûre, shake well with ice, strain into chilled old fashioned glass filled with crushed ice, then pour the blackberry liqueur (Crème de Mûre) over the top of the drink, in a circular motion.","garnish":"Garnish optionally with a lemon slice and blackberries.","url":"https://iba-world.com/bramble/"},{"slug":"vesper","en":"Vesper","cat":"Contemporary Classics","ingredients":[{"am":45,"unit":"ml","name":"Gin"},{"am":15,"unit":"ml","name":"Vodka"},{"am":7.5,"unit":"ml","name":"Lillet Blanc"}],"method":"Pour all ingredients into cocktail shaker filled with ice cubes.\nShake and strain into a chilled cocktail glass.","garnish":"Garnish with lemon zest.","url":"https://iba-world.com/vesper/"},{"slug":"gin-fizz","en":"Gin Fizz","cat":"The unforgettables","ingredients":[{"am":45,"unit":"ml","name":"Gin"},{"am":30,"unit":"ml","name":"Fresh Lemon Juice"},{"am":10,"unit":"ml","name":"Simple Syrup"},{"am":null,"unit":"","name":"Splash of Soda Water"}],"method":"Shake all ingredients with ice except soda water.\nPour into thin tall Tumbler glass , top with a splash soda water.\nNOTE:\nServe without ice.","garnish":"Garnish with lemon slice, optional lemon zest.","url":"https://iba-world.com/gin-fizz/"},{"slug":"monkey-gland","en":"Monkey Gland","cat":"The unforgettables","ingredients":[{"am":45,"unit":"ml","name":"Dry Gin"},{"am":45,"unit":"ml","name":"Fresh Orange Juice"},{"am":1,"unit":"tablespoon","name":"Absinthe"},{"am":1,"unit":"tablespoon","name":"Grenadine Syrup"}],"method":"Pour all ingredients into cocktail shaker, shake well with ice, strain into chilled cocktail glass.","garnish":"N/A","url":"https://iba-world.com/monkey-gland/"},{"slug":"pisco-sour","en":"Pisco Sour","cat":"Contemporary Classics","ingredients":[{"am":60,"unit":"ml","name":"Pisco"},{"am":30,"unit":"ml","name":"Fresh Lemon Juice"},{"am":20,"unit":"ml","name":"Simple Syrup"},{"am":null,"unit":"","name":"1 Raw whole Egg White"}],"method":"Add all ingredients into a shaker with ice.\nShake and strain into a chilled goblet glass.","garnish":"Few dashes of Amargo bitters on top as an aromatic garnish.","url":"https://iba-world.com/pisco-sour/"},{"slug":"white-lady","en":"White Lady","cat":"The unforgettables","ingredients":[{"am":40,"unit":"ml","name":"Gin"},{"am":30,"unit":"ml","name":"Triple Sec"},{"am":20,"unit":"ml","name":"Fresh Lemon Juice"}],"method":"Pour all ingredients into cocktail shaker, shake well with ice, strain into chilled cocktail glass.","garnish":"N/A","url":"https://iba-world.com/white-lady/"},{"slug":"clover-club","en":"Clover Club","cat":"The unforgettables","ingredients":[{"am":45,"unit":"ml","name":"Gin"},{"am":15,"unit":"ml","name":"Raspberry Syrup"},{"am":15,"unit":"ml","name":"Fresh Lemon Juice"},{"am":null,"unit":"","name":"Few Drops of Egg White"}],"method":"Pour all ingredients into cocktails shaker, shake well with ice, strain into chilled cocktail glass.","garnish":"Fresh raspberries.","url":"https://iba-world.com/clover-club/"},{"slug":"aviation","en":"Aviation","cat":"The unforgettables","ingredients":[{"am":45,"unit":"ml","name":"Gin"},{"am":15,"unit":"ml","name":"Maraschino Luxardo"},{"am":15,"unit":"ml","name":"Fresh Lemon Juice"},{"am":1,"unit":"bar spoon","name":"Crème de Violette"}],"method":"Add all ingredients into a cocktail shaker.\nShake with cracked ice and strain into a chilled cocktail glass.","garnish":"Optional Maraschino Cherry.","url":"https://iba-world.com/aviation/"},{"slug":"sidecar","en":"Sidecar","cat":"The unforgettables","ingredients":[{"am":50,"unit":"ml","name":"Cognac"},{"am":20,"unit":"ml","name":"Triple Sec"},{"am":20,"unit":"ml","name":"Fresh Lemon Juice"}],"method":"Pour all ingredients into cocktail shaker, shake well with ice, strain into chilled cocktail glass.","garnish":"N/A","url":"https://iba-world.com/sidecar/"},{"slug":"french-75","en":"French 75","cat":"Contemporary Classics","ingredients":[{"am":30,"unit":"ml","name":"Gin"},{"am":15,"unit":"ml","name":"Fresh Lemon Juice"},{"am":15,"unit":"ml","name":"Sugar Syrup"},{"am":60,"unit":"ml","name":"Champagne"}],"method":"Pour all the ingredients, except Champagne, into a shaker.\nShake well and strain into a Champagne flute.\nTop up with Champagne.\nStir gently.","garnish":"N/A","url":"https://iba-world.com/french-75/"},{"slug":"vieux-carre","en":"Vieux Carré","cat":"The unforgettables","ingredients":[{"am":30,"unit":"ml","name":"Rye Whiskey"},{"am":30,"unit":"ml","name":"Cognac"},{"am":30,"unit":"ml","name":"Sweet Vermouth"},{"am":1,"unit":"bar spoon","name":"Bénédictine"},{"am":2,"unit":"dashes","name":"Peychaud's Bitters"}],"method":"Pour all ingredients into mixing glass with ice cubes.\nStir well. Strain into chilled cocktail glass.","garnish":"Garnish with orange zest and maraschino cherry.","url":"https://iba-world.com/vieux-carre/"},{"slug":"last-word","en":"Last Word","cat":"The unforgettables","ingredients":[{"am":22.5,"unit":"ml","name":"Gin"},{"am":22.5,"unit":"ml","name":"Green Chartreuse"},{"am":22.5,"unit":"ml","name":"Maraschino Luxardo"},{"am":22.5,"unit":"ml","name":"Fresh Lime Juice"}],"method":"Add all ingredients into a cocktail shaker.\nShake with ice and strain into a chilled cocktail glass.","garnish":"N/A","url":"https://iba-world.com/last-word/"},{"slug":"corpse-reviver-2","en":"Corpse Reviver #2","cat":"Contemporary Classics","ingredients":[{"am":30,"unit":"ml","name":"Gin"},{"am":30,"unit":"ml","name":"Cointreau"},{"am":30,"unit":"ml","name":"Lillet Blanc"},{"am":30,"unit":"ml","name":"Fresh Lemon Juice"},{"am":1,"unit":"dash","name":"Absinthe"}],"method":"Pour all ingredients into shaker with ice.\nShake well and strain in chilled cocktail glass.","garnish":"Garnish with an orange zest.","url":"https://iba-world.com/corpse-reviver-2/"},{"slug":"bloody-mary","en":"Bloody Mary","cat":"Contemporary Classics","ingredients":[{"am":45,"unit":"ml","name":"Vodka"},{"am":90,"unit":"ml","name":"Tomato Juice"},{"am":15,"unit":"ml","name":"Fresh Lemon Juice"},{"am":2,"unit":"dashes","name":"Worcestershire Sauce"},{"am":null,"unit":"","name":"Tabasco, Celery Salt, Pepper (Up to taste)"}],"method":"Stir gently all the ingredients in a mixing glass with ice, pour into rocks glass.\nNOTE:\nIf requested served with ice, pour into highball glass.","garnish":"Celery, lemon wedge (Optional).","url":"https://iba-world.com/bloody-mary/"},{"slug":"martinez","en":"Martinez","cat":"The unforgettables","ingredients":[{"am":45,"unit":"ml","name":"London Dry Gin"},{"am":45,"unit":"ml","name":"Sweet Red Vermouth"},{"am":1,"unit":"bar spoon","name":"Maraschino Luxardo"},{"am":2,"unit":"dashes","name":"Orange Bitters"}],"method":"Pour all ingredients into mixing glass with ice cubes.\nStir well. Strain into chilled cocktail glass.","garnish":"Lemon zest.","url":"https://iba-world.com/martinez/"},{"slug":"hanky-panky","en":"Hanky Panky","cat":"The unforgettables","ingredients":[{"am":45,"unit":"ml","name":"London Dry Gin"},{"am":45,"unit":"ml","name":"Sweet Red Vermouth"},{"am":7.5,"unit":"ml","name":"Fernet"}],"method":"Pour all ingredients into mixing glass with ice cubes. Stir well.\nStrain into chilled cocktail glass.","garnish":"Orange zest.","url":"https://iba-world.com/hanky-panky/"},{"slug":"trinidad-sour","en":"Trinidad Sour","cat":"New Era","ingredients":[{"am":45,"unit":"ml","name":"Angostura Bitters"},{"am":30,"unit":"ml","name":"Orgeat Syrup"},{"am":22.5,"unit":"ml","name":"Fresh Lemon Juice"},{"am":15,"unit":"ml","name":"Rye Whiskey"}],"method":"Pour all ingredients into a cocktail shaker, shake well with ice.\nStrain into chilled cocktail glass.","garnish":"N/A","url":"https://iba-world.com/trinidad-sour/"},{"slug":"new-york","en":"New York Sour","cat":"New Era","ingredients":[{"am":60,"unit":"ml","name":"Rye Whiskey or Bourbon"},{"am":22.5,"unit":"ml","name":"Simple syrup"},{"am":30,"unit":"ml","name":"Fresh lemon juice"},{"am":null,"unit":"","name":"Few Drops of Egg White"},{"am":15,"unit":"ml","name":"Red wine (Shiraz or Malbech)"}],"method":"Pour all ingredients into the shaker. Shake vigorously with ice.\nStrain into a chilled rocks glass filled with ice. Float the wine on top.","garnish":"Garnish with lemon or orange zest with cherry.","url":"https://iba-world.com/new-york/"},{"slug":"french-connection","en":"French Connection","cat":"Contemporary Classics","ingredients":[{"am":35,"unit":"ml","name":"Cognac"},{"am":35,"unit":"ml","name":"Amaretto"}],"method":"Pour all ingredients directly into old fashioned glass filled with ice cubes.\nStir gently.","garnish":"N/A","url":"https://iba-world.com/french-connection/"},{"slug":"rusty-nail","en":"Rusty Nail","cat":"The unforgettables","ingredients":[{"am":45,"unit":"ml","name":"Scotch Whisky"},{"am":25,"unit":"ml","name":"Drambuie"}],"method":"Pour all ingredients directly into an old fashioned glass filled with ice.\nStir gently.","garnish":"Garnish with lemon zest.","url":"https://iba-world.com/rusty-nail/"},{"slug":"garibaldi","en":"Garibaldi","cat":"Contemporary Classics","ingredients":[{"am":45,"unit":"ml","name":"Bitter Campari"},{"am":120,"unit":"ml","name":"Freshly Squeezed Orange Juice"}],"method":"Build all ingredients in a highball glass filled with ice.","garnish":"Garnish with an orange wedge.","url":"https://iba-world.com/garibaldi/"},{"slug":"brandy-crusta","en":"Brandy Crusta","cat":"The unforgettables","ingredients":[{"am":52.5,"unit":"ml","name":"Brandy"},{"am":7.5,"unit":"ml","name":"Maraschino Luxardo"},{"am":1,"unit":"bar spoon","name":"Curacao"},{"am":15,"unit":"ml","name":"Fresh Lemon Juice"},{"am":1,"unit":"bar spoon","name":"Simple Syrup"},{"am":2,"unit":"dashes","name":"Aromatic Bitters"}],"method":"Mix together all ingredients with ice cubes in a mixing\nglass and strain into a prepared slim cocktail glass.","garnish":"Rub a slice of orange (or lemon) around the rim of the glass and dip it in\npulverized white sugar, so that the sugar will adhere to the edge of the glass.\nCarefully curling place the orange/le","url":"https://iba-world.com/brandy-crusta/"},{"slug":"grasshopper","en":"Grasshopper","cat":"Contemporary Classics","ingredients":[{"am":20,"unit":"ml","name":"Crème de Cacao (White)"},{"am":20,"unit":"ml","name":"Crème de Menthe (Green)"},{"am":20,"unit":"ml","name":"Fresh Cream"}],"method":"Pour all ingredients into shaker filled with ice.\nShake briskly for few seconds. Strain into chilled cocktail glass.","garnish":"N/A, optional mint leave.","url":"https://iba-world.com/grasshopper/"},{"slug":"chartreuse-swizzle","en":"Chartreuse Swizzle","cat":"New Era","ingredients":[{"am":45,"unit":"ml","name":"Green Chartreuse"},{"am":30,"unit":"ml","name":"Fresh Pineapple Juice"},{"am":22.5,"unit":"ml","name":"Fresh Lime Juice"},{"am":15,"unit":"ml","name":"Falernum"}],"method":"Pour all ingredients into a tall glass, add pebble ice.\nWith the help of a swizzle stick (or cocktail spoon) mix vigorously, complete by filling the glass with more pebble ice.","garnish":"Garnish with mint leaves and grated nutmeg.","url":"https://iba-world.com/chartreuse-swizzle/"},{"slug":"remember-the-maine","en":"Remember the Maine","cat":"The unforgettables","ingredients":[{"am":60,"unit":"ml","name":"Rye Whiskey"},{"am":22.5,"unit":"ml","name":"Sweet Vermouth"},{"am":15,"unit":"ml","name":"Cherry Brandy Luxardo"},{"am":7.5,"unit":"ml","name":"Absinthe"}],"method":"Pour the absinthe into a coupe glass and swirl to completely coat the inside.\nDiscard the absinthe and set the glass aside. Add the other ingredients to a mixing glass and fill it 3/4 full with ice. Stir until chilled, then strain into the glass rinsed with the absinthe.","garnish":"Garnish with lemon zest.","url":"https://iba-world.com/remember-the-maine/"},{"slug":"jungle-bird","en":"Jungle Bird","cat":"New Era","ingredients":[{"am":45,"unit":"ml","name":"Blackstrap rum"},{"am":22.5,"unit":"ml","name":"Campari"},{"am":45,"unit":"ml","name":"Pineapple juice"},{"am":15,"unit":"ml","name":"Freshly Squeezed Lime juice"},{"am":15,"unit":"ml","name":"Demerara sugar syrup"}],"method":"Pour all ingredients into a shaker with ice and shake.\nStrain into a rocks glass filled with ice.","garnish":"Garnish with a pineapple wedge.","url":"https://iba-world.com/jungle-bird/"},{"slug":"suffering-bastard","en":"Suffering Bastard","cat":"New Era","ingredients":[{"am":30,"unit":"ml","name":"Cognac or Brandy"},{"am":30,"unit":"ml","name":"Gin"},{"am":15,"unit":"ml","name":"Fresh Lime Juice"},{"am":2,"unit":"dashes","name":"Angostura Bitters"},{"am":null,"unit":"","name":"Top up Ginger beer"}],"method":"Pour all ingredients into cocktail shaker except the ginger beer, shake well with ice.\nPour unstrained into a Collins glass or in the original.\nS. Bastard mug and top up with ginger beer.","garnish":"Garnish with mint spring and optionally an orange slice as well.","url":"https://iba-world.com/suffering-bastard/"},{"slug":"sex-on-the-beach","en":"Sex on the Beach","cat":"Contemporary Classics","ingredients":[{"am":40,"unit":"ml","name":"Vodka"},{"am":20,"unit":"ml","name":"Peach Schnapps"},{"am":40,"unit":"ml","name":"Fresh Orange Juice"},{"am":40,"unit":"ml","name":"Cranberry Juice"}],"method":"Build all ingredients in a highball glass filled with ice.","garnish":"Garnish with half orange slice.","url":"https://iba-world.com/sex-on-the-beach/"},{"slug":"bellini","en":"Bellini","cat":"Contemporary Classics","ingredients":[{"am":100,"unit":"ml","name":"Prosecco"},{"am":50,"unit":"ml","name":"White Peach Puree"}],"method":"Pour peach puree into the mixing glass with ice, add the Prosecco wine.\nStir gently and pour in a chilled flute glass.\nNOTE:\nPuccini – Fresh Mandarin Orange Juice;\nRossini – Fresh Strawberry Puree;\nTintoretto –  Fresh Pomegranate Juice.","garnish":"N/A.","url":"https://iba-world.com/bellini/"},{"slug":"sherry-cobble","en":"Sherry Cobbler","cat":"New Era","ingredients":[{"am":45,"unit":"ml","name":"Amontillado sherry"},{"am":45,"unit":"ml","name":"Palo Cortado"},{"am":1,"unit":"tsp","name":"Superfine Sugar (or granulated)"},{"am":null,"unit":"","name":"1/2 Orange Wheel"},{"am":null,"unit":"","name":"1/2 Lemon Wheel"}],"method":"Combine sherry, sugar and 2 quarter wheels each of orange and lemon in a shaker with ice, shake briskly, strain into a Julep cocktail cup filled with crushed ice.","garnish":"Garnish with fresh berries, ¼ wheel each orange and lemon. Serve with straws.","url":"https://iba-world.com/sherry-cobble/"},{"slug":"naked-and-famous","en":"Naked and Famous","cat":"New Era","ingredients":[{"am":22.5,"unit":"ml","name":"Mezcal"},{"am":22.5,"unit":"ml","name":"Yellow Chartreuse"},{"am":22.5,"unit":"ml","name":"Aperol"},{"am":22.5,"unit":"ml","name":"Fresh Lime Juice"}],"method":"Pour all ingredients into cocktail shaker, shake well with ice, strain into chilled cocktail glass.","garnish":"N/A","url":"https://iba-world.com/naked-and-famous/"},{"slug":"alexander","en":"Alexander","cat":"The unforgettables","ingredients":[{"am":30,"unit":"ml","name":"Cognac"},{"am":30,"unit":"ml","name":"Crème de Cacao (Brown)"},{"am":30,"unit":"ml","name":"Fresh Cream"}],"method":"Pour all ingredients into cocktail shaker filled with ice cubes.\nShake and strain into a chilled cocktail glass.","garnish":"Sprinkle fresh ground nutmeg on top.","url":"https://iba-world.com/alexander/"},{"slug":"between-the-sheets","en":"Between the Sheets","cat":"The unforgettables","ingredients":[{"am":30,"unit":"ml","name":"White Rum"},{"am":30,"unit":"ml","name":"Cognac"},{"am":30,"unit":"ml","name":"Triple Sec"},{"am":20,"unit":"ml","name":"Fresh Lemon Juice"}],"method":"Add all ingredients into a cocktail shaker.\nShake with ice and strain into a chilled cocktail glass.","garnish":"N/A","url":"https://iba-world.com/between-the-sheets/"},{"slug":"stinger","en":"Stinger","cat":"The unforgettables","ingredients":[{"am":50,"unit":"ml","name":"Cognac"},{"am":20,"unit":"ml","name":"White Crème de Menthe"}],"method":"Pour all ingredients into mixing glass with ice cubes. Stir well.\nStrain into chilled martini cocktail glass.","garnish":"Optional mint leave.","url":"https://iba-world.com/stinger/"},{"slug":"angel-face","en":"Angel Face","cat":"The unforgettables","ingredients":[{"am":30,"unit":"ml","name":"Gin"},{"am":30,"unit":"ml","name":"Apricot Brandy"},{"am":30,"unit":"ml","name":"Calvados"}],"method":"Pour all ingredients into cocktail shaker filled with ice cubes.\nShake and strain into a chilled cocktail glass.","garnish":"N/A","url":"https://iba-world.com/angel-face/"},{"slug":"tuxedo","en":"Tuxedo","cat":"The unforgettables","ingredients":[{"am":30,"unit":"ml","name":"Old Tom Gin"},{"am":30,"unit":"ml","name":"Dry Vermouth"},{"am":null,"unit":"","name":"1/2 Bar Spoon Maraschino Luxardo"},{"am":null,"unit":"","name":"1/4 Bar Spoon of Absinthe"},{"am":3,"unit":"dashes","name":"Orange Bitters"}],"method":"Pour all ingredients into mixing glass with ice cubes. Stir well.\nStrain into chilled martini cocktail glass.","garnish":"Garnish with cherry and lemon zest.","url":"https://iba-world.com/tuxedo/"},{"slug":"paradise","en":"Paradise","cat":"The unforgettables","ingredients":[{"am":30,"unit":"ml","name":"Gin"},{"am":20,"unit":"ml","name":"Apricot Brandy"},{"am":15,"unit":"ml","name":"Fresh Orange Juice"}],"method":"Pour all ingredients into cocktail shaker, shake well with ice, strain into chilled cocktail glass.","garnish":"N/A","url":"https://iba-world.com/paradise/"},{"slug":"hemingway-special","en":"Hemingway Special","cat":"Contemporary Classics","ingredients":[{"am":60,"unit":"ml","name":"Rum"},{"am":40,"unit":"ml","name":"Grapefruit Juice"},{"am":15,"unit":"ml","name":"Maraschino Luxardo"},{"am":15,"unit":"ml","name":"Fresh Lime"}],"method":"Pour all ingredients into a shaker with ice.\nShake well and strain into a large cocktail glass.","garnish":"N/A","url":"https://iba-world.com/hemingway-special/"},{"slug":"casino","en":"Casino","cat":"The unforgettables","ingredients":[{"am":40,"unit":"ml","name":"Old Tom Gin"},{"am":10,"unit":"ml","name":"Maraschino Luxardo"},{"am":10,"unit":"ml","name":"Fresh Lemon Juice"},{"am":2,"unit":"dashes","name":"Orange Bitters"}],"method":"Pour all ingredients into cocktails shaker, shake well with ice, strain\ninto chilled rocks glass with ice.","garnish":"Garnish with a lemon zest and a maraschino cherry.","url":"https://iba-world.com/casino/"},{"slug":"cuba-libre","en":"Cuba Libre","cat":"Contemporary Classics","ingredients":[{"am":50,"unit":"ml","name":"White Rum"},{"am":120,"unit":"ml","name":"Cola"},{"am":10,"unit":"ml","name":"Fresh Lime Juice"}],"method":"Build all ingredients in a highball glass filled with ice.","garnish":"Garnish with lime wedge.","url":"https://iba-world.com/cuba-libre/"},{"slug":"planters-punch","en":"Planters Punch","cat":"The unforgettables","ingredients":[{"am":45,"unit":"ml","name":"Jamaican Rum"},{"am":15,"unit":"ml","name":"Lime Juice"},{"am":30,"unit":"ml","name":"Sugar Cane Juice"}],"method":"Pour all ingredients directly in a small tumbler or a typical terracotta glass.\nNOTE:\nAdd dilution up to taste, it can be given by water, ice or fresh juices.","garnish":"Garnish with orange zest.","url":"https://iba-world.com/planters-punch/"},{"slug":"mary-pickford","en":"Mary Pickford","cat":"The unforgettables","ingredients":[{"am":45,"unit":"ml","name":"White Rum"},{"am":45,"unit":"ml","name":"Fresh Pineapple Juice"},{"am":7.5,"unit":"ml","name":"Maraschino Luxardo"},{"am":5,"unit":"ml","name":"Grenadine Syrup"}],"method":"Pour all ingredients into cocktail shaker, shake well with ice, strain into chilled cocktail glass.","garnish":"N/A","url":"https://iba-world.com/mary-pickford/"},{"slug":"irish-coffee","en":"Irish Coffee","cat":"Contemporary Classics","ingredients":[{"am":50,"unit":"ml","name":"Irish Whiskey"},{"am":120,"unit":"ml","name":"Hot coffee"},{"am":50,"unit":"ml","name":"Fresh cream (Chilled)"},{"am":1,"unit":"teaspoon","name":"Sugar"}],"method":"Warm black coffee is poured into a preheated Irish coffee glass.\nWhiskey and at least one teaspoon of sugar is added and stirred until dissolved.\nFresh thick chilled cream is carefully poured over the back of a spoon held just above the surface of the coffee.\nThe layer of cream will float on the coffee without mixing.\nPlain sugar can be replaced with sugar syrup","garnish":"N/A","url":"https://iba-world.com/irish-coffee/"},{"slug":"porn-star-martini","en":"Porn Star Martini","cat":"New Era","ingredients":[{"am":50,"unit":"ml","name":"Vanilla Vodka"},{"am":20,"unit":"ml","name":"Passion Fruit Liqueur"},{"am":50,"unit":"ml","name":"Passion Fruit Puree"},{"am":2,"unit":"bar spoons","name":"Vanilla Sugar"},{"am":50,"unit":"ml","name":"Champagne to serve on the side"}],"method":"Pour all ingredients into cocktail shaker, shake well with ice, double strain into a large chilled cocktail glass.\nAccompany with a shot of champagne.","garnish":"Garnish with passion fruit cup and sugar.","url":"https://iba-world.com/porn-star-martini/"},{"slug":"new-york-sour","en":"New York Sour","cat":"New Era","ingredients":[{"am":60,"unit":"ml","name":"Rye Whiskey or Bourbon"},{"am":22.5,"unit":"ml","name":"Simple syrup"},{"am":30,"unit":"ml","name":"Fresh lemon juice"},{"am":null,"unit":"","name":"Few Drops of Egg White"},{"am":15,"unit":"ml","name":"Red wine (Shiraz or Malbech)"}],"method":"Pour all ingredients into the shaker. Shake vigorously with ice.\nStrain into a chilled rocks glass filled with ice. Float the wine on top.","garnish":"Garnish with lemon or orange zest with cherry.","url":"https://iba-world.com/new-york-sour/"},{"slug":"champagne-cocktail","en":"Champagne Cocktail","cat":"Contemporary Classics","ingredients":[{"am":90,"unit":"ml","name":"Chilled Champagne"},{"am":10,"unit":"ml","name":"Cognac"},{"am":2,"unit":"dashes","name":"Angostura bitters"},{"am":null,"unit":"","name":"Few drops of Grand Marnier (optional)"},{"am":null,"unit":"","name":"1 sugar cube"}],"method":"Place the sugar cube with 2 dashes of bitters in a large Champagne glass, add the cognac.\nPour gently chilled Champagne.","garnish":"Garnish with orange zest and maraschino cherry.","url":"https://iba-world.com/champagne-cocktail/"},{"slug":"mimosa","en":"Mimosa","cat":"Contemporary Classics","ingredients":[{"am":75,"unit":"ml","name":"Freshly Squeezed Orange Juice"},{"am":75,"unit":"ml","name":"Prosecco"}],"method":"Pour orange juice into flute glass and gently pour the sparkling wine.\nStir gently.\nNOTE:\nAlso known as Buck’s Fizz.","garnish":"Garnish with orange twist (optional).","url":"https://iba-world.com/mimosa/"},{"slug":"john-collins","en":"John Collins","cat":"The unforgettables","ingredients":[{"am":45,"unit":"ml","name":"Gin"},{"am":30,"unit":"ml","name":"Fresh Lemon Juice"},{"am":15,"unit":"ml","name":"Simple Syrup"},{"am":60,"unit":"ml","name":"Soda Water"}],"method":"Pour all ingredients directly into highball filled with ice. Stir gently.\nNOTE:\nUse ‘Old Tom' Gin for Tom Collins.","garnish":"Garnish with lemon slice and maraschino cherry.","url":"https://iba-world.com/john-collins/"},{"slug":"kir","en":"Kir","cat":"Contemporary Classics","ingredients":[{"am":90,"unit":"ml","name":"Dry White Wine"},{"am":10,"unit":"ml","name":"Crème de Cassis"}],"method":"Pour Crème de Cassis into glass, top up with white wine.\nNOTE:\nKir Royal - Use Champagne instead of white wine","garnish":"N/A","url":"https://iba-world.com/kir/"}];
+
+</script>
+<script>
+/* 生成物：酒单 AI 示意图映射；由 assets/cocktails-ai/manifest.json 生成 */
+var COCKTAIL_PHOTOS = {
+  "0": {
+    "thumb": "assets/cocktails-ai/thumb/paper-plane.webp",
+    "full": "assets/cocktails-ai/full/paper-plane.webp",
+    "label": "AI 示意图"
+  },
+  "1": {
+    "thumb": "assets/cocktails-ai/thumb/long-island-ice-tea.webp",
+    "full": "assets/cocktails-ai/full/long-island-ice-tea.webp",
+    "label": "AI 示意图"
+  },
+  "2": {
+    "thumb": "assets/cocktails-ai/thumb/zombie.webp",
+    "full": "assets/cocktails-ai/full/zombie.webp",
+    "label": "AI 示意图"
+  },
+  "3": {
+    "thumb": "assets/cocktails-ai/thumb/spumoni.webp",
+    "full": "assets/cocktails-ai/full/spumoni.webp",
+    "label": "AI 示意图"
+  },
+  "4": {
+    "thumb": "assets/cocktails-ai/thumb/cosmopolitan.webp",
+    "full": "assets/cocktails-ai/full/cosmopolitan.webp",
+    "label": "AI 示意图"
+  },
+  "5": {
+    "thumb": "assets/cocktails-ai/thumb/pina-colada.webp",
+    "full": "assets/cocktails-ai/full/pina-colada.webp",
+    "label": "AI 示意图"
+  },
+  "6": {
+    "thumb": "assets/cocktails-ai/thumb/negroni.webp",
+    "full": "assets/cocktails-ai/full/negroni.webp",
+    "label": "AI 示意图"
+  },
+  "7": {
+    "thumb": "assets/cocktails-ai/thumb/penicillin.webp",
+    "full": "assets/cocktails-ai/full/penicillin.webp",
+    "label": "AI 示意图"
+  },
+  "8": {
+    "thumb": "assets/cocktails-ai/thumb/bee-s-knees.webp",
+    "full": "assets/cocktails-ai/full/bee-s-knees.webp",
+    "label": "AI 示意图"
+  },
+  "9": {
+    "thumb": "assets/cocktails-ai/thumb/espresso-martini.webp",
+    "full": "assets/cocktails-ai/full/espresso-martini.webp",
+    "label": "AI 示意图"
+  },
+  "10": {
+    "thumb": "assets/cocktails-ai/thumb/dry-martini.webp",
+    "full": "assets/cocktails-ai/full/dry-martini.webp",
+    "label": "AI 示意图"
+  },
+  "11": {
+    "thumb": "assets/cocktails-ai/thumb/manhattan.webp",
+    "full": "assets/cocktails-ai/full/manhattan.webp",
+    "label": "AI 示意图"
+  },
+  "12": {
+    "thumb": "assets/cocktails-ai/thumb/mojito.webp",
+    "full": "assets/cocktails-ai/full/mojito.webp",
+    "label": "AI 示意图"
+  },
+  "13": {
+    "thumb": "assets/cocktails-ai/thumb/whiskey-sour.webp",
+    "full": "assets/cocktails-ai/full/whiskey-sour.webp",
+    "label": "AI 示意图"
+  },
+  "14": {
+    "thumb": "assets/cocktails-ai/thumb/old-fashioned.webp",
+    "full": "assets/cocktails-ai/full/old-fashioned.webp",
+    "label": "AI 示意图"
+  },
+  "15": {
+    "thumb": "assets/cocktails-ai/thumb/daiquiri.webp",
+    "full": "assets/cocktails-ai/full/daiquiri.webp",
+    "label": "AI 示意图"
+  },
+  "16": {
+    "thumb": "assets/cocktails-ai/thumb/margarita.webp",
+    "full": "assets/cocktails-ai/full/margarita.webp",
+    "label": "AI 示意图"
+  },
+  "17": {
+    "thumb": "assets/cocktails-ai/thumb/moscow-mule.webp",
+    "full": "assets/cocktails-ai/full/moscow-mule.webp",
+    "label": "AI 示意图"
+  },
+  "18": {
+    "thumb": "assets/cocktails-ai/thumb/boulevardier.webp",
+    "full": "assets/cocktails-ai/full/boulevardier.webp",
+    "label": "AI 示意图"
+  },
+  "19": {
+    "thumb": "assets/cocktails-ai/thumb/french-martini.webp",
+    "full": "assets/cocktails-ai/full/french-martini.webp",
+    "label": "AI 示意图"
+  },
+  "20": {
+    "thumb": "assets/cocktails-ai/thumb/caipirinha.webp",
+    "full": "assets/cocktails-ai/full/caipirinha.webp",
+    "label": "AI 示意图"
+  },
+  "21": {
+    "thumb": "assets/cocktails-ai/thumb/sazerac.webp",
+    "full": "assets/cocktails-ai/full/sazerac.webp",
+    "label": "AI 示意图"
+  },
+  "22": {
+    "thumb": "assets/cocktails-ai/thumb/tommy-s-margarita.webp",
+    "full": "assets/cocktails-ai/full/tommy-s-margarita.webp",
+    "label": "AI 示意图"
+  },
+  "23": {
+    "thumb": "assets/cocktails-ai/thumb/mai-tai.webp",
+    "full": "assets/cocktails-ai/full/mai-tai.webp",
+    "label": "AI 示意图"
+  },
+  "24": {
+    "thumb": "assets/cocktails-ai/thumb/americano.webp",
+    "full": "assets/cocktails-ai/full/americano.webp",
+    "label": "AI 示意图"
+  },
+  "25": {
+    "thumb": "assets/cocktails-ai/thumb/black-russian.webp",
+    "full": "assets/cocktails-ai/full/black-russian.webp",
+    "label": "AI 示意图"
+  },
+  "26": {
+    "thumb": "assets/cocktails-ai/thumb/white-russian.webp",
+    "full": "assets/cocktails-ai/full/white-russian.webp",
+    "label": "AI 示意图"
+  },
+  "27": {
+    "thumb": "assets/cocktails-ai/thumb/singapore-sling.webp",
+    "full": "assets/cocktails-ai/full/singapore-sling.webp",
+    "label": "AI 示意图"
+  },
+  "28": {
+    "thumb": "assets/cocktails-ai/thumb/horse-s-neck.webp",
+    "full": "assets/cocktails-ai/full/horse-s-neck.webp",
+    "label": "AI 示意图"
+  },
+  "29": {
+    "thumb": "assets/cocktails-ai/thumb/paloma.webp",
+    "full": "assets/cocktails-ai/full/paloma.webp",
+    "label": "AI 示意图"
+  },
+  "30": {
+    "thumb": "assets/cocktails-ai/thumb/mint-julep.webp",
+    "full": "assets/cocktails-ai/full/mint-julep.webp",
+    "label": "AI 示意图"
+  },
+  "31": {
+    "thumb": "assets/cocktails-ai/thumb/bramble.webp",
+    "full": "assets/cocktails-ai/full/bramble.webp",
+    "label": "AI 示意图"
+  },
+  "32": {
+    "thumb": "assets/cocktails-ai/thumb/rob-roy.webp",
+    "full": "assets/cocktails-ai/full/rob-roy.webp",
+    "label": "AI 示意图"
+  },
+  "33": {
+    "thumb": "assets/cocktails-ai/thumb/vesper.webp",
+    "full": "assets/cocktails-ai/full/vesper.webp",
+    "label": "AI 示意图"
+  },
+  "34": {
+    "thumb": "assets/cocktails-ai/thumb/gin-fizz.webp",
+    "full": "assets/cocktails-ai/full/gin-fizz.webp",
+    "label": "AI 示意图"
+  },
+  "35": {
+    "thumb": "assets/cocktails-ai/thumb/monkey-gland.webp",
+    "full": "assets/cocktails-ai/full/monkey-gland.webp",
+    "label": "AI 示意图"
+  },
+  "36": {
+    "thumb": "assets/cocktails-ai/thumb/pisco-sour.webp",
+    "full": "assets/cocktails-ai/full/pisco-sour.webp",
+    "label": "AI 示意图"
+  },
+  "37": {
+    "thumb": "assets/cocktails-ai/thumb/frangelico-sour.webp",
+    "full": "assets/cocktails-ai/full/frangelico-sour.webp",
+    "label": "AI 示意图"
+  },
+  "38": {
+    "thumb": "assets/cocktails-ai/thumb/white-lady.webp",
+    "full": "assets/cocktails-ai/full/white-lady.webp",
+    "label": "AI 示意图"
+  },
+  "39": {
+    "thumb": "assets/cocktails-ai/thumb/clover-club.webp",
+    "full": "assets/cocktails-ai/full/clover-club.webp",
+    "label": "AI 示意图"
+  },
+  "40": {
+    "thumb": "assets/cocktails-ai/thumb/aviation.webp",
+    "full": "assets/cocktails-ai/full/aviation.webp",
+    "label": "AI 示意图"
+  },
+  "41": {
+    "thumb": "assets/cocktails-ai/thumb/white-negroni.webp",
+    "full": "assets/cocktails-ai/full/white-negroni.webp",
+    "label": "AI 示意图"
+  },
+  "42": {
+    "thumb": "assets/cocktails-ai/thumb/hemingway-daiquiri.webp",
+    "full": "assets/cocktails-ai/full/hemingway-daiquiri.webp",
+    "label": "AI 示意图"
+  },
+  "43": {
+    "thumb": "assets/cocktails-ai/thumb/sidecar.webp",
+    "full": "assets/cocktails-ai/full/sidecar.webp",
+    "label": "AI 示意图"
+  },
+  "44": {
+    "thumb": "assets/cocktails-ai/thumb/blood-and-sand.webp",
+    "full": "assets/cocktails-ai/full/blood-and-sand.webp",
+    "label": "AI 示意图"
+  },
+  "45": {
+    "thumb": "assets/cocktails-ai/thumb/french-75.webp",
+    "full": "assets/cocktails-ai/full/french-75.webp",
+    "label": "AI 示意图"
+  },
+  "46": {
+    "thumb": "assets/cocktails-ai/thumb/vieux-carr.webp",
+    "full": "assets/cocktails-ai/full/vieux-carr.webp",
+    "label": "AI 示意图"
+  },
+  "47": {
+    "thumb": "assets/cocktails-ai/thumb/last-word.webp",
+    "full": "assets/cocktails-ai/full/last-word.webp",
+    "label": "AI 示意图"
+  },
+  "48": {
+    "thumb": "assets/cocktails-ai/thumb/corpse-reviver-2.webp",
+    "full": "assets/cocktails-ai/full/corpse-reviver-2.webp",
+    "label": "AI 示意图"
+  },
+  "49": {
+    "thumb": "assets/cocktails-ai/thumb/bloody-mary.webp",
+    "full": "assets/cocktails-ai/full/bloody-mary.webp",
+    "label": "AI 示意图"
+  },
+  "50": {
+    "thumb": "assets/cocktails-ai/thumb/martinez.webp",
+    "full": "assets/cocktails-ai/full/martinez.webp",
+    "label": "AI 示意图"
+  },
+  "51": {
+    "thumb": "assets/cocktails-ai/thumb/hanky-panky.webp",
+    "full": "assets/cocktails-ai/full/hanky-panky.webp",
+    "label": "AI 示意图"
+  },
+  "52": {
+    "thumb": "assets/cocktails-ai/thumb/teresa.webp",
+    "full": "assets/cocktails-ai/full/teresa.webp",
+    "label": "AI 示意图"
+  },
+  "53": {
+    "thumb": "assets/cocktails-ai/thumb/trinidad-sour.webp",
+    "full": "assets/cocktails-ai/full/trinidad-sour.webp",
+    "label": "AI 示意图"
+  },
+  "54": {
+    "thumb": "assets/cocktails-ai/thumb/jack-rose.webp",
+    "full": "assets/cocktails-ai/full/jack-rose.webp",
+    "label": "AI 示意图"
+  },
+  "55": {
+    "thumb": "assets/cocktails-ai/thumb/b-b.webp",
+    "full": "assets/cocktails-ai/full/b-b.webp",
+    "label": "AI 示意图"
+  },
+  "56": {
+    "thumb": "assets/cocktails-ai/thumb/new-york.webp",
+    "full": "assets/cocktails-ai/full/new-york.webp",
+    "label": "AI 示意图"
+  },
+  "57": {
+    "thumb": "assets/cocktails-ai/thumb/bijou.webp",
+    "full": "assets/cocktails-ai/full/bijou.webp",
+    "label": "AI 示意图"
+  },
+  "58": {
+    "thumb": "assets/cocktails-ai/thumb/ice-breaker.webp",
+    "full": "assets/cocktails-ai/full/ice-breaker.webp",
+    "label": "AI 示意图"
+  },
+  "59": {
+    "thumb": "assets/cocktails-ai/thumb/blue-hawaii.webp",
+    "full": "assets/cocktails-ai/full/blue-hawaii.webp",
+    "label": "AI 示意图"
+  },
+  "60": {
+    "thumb": "assets/cocktails-ai/thumb/metropole-no-2.webp",
+    "full": "assets/cocktails-ai/full/metropole-no-2.webp",
+    "label": "AI 示意图"
+  },
+  "61": {
+    "thumb": "assets/cocktails-ai/thumb/cape-cod.webp",
+    "full": "assets/cocktails-ai/full/cape-cod.webp",
+    "label": "AI 示意图"
+  },
+  "62": {
+    "thumb": "assets/cocktails-ai/thumb/xyz.webp",
+    "full": "assets/cocktails-ai/full/xyz.webp",
+    "label": "AI 示意图"
+  },
+  "63": {
+    "thumb": "assets/cocktails-ai/thumb/bossa-nova.webp",
+    "full": "assets/cocktails-ai/full/bossa-nova.webp",
+    "label": "AI 示意图"
+  },
+  "64": {
+    "thumb": "assets/cocktails-ai/thumb/florida-no-1.webp",
+    "full": "assets/cocktails-ai/full/florida-no-1.webp",
+    "label": "AI 示意图"
+  },
+  "65": {
+    "thumb": "assets/cocktails-ai/thumb/sapporo.webp",
+    "full": "assets/cocktails-ai/full/sapporo.webp",
+    "label": "AI 示意图"
+  },
+  "66": {
+    "thumb": "assets/cocktails-ai/thumb/el-diablo.webp",
+    "full": "assets/cocktails-ai/full/el-diablo.webp",
+    "label": "AI 示意图"
+  },
+  "67": {
+    "thumb": "assets/cocktails-ai/thumb/french-connection.webp",
+    "full": "assets/cocktails-ai/full/french-connection.webp",
+    "label": "AI 示意图"
+  },
+  "68": {
+    "thumb": "assets/cocktails-ai/thumb/french-kiss.webp",
+    "full": "assets/cocktails-ai/full/french-kiss.webp",
+    "label": "AI 示意图"
+  },
+  "69": {
+    "thumb": "assets/cocktails-ai/thumb/perfect-lady.webp",
+    "full": "assets/cocktails-ai/full/perfect-lady.webp",
+    "label": "AI 示意图"
+  },
+  "70": {
+    "thumb": "assets/cocktails-ai/thumb/dark-stormy.webp",
+    "full": "assets/cocktails-ai/full/dark-stormy.webp",
+    "label": "AI 示意图"
+  },
+  "71": {
+    "thumb": "assets/cocktails-ai/thumb/rusty-nail.webp",
+    "full": "assets/cocktails-ai/full/rusty-nail.webp",
+    "label": "AI 示意图"
+  },
+  "72": {
+    "thumb": "assets/cocktails-ai/thumb/garibaldi.webp",
+    "full": "assets/cocktails-ai/full/garibaldi.webp",
+    "label": "AI 示意图"
+  },
+  "73": {
+    "thumb": "assets/cocktails-ai/thumb/brandy-crusta.webp",
+    "full": "assets/cocktails-ai/full/brandy-crusta.webp",
+    "label": "AI 示意图"
+  },
+  "74": {
+    "thumb": "assets/cocktails-ai/thumb/airmail.webp",
+    "full": "assets/cocktails-ai/full/airmail.webp",
+    "label": "AI 示意图"
+  },
+  "75": {
+    "thumb": "assets/cocktails-ai/thumb/harvey-wallbanger.webp",
+    "full": "assets/cocktails-ai/full/harvey-wallbanger.webp",
+    "label": "AI 示意图"
+  },
+  "76": {
+    "thumb": "assets/cocktails-ai/thumb/champs-lys-es.webp",
+    "full": "assets/cocktails-ai/full/champs-lys-es.webp",
+    "label": "AI 示意图"
+  },
+  "77": {
+    "thumb": "assets/cocktails-ai/thumb/fancy-free.webp",
+    "full": "assets/cocktails-ai/full/fancy-free.webp",
+    "label": "AI 示意图"
+  },
+  "78": {
+    "thumb": "assets/cocktails-ai/thumb/grasshopper.webp",
+    "full": "assets/cocktails-ai/full/grasshopper.webp",
+    "label": "AI 示意图"
+  },
+  "79": {
+    "thumb": "assets/cocktails-ai/thumb/lucien-gaudin.webp",
+    "full": "assets/cocktails-ai/full/lucien-gaudin.webp",
+    "label": "AI 示意图"
+  },
+  "80": {
+    "thumb": "assets/cocktails-ai/thumb/mexican-firing-squad.webp",
+    "full": "assets/cocktails-ai/full/mexican-firing-squad.webp",
+    "label": "AI 示意图"
+  },
+  "81": {
+    "thumb": "assets/cocktails-ai/thumb/preakness.webp",
+    "full": "assets/cocktails-ai/full/preakness.webp",
+    "label": "AI 示意图"
+  },
+  "82": {
+    "thumb": "assets/cocktails-ai/thumb/toronto.webp",
+    "full": "assets/cocktails-ai/full/toronto.webp",
+    "label": "AI 示意图"
+  },
+  "83": {
+    "thumb": "assets/cocktails-ai/thumb/ward-8.webp",
+    "full": "assets/cocktails-ai/full/ward-8.webp",
+    "label": "AI 示意图"
+  },
+  "84": {
+    "thumb": "assets/cocktails-ai/thumb/celine-fizz.webp",
+    "full": "assets/cocktails-ai/full/celine-fizz.webp",
+    "label": "AI 示意图"
+  },
+  "85": {
+    "thumb": "assets/cocktails-ai/thumb/widow-s-kiss.webp",
+    "full": "assets/cocktails-ai/full/widow-s-kiss.webp",
+    "label": "AI 示意图"
+  },
+  "86": {
+    "thumb": "assets/cocktails-ai/thumb/abbey.webp",
+    "full": "assets/cocktails-ai/full/abbey.webp",
+    "label": "AI 示意图"
+  },
+  "87": {
+    "thumb": "assets/cocktails-ai/thumb/alabama-slammer.webp",
+    "full": "assets/cocktails-ai/full/alabama-slammer.webp",
+    "label": "AI 示意图"
+  },
+  "88": {
+    "thumb": "assets/cocktails-ai/thumb/golden-dream.webp",
+    "full": "assets/cocktails-ai/full/golden-dream.webp",
+    "label": "AI 示意图"
+  },
+  "89": {
+    "thumb": "assets/cocktails-ai/thumb/jasmine.webp",
+    "full": "assets/cocktails-ai/full/jasmine.webp",
+    "label": "AI 示意图"
+  },
+  "90": {
+    "thumb": "assets/cocktails-ai/thumb/trident.webp",
+    "full": "assets/cocktails-ai/full/trident.webp",
+    "label": "AI 示意图"
+  },
+  "91": {
+    "thumb": "assets/cocktails-ai/thumb/chartreuse-swizzle.webp",
+    "full": "assets/cocktails-ai/full/chartreuse-swizzle.webp",
+    "label": "AI 示意图"
+  },
+  "92": {
+    "thumb": "assets/cocktails-ai/thumb/gold-rush.webp",
+    "full": "assets/cocktails-ai/full/gold-rush.webp",
+    "label": "AI 示意图"
+  },
+  "93": {
+    "thumb": "assets/cocktails-ai/thumb/bamboo.webp",
+    "full": "assets/cocktails-ai/full/bamboo.webp",
+    "label": "AI 示意图"
+  },
+  "94": {
+    "thumb": "assets/cocktails-ai/thumb/red-hook.webp",
+    "full": "assets/cocktails-ai/full/red-hook.webp",
+    "label": "AI 示意图"
+  },
+  "95": {
+    "thumb": "assets/cocktails-ai/thumb/gin-gin-mule.webp",
+    "full": "assets/cocktails-ai/full/gin-gin-mule.webp",
+    "label": "AI 示意图"
+  },
+  "96": {
+    "thumb": "assets/cocktails-ai/thumb/la-louisiane.webp",
+    "full": "assets/cocktails-ai/full/la-louisiane.webp",
+    "label": "AI 示意图"
+  },
+  "97": {
+    "thumb": "assets/cocktails-ai/thumb/remember-the-maine.webp",
+    "full": "assets/cocktails-ai/full/remember-the-maine.webp",
+    "label": "AI 示意图"
+  },
+  "98": {
+    "thumb": "assets/cocktails-ai/thumb/jungle-bird.webp",
+    "full": "assets/cocktails-ai/full/jungle-bird.webp",
+    "label": "AI 示意图"
+  },
+  "99": {
+    "thumb": "assets/cocktails-ai/thumb/suffering-bastard.webp",
+    "full": "assets/cocktails-ai/full/suffering-bastard.webp",
+    "label": "AI 示意图"
+  },
+  "100": {
+    "thumb": "assets/cocktails-ai/thumb/sex-on-the-beach.webp",
+    "full": "assets/cocktails-ai/full/sex-on-the-beach.webp",
+    "label": "AI 示意图"
+  },
+  "101": {
+    "thumb": "assets/cocktails-ai/thumb/ramos-gin-fizz.webp",
+    "full": "assets/cocktails-ai/full/ramos-gin-fizz.webp",
+    "label": "AI 示意图"
+  },
+  "102": {
+    "thumb": "assets/cocktails-ai/thumb/recipe-103.webp",
+    "full": "assets/cocktails-ai/full/recipe-103.webp",
+    "label": "AI 示意图"
+  },
+  "103": {
+    "thumb": "assets/cocktails-ai/thumb/terrible-love.webp",
+    "full": "assets/cocktails-ai/full/terrible-love.webp",
+    "label": "AI 示意图"
+  },
+  "104": {
+    "thumb": "assets/cocktails-ai/thumb/yuzu.webp",
+    "full": "assets/cocktails-ai/full/yuzu.webp",
+    "label": "AI 示意图"
+  },
+  "105": {
+    "thumb": "assets/cocktails-ai/thumb/wibble.webp",
+    "full": "assets/cocktails-ai/full/wibble.webp",
+    "label": "AI 示意图"
+  },
+  "106": {
+    "thumb": "assets/cocktails-ai/thumb/kings-valley.webp",
+    "full": "assets/cocktails-ai/full/kings-valley.webp",
+    "label": "AI 示意图"
+  },
+  "107": {
+    "thumb": "assets/cocktails-ai/thumb/clip-joint-cup.webp",
+    "full": "assets/cocktails-ai/full/clip-joint-cup.webp",
+    "label": "AI 示意图"
+  },
+  "108": {
+    "thumb": "assets/cocktails-ai/thumb/diplomat.webp",
+    "full": "assets/cocktails-ai/full/diplomat.webp",
+    "label": "AI 示意图"
+  },
+  "109": {
+    "thumb": "assets/cocktails-ai/thumb/corpse-reviver-1.webp",
+    "full": "assets/cocktails-ai/full/corpse-reviver-1.webp",
+    "label": "AI 示意图"
+  },
+  "110": {
+    "thumb": "assets/cocktails-ai/thumb/ping-pang.webp",
+    "full": "assets/cocktails-ai/full/ping-pang.webp",
+    "label": "AI 示意图"
+  },
+  "111": {
+    "thumb": "assets/cocktails-ai/thumb/alaska.webp",
+    "full": "assets/cocktails-ai/full/alaska.webp",
+    "label": "AI 示意图"
+  },
+  "112": {
+    "thumb": "assets/cocktails-ai/thumb/howie-in-the-jungle.webp",
+    "full": "assets/cocktails-ai/full/howie-in-the-jungle.webp",
+    "label": "AI 示意图"
+  },
+  "113": {
+    "thumb": "assets/cocktails-ai/thumb/jive-turkey.webp",
+    "full": "assets/cocktails-ai/full/jive-turkey.webp",
+    "label": "AI 示意图"
+  },
+  "114": {
+    "thumb": "assets/cocktails-ai/thumb/ford.webp",
+    "full": "assets/cocktails-ai/full/ford.webp",
+    "label": "AI 示意图"
+  },
+  "115": {
+    "thumb": "assets/cocktails-ai/thumb/gimlet.webp",
+    "full": "assets/cocktails-ai/full/gimlet.webp",
+    "label": "AI 示意图"
+  },
+  "116": {
+    "thumb": "assets/cocktails-ai/thumb/kaikan-fizz.webp",
+    "full": "assets/cocktails-ai/full/kaikan-fizz.webp",
+    "label": "AI 示意图"
+  },
+  "117": {
+    "thumb": "assets/cocktails-ai/thumb/bellini.webp",
+    "full": "assets/cocktails-ai/full/bellini.webp",
+    "label": "AI 示意图"
+  },
+  "118": {
+    "thumb": "assets/cocktails-ai/thumb/yokohama.webp",
+    "full": "assets/cocktails-ai/full/yokohama.webp",
+    "label": "AI 示意图"
+  },
+  "119": {
+    "thumb": "assets/cocktails-ai/thumb/enzoni.webp",
+    "full": "assets/cocktails-ai/full/enzoni.webp",
+    "label": "AI 示意图"
+  },
+  "120": {
+    "thumb": "assets/cocktails-ai/thumb/tom-collins.webp",
+    "full": "assets/cocktails-ai/full/tom-collins.webp",
+    "label": "AI 示意图"
+  },
+  "121": {
+    "thumb": "assets/cocktails-ai/thumb/francis-albert.webp",
+    "full": "assets/cocktails-ai/full/francis-albert.webp",
+    "label": "AI 示意图"
+  },
+  "122": {
+    "thumb": "assets/cocktails-ai/thumb/haystack.webp",
+    "full": "assets/cocktails-ai/full/haystack.webp",
+    "label": "AI 示意图"
+  },
+  "123": {
+    "thumb": "assets/cocktails-ai/thumb/aperol-spritz.webp",
+    "full": "assets/cocktails-ai/full/aperol-spritz.webp",
+    "label": "AI 示意图"
+  },
+  "124": {
+    "thumb": "assets/cocktails-ai/thumb/amaretto-sour.webp",
+    "full": "assets/cocktails-ai/full/amaretto-sour.webp",
+    "label": "AI 示意图"
+  },
+  "125": {
+    "thumb": "assets/cocktails-ai/thumb/blue-moon.webp",
+    "full": "assets/cocktails-ai/full/blue-moon.webp",
+    "label": "AI 示意图"
+  },
+  "126": {
+    "thumb": "assets/cocktails-ai/thumb/valencia.webp",
+    "full": "assets/cocktails-ai/full/valencia.webp",
+    "label": "AI 示意图"
+  },
+  "127": {
+    "thumb": "assets/cocktails-ai/thumb/dirty-martini.webp",
+    "full": "assets/cocktails-ai/full/dirty-martini.webp",
+    "label": "AI 示意图"
+  },
+  "128": {
+    "thumb": "assets/cocktails-ai/thumb/sherry-cobble.webp",
+    "full": "assets/cocktails-ai/full/sherry-cobble.webp",
+    "label": "AI 示意图"
+  },
+  "129": {
+    "thumb": "assets/cocktails-ai/thumb/adonis.webp",
+    "full": "assets/cocktails-ai/full/adonis.webp",
+    "label": "AI 示意图"
+  },
+  "130": {
+    "thumb": "assets/cocktails-ai/thumb/murasame.webp",
+    "full": "assets/cocktails-ai/full/murasame.webp",
+    "label": "AI 示意图"
+  },
+  "131": {
+    "thumb": "assets/cocktails-ai/thumb/czarina.webp",
+    "full": "assets/cocktails-ai/full/czarina.webp",
+    "label": "AI 示意图"
+  },
+  "132": {
+    "thumb": "assets/cocktails-ai/thumb/gin-ricky.webp",
+    "full": "assets/cocktails-ai/full/gin-ricky.webp",
+    "label": "AI 示意图"
+  },
+  "133": {
+    "thumb": "assets/cocktails-ai/thumb/meat-hook.webp",
+    "full": "assets/cocktails-ai/full/meat-hook.webp",
+    "label": "AI 示意图"
+  },
+  "134": {
+    "thumb": "assets/cocktails-ai/thumb/naked-and-famous.webp",
+    "full": "assets/cocktails-ai/full/naked-and-famous.webp",
+    "label": "AI 示意图"
+  },
+  "135": {
+    "thumb": "assets/cocktails-ai/thumb/mulled-wine.webp",
+    "full": "assets/cocktails-ai/full/mulled-wine.webp",
+    "label": "AI 示意图"
+  },
+  "136": {
+    "thumb": "assets/cocktails-ai/thumb/kamikaze.webp",
+    "full": "assets/cocktails-ai/full/kamikaze.webp",
+    "label": "AI 示意图"
+  },
+  "137": {
+    "thumb": "assets/cocktails-ai/thumb/m-30-rain.webp",
+    "full": "assets/cocktails-ai/full/m-30-rain.webp",
+    "label": "AI 示意图"
+  },
+  "138": {
+    "thumb": "assets/cocktails-ai/thumb/alexander.webp",
+    "full": "assets/cocktails-ai/full/alexander.webp",
+    "label": "AI 示意图"
+  },
+  "139": {
+    "thumb": "assets/cocktails-ai/thumb/between-the-sheets.webp",
+    "full": "assets/cocktails-ai/full/between-the-sheets.webp",
+    "label": "AI 示意图"
+  },
+  "140": {
+    "thumb": "assets/cocktails-ai/thumb/stinger.webp",
+    "full": "assets/cocktails-ai/full/stinger.webp",
+    "label": "AI 示意图"
+  },
+  "141": {
+    "thumb": "assets/cocktails-ai/thumb/port-flip.webp",
+    "full": "assets/cocktails-ai/full/port-flip.webp",
+    "label": "AI 示意图"
+  },
+  "142": {
+    "thumb": "assets/cocktails-ai/thumb/angel-face.webp",
+    "full": "assets/cocktails-ai/full/angel-face.webp",
+    "label": "AI 示意图"
+  },
+  "143": {
+    "thumb": "assets/cocktails-ai/thumb/tuxedo.webp",
+    "full": "assets/cocktails-ai/full/tuxedo.webp",
+    "label": "AI 示意图"
+  },
+  "144": {
+    "thumb": "assets/cocktails-ai/thumb/pink-lady.webp",
+    "full": "assets/cocktails-ai/full/pink-lady.webp",
+    "label": "AI 示意图"
+  },
+  "145": {
+    "thumb": "assets/cocktails-ai/thumb/paradise.webp",
+    "full": "assets/cocktails-ai/full/paradise.webp",
+    "label": "AI 示意图"
+  },
+  "146": {
+    "thumb": "assets/cocktails-ai/thumb/derby.webp",
+    "full": "assets/cocktails-ai/full/derby.webp",
+    "label": "AI 示意图"
+  },
+  "147": {
+    "thumb": "assets/cocktails-ai/thumb/hemingway-special.webp",
+    "full": "assets/cocktails-ai/full/hemingway-special.webp",
+    "label": "AI 示意图"
+  },
+  "148": {
+    "thumb": "assets/cocktails-ai/thumb/pegu-club.webp",
+    "full": "assets/cocktails-ai/full/pegu-club.webp",
+    "label": "AI 示意图"
+  },
+  "149": {
+    "thumb": "assets/cocktails-ai/thumb/20th-century.webp",
+    "full": "assets/cocktails-ai/full/20th-century.webp",
+    "label": "AI 示意图"
+  },
+  "150": {
+    "thumb": "assets/cocktails-ai/thumb/casino.webp",
+    "full": "assets/cocktails-ai/full/casino.webp",
+    "label": "AI 示意图"
+  },
+  "151": {
+    "thumb": "assets/cocktails-ai/thumb/cuba-libre.webp",
+    "full": "assets/cocktails-ai/full/cuba-libre.webp",
+    "label": "AI 示意图"
+  },
+  "152": {
+    "thumb": "assets/cocktails-ai/thumb/bacardi.webp",
+    "full": "assets/cocktails-ai/full/bacardi.webp",
+    "label": "AI 示意图"
+  },
+  "153": {
+    "thumb": "assets/cocktails-ai/thumb/planter-s-punch.webp",
+    "full": "assets/cocktails-ai/full/planter-s-punch.webp",
+    "label": "AI 示意图"
+  },
+  "154": {
+    "thumb": "assets/cocktails-ai/thumb/yellow-bird.webp",
+    "full": "assets/cocktails-ai/full/yellow-bird.webp",
+    "label": "AI 示意图"
+  },
+  "155": {
+    "thumb": "assets/cocktails-ai/thumb/mary-pickford.webp",
+    "full": "assets/cocktails-ai/full/mary-pickford.webp",
+    "label": "AI 示意图"
+  },
+  "156": {
+    "thumb": "assets/cocktails-ai/thumb/painkiller.webp",
+    "full": "assets/cocktails-ai/full/painkiller.webp",
+    "label": "AI 示意图"
+  },
+  "157": {
+    "thumb": "assets/cocktails-ai/thumb/hot-buttered-rum.webp",
+    "full": "assets/cocktails-ai/full/hot-buttered-rum.webp",
+    "label": "AI 示意图"
+  },
+  "158": {
+    "thumb": "assets/cocktails-ai/thumb/screwdriver.webp",
+    "full": "assets/cocktails-ai/full/screwdriver.webp",
+    "label": "AI 示意图"
+  },
+  "159": {
+    "thumb": "assets/cocktails-ai/thumb/irish-coffee.webp",
+    "full": "assets/cocktails-ai/full/irish-coffee.webp",
+    "label": "AI 示意图"
+  },
+  "160": {
+    "thumb": "assets/cocktails-ai/thumb/red-snapper.webp",
+    "full": "assets/cocktails-ai/full/red-snapper.webp",
+    "label": "AI 示意图"
+  },
+  "161": {
+    "thumb": "assets/cocktails-ai/thumb/caipiroska.webp",
+    "full": "assets/cocktails-ai/full/caipiroska.webp",
+    "label": "AI 示意图"
+  },
+  "162": {
+    "thumb": "assets/cocktails-ai/thumb/porn-star-martini.webp",
+    "full": "assets/cocktails-ai/full/porn-star-martini.webp",
+    "label": "AI 示意图"
+  },
+  "163": {
+    "thumb": "assets/cocktails-ai/thumb/bay-breeze.webp",
+    "full": "assets/cocktails-ai/full/bay-breeze.webp",
+    "label": "AI 示意图"
+  },
+  "164": {
+    "thumb": "assets/cocktails-ai/thumb/greyhound.webp",
+    "full": "assets/cocktails-ai/full/greyhound.webp",
+    "label": "AI 示意图"
+  },
+  "165": {
+    "thumb": "assets/cocktails-ai/thumb/salty-dog.webp",
+    "full": "assets/cocktails-ai/full/salty-dog.webp",
+    "label": "AI 示意图"
+  },
+  "166": {
+    "thumb": "assets/cocktails-ai/thumb/god-father.webp",
+    "full": "assets/cocktails-ai/full/god-father.webp",
+    "label": "AI 示意图"
+  },
+  "167": {
+    "thumb": "assets/cocktails-ai/thumb/god-mother.webp",
+    "full": "assets/cocktails-ai/full/god-mother.webp",
+    "label": "AI 示意图"
+  },
+  "168": {
+    "thumb": "assets/cocktails-ai/thumb/new-york-sour.webp",
+    "full": "assets/cocktails-ai/full/new-york-sour.webp",
+    "label": "AI 示意图"
+  },
+  "169": {
+    "thumb": "assets/cocktails-ai/thumb/old-pal.webp",
+    "full": "assets/cocktails-ai/full/old-pal.webp",
+    "label": "AI 示意图"
+  },
+  "170": {
+    "thumb": "assets/cocktails-ai/thumb/brooklyn.webp",
+    "full": "assets/cocktails-ai/full/brooklyn.webp",
+    "label": "AI 示意图"
+  },
+  "171": {
+    "thumb": "assets/cocktails-ai/thumb/champagne-cocktail.webp",
+    "full": "assets/cocktails-ai/full/champagne-cocktail.webp",
+    "label": "AI 示意图"
+  },
+  "172": {
+    "thumb": "assets/cocktails-ai/thumb/mimosa.webp",
+    "full": "assets/cocktails-ai/full/mimosa.webp",
+    "label": "AI 示意图"
+  },
+  "173": {
+    "thumb": "assets/cocktails-ai/thumb/death-in-the-afternoon.webp",
+    "full": "assets/cocktails-ai/full/death-in-the-afternoon.webp",
+    "label": "AI 示意图"
+  },
+  "174": {
+    "thumb": "assets/cocktails-ai/thumb/b-52.webp",
+    "full": "assets/cocktails-ai/full/b-52.webp",
+    "label": "AI 示意图"
+  },
+  "175": {
+    "thumb": "assets/cocktails-ai/thumb/blue-lagoon.webp",
+    "full": "assets/cocktails-ai/full/blue-lagoon.webp",
+    "label": "AI 示意图"
+  },
+  "176": {
+    "thumb": "assets/cocktails-ai/thumb/chocolate-martini.webp",
+    "full": "assets/cocktails-ai/full/chocolate-martini.webp",
+    "label": "AI 示意图"
+  },
+  "177": {
+    "thumb": "assets/cocktails-ai/thumb/angel-s-tit.webp",
+    "full": "assets/cocktails-ai/full/angel-s-tit.webp",
+    "label": "AI 示意图"
+  },
+  "178": {
+    "thumb": "assets/cocktails-ai/thumb/banana-banshee.webp",
+    "full": "assets/cocktails-ai/full/banana-banshee.webp",
+    "label": "AI 示意图"
+  },
+  "179": {
+    "thumb": "assets/cocktails-ai/thumb/chicago.webp",
+    "full": "assets/cocktails-ai/full/chicago.webp",
+    "label": "AI 示意图"
+  },
+  "180": {
+    "thumb": "assets/cocktails-ai/thumb/flamingo.webp",
+    "full": "assets/cocktails-ai/full/flamingo.webp",
+    "label": "AI 示意图"
+  },
+  "181": {
+    "thumb": "assets/cocktails-ai/thumb/freddy-fudpucker.webp",
+    "full": "assets/cocktails-ai/full/freddy-fudpucker.webp",
+    "label": "AI 示意图"
+  },
+  "182": {
+    "thumb": "assets/cocktails-ai/thumb/smoky-martini.webp",
+    "full": "assets/cocktails-ai/full/smoky-martini.webp",
+    "label": "AI 示意图"
+  },
+  "183": {
+    "thumb": "assets/cocktails-ai/thumb/oaxaca-old-fashioned.webp",
+    "full": "assets/cocktails-ai/full/oaxaca-old-fashioned.webp",
+    "label": "AI 示意图"
+  },
+  "184": {
+    "thumb": "assets/cocktails-ai/thumb/mezcal-negroni.webp",
+    "full": "assets/cocktails-ai/full/mezcal-negroni.webp",
+    "label": "AI 示意图"
+  },
+  "185": {
+    "thumb": "assets/cocktails-ai/thumb/vampiro.webp",
+    "full": "assets/cocktails-ai/full/vampiro.webp",
+    "label": "AI 示意图"
+  },
+  "186": {
+    "thumb": "assets/cocktails-ai/thumb/cantarito.webp",
+    "full": "assets/cocktails-ai/full/cantarito.webp",
+    "label": "AI 示意图"
+  },
+  "187": {
+    "thumb": "assets/cocktails-ai/thumb/john-collins.webp",
+    "full": "assets/cocktails-ai/full/john-collins.webp",
+    "label": "AI 示意图"
+  },
+  "188": {
+    "thumb": "assets/cocktails-ai/thumb/pimm-s-cup.webp",
+    "full": "assets/cocktails-ai/full/pimm-s-cup.webp",
+    "label": "AI 示意图"
+  },
+  "189": {
+    "thumb": "assets/cocktails-ai/thumb/kir.webp",
+    "full": "assets/cocktails-ai/full/kir.webp",
+    "label": "AI 示意图"
+  },
+  "190": {
+    "thumb": "assets/cocktails-ai/thumb/kir-royale.webp",
+    "full": "assets/cocktails-ai/full/kir-royale.webp",
+    "label": "AI 示意图"
+  }
+};
 
 </script>
 <script>
@@ -8070,8 +9052,14 @@ var qrcode = function() {
      而且收藏会互相顶掉（两条都叫空字符串） */
   function recipeName(r) { return (r && (r.zh || r.en)) || '（未命名）'; }
 
+  function photoFor(i) {
+    if (typeof COCKTAIL_PHOTOS === 'undefined' || !COCKTAIL_PHOTOS) return null;
+    return COCKTAIL_PHOTOS[String(i)] || null;
+  }
+
   function menuCard(i) {
     var r = REF_RECIPES[i], st = refStat(i);
+    var ph = photoFor(i);
     var d = presetDiffOf(r);
     var use = d
       ? d.pre.items.filter(function (it) { return BY_ID[it[0]]; })
@@ -8084,6 +9072,9 @@ var qrcode = function() {
     var tech = methodFromRef(d ? (PRESET_METHOD[d.pre.name] || r.method) : r.method);
     var fizzNow = d ? presetFizzNames(d.pre) : refFizz(r);
     return '<button type="button" class="menucard" data-menu="' + i + '">'
+      + (ph ? '<span class="mc-photo"><img src="' + esc(ph.thumb) + '" alt="'
+        + esc(recipeName(r) + ' AI 示意图') + '" loading="lazy" decoding="async">'
+        + '<i class="mc-ai" title="AI 示意图">AI</i></span>' : '')
       + '<span class="mc-top"><b>' + esc(recipeName(r)) + '</b><i>' + esc(r.zh ? (r.en || '') : '') + '</i>'
         + '<span class="mc-star' + (on ? ' on' : '') + '" data-fav="' + i + '" role="button" tabindex="0"'
         + ' title="' + (on ? '取消收藏' : '收藏') + '">' + (on ? '★' : '☆') + '</span></span>'
@@ -8284,6 +9275,7 @@ var qrcode = function() {
     }
     if (page) page.classList.add('hasdetail');
     var i = openRecipe, r = REF_RECIPES[i], st = refStat(i);
+    var ph = photoFor(i);
     /* 有我们调好的版本就用我们的：材料表、备注都换成那份 */
     var d = presetDiffOf(r);
     var pre = d ? d.pre : null;
@@ -8310,6 +9302,9 @@ var qrcode = function() {
     box.innerHTML = '<div class="panel-head"><h2>' + esc(recipeName(r)) + '　'
       + '<span class="hint">' + esc(r.en || '') + '</span></h2>'
       + '<button type="button" class="ghost" data-menu-close="1">关闭</button></div>'
+      + (ph ? '<div class="md-photo"><img src="' + esc(ph.full) + '" alt="'
+        + esc(recipeName(r) + ' AI 示意图') + '" loading="lazy" decoding="async">'
+        + '<span class="md-ai">AI 示意图 · 实际杯具/材料可能不同</span></div>' : '')
       + '<div class="detail-body">'
       + '<p class="hint">' + esc(pre ? (PRESET_METHOD[pre.name] ? methodName({ method: PRESET_METHOD[pre.name] }) : methodName(r)) : methodName(r))
         + ' · ' + esc(pre ? glassOf(pre.glass).name : glassOf(glassFromRef(r)).name)

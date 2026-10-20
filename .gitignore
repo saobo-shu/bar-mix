@@ -11,3 +11,6 @@ desktop.ini
 #   1) 走拖拽上传的人，本地就有现成的 dist 可以直接拖
 #   2) 走 GitHub Pages「从分支部署」的人，可以直接指向 dist 目录
 # 走 GitHub Actions 的话，云端会重新 build 一次，产物以云端为准。
+
+# 1024 原始 AI 图只留本地母版，不进仓库；只提交 800/400 WebP
+assets/cocktails-ai/source/
