@@ -338,6 +338,17 @@ main {
   padding: 11px 12px; border-radius: 12px;
   background: var(--card2); border: 1px solid var(--line); min-width: 0;
 }
+.tc-photo {
+  position: relative; display: block; width: 100%; aspect-ratio: 1 / 1;
+  overflow: hidden; border-radius: 8px; margin: 0 0 5px; background: var(--bg);
+}
+.tc-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.tc-ai {
+  position: absolute; right: 5px; bottom: 5px;
+  font-style: normal; font-size: 9px; line-height: 1.5;
+  padding: 0 5px; border-radius: 999px;
+  color: #fff; background: rgba(0, 0, 0, .52); letter-spacing: .02em;
+}
 .tc-head { display: flex; align-items: baseline; gap: 6px; }
 .tc-head b { font-size: 15px; font-weight: 600; color: var(--text); }
 .tc-head i { font-style: normal; font-size: 10.5px; color: var(--muted); flex: 1; min-width: 0;
@@ -10617,6 +10628,7 @@ var qrcode = function() {
   function tonightCard(i) {
     var r = REF_RECIPES[i];
     var nm = recipeName(r);
+    var ph = photoFor(i);
     var items = tonightItems(r);
     var need = items.filter(function (x) { return !x.have; });
     var line = items.map(function (x) {
@@ -10630,6 +10642,9 @@ var qrcode = function() {
     var missLine = items.some(function (x) { return x.have; })
       ? '<p class="tc-miss">' + miss + '</p>' : '';
     return '<article class="tcard">'
+      + (ph ? '<div class="tc-photo"><img src="' + esc(ph.thumb) + '" alt="'
+        + esc(nm + ' AI 示意图') + '" loading="lazy" decoding="async">'
+        + '<i class="tc-ai" title="AI 示意图">AI</i></div>' : '')
       + '<div class="tc-head"><b>' + esc(nm) + '</b><i>' + esc(r.en || '') + '</i>'
         + '<span class="tc-star' + (isFav(nm) ? ' on' : '') + '" data-fav="' + i + '" role="button" tabindex="0"'
         + ' title="' + (isFav(nm) ? '取消收藏' : '收藏') + '">' + (isFav(nm) ? '★' : '☆') + '</span></div>'

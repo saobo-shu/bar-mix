@@ -3471,6 +3471,13 @@ console.log('\n--- 酒单 AI 示意图 ---');
     && cards.indexOf('mc-photo') >= 0;
   console.log('  ' + (okUi ? '✅' : '❌') + ' 酒单卡片和详情页都接上了 AI 图');
   if (!okUi) bad('图片', '酒单卡片/详情页没有接上 AI 图');
+
+  B.page.set('tonight'); B.tonight.render();
+  const tonight = els.tonightOut.innerHTML || '';
+  const okTonight = tonight.indexOf('tc-photo') >= 0
+    && tonight.indexOf('assets/cocktails-ai/thumb/') >= 0;
+  console.log('  ' + (okTonight ? '✅' : '❌') + ' 「今晚喝什么」的三杯也有 AI 图');
+  if (!okTonight) bad('图片', '「今晚喝什么」没有接上 AI 图');
   B.menu.reset(); B.page.set('bar');
 })();
 

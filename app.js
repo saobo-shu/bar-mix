@@ -4213,6 +4213,7 @@
   function tonightCard(i) {
     var r = REF_RECIPES[i];
     var nm = recipeName(r);
+    var ph = photoFor(i);
     var items = tonightItems(r);
     var need = items.filter(function (x) { return !x.have; });
     var line = items.map(function (x) {
@@ -4226,6 +4227,9 @@
     var missLine = items.some(function (x) { return x.have; })
       ? '<p class="tc-miss">' + miss + '</p>' : '';
     return '<article class="tcard">'
+      + (ph ? '<div class="tc-photo"><img src="' + esc(ph.thumb) + '" alt="'
+        + esc(nm + ' AI 示意图') + '" loading="lazy" decoding="async">'
+        + '<i class="tc-ai" title="AI 示意图">AI</i></div>' : '')
       + '<div class="tc-head"><b>' + esc(nm) + '</b><i>' + esc(r.en || '') + '</i>'
         + '<span class="tc-star' + (isFav(nm) ? ' on' : '') + '" data-fav="' + i + '" role="button" tabindex="0"'
         + ' title="' + (isFav(nm) ? '取消收藏' : '收藏') + '">' + (isFav(nm) ? '★' : '☆') + '</span></div>'
