@@ -948,6 +948,17 @@ details.panel:not([open]) { padding-bottom: 13px; }
   background: var(--card2); border: 1px solid var(--line); display: grid; gap: 3px;
 }
 .preset:active { border-color: var(--amber); }
+.p-photo {
+  position: relative; display: block; width: 100%; aspect-ratio: 1 / 1;
+  overflow: hidden; border-radius: 8px; margin-bottom: 4px; background: var(--bg);
+}
+.p-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.p-ai {
+  position: absolute; right: 5px; bottom: 5px;
+  font-style: normal; font-size: 9px; line-height: 1.5;
+  padding: 0 5px; border-radius: 999px;
+  color: #fff; background: rgba(0, 0, 0, .52); letter-spacing: .02em;
+}
 .p-name { font-size: 14px; font-weight: 600; }
 .p-sub { font-size: 11.5px; color: var(--amber); }
 .p-tip { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
@@ -2385,15 +2396,15 @@ var PRESETS = [
     tip:'青柠不能省：朗姆 + 菠萝 + 椰浆之外，就靠它把甜压住，少了它是一杯甜果昔。这一杯我特意放进来当反面教材：菠萝汁里的菠萝蛋白酶会把椰浆的乳化结构拆开，倒下去那一刻就可能起絮分层，和 pH 无关。想稳定出品，用罐装/超高温灭菌的菠萝汁，或者把鲜菠萝汁煮开一分钟灭酶再放凉。' }
   /* 下面 5 杯来自 Derick Santiago《The Mocktail Club》，
      只收材料少、国内超市/网购能买到的；比例按本库杯子容量略有缩放。 */
-  ,{ name:'浓缩咖啡汤力', family:'mocktail', glass:'highball', sub:'Espresso & Tonic · 3 样材料 · 无酒精', items:[['cold_brew',45],['tonic',140],['orange_peel',1]],
+  ,{ name:'浓缩咖啡汤力', family:'mocktail', glass:'highball', sub:'Espresso & Tonic · 3 样材料 · 无酒精', photo:'assets/cocktails-ai/thumb/espresso-tonic.webp', items:[['cold_brew',45],['tonic',140],['orange_peel',1]],
     tip:'书上用 2 oz 冰镇浓缩咖啡 + 6 oz 汤力水。这里用冷萃咖啡代替浓缩，苦味更柔、便利店更容易买到；有浓缩咖啡就换成 45ml 放凉。先倒咖啡，再沿杯壁倒汤力水，最后挤橙皮油。改编自 Derick Santiago《The Mocktail Club》。' }
-  ,{ name:'蓝莓薄荷沁饮', family:'mocktail', glass:'highball', sub:'Blueberry Mint Refresher · 5 样材料 · 无酒精', items:[['blueberry',40],['syrup',20],['lime',15],['mint',6],['sprite',150]],
+  ,{ name:'蓝莓薄荷沁饮', family:'mocktail', glass:'highball', sub:'Blueberry Mint Refresher · 5 样材料 · 无酒精', photo:'assets/cocktails-ai/thumb/blueberry-mint.webp', items:[['blueberry',40],['syrup',20],['lime',15],['mint',6],['sprite',150]],
     tip:'蓝莓和薄荷先轻压，加糖浆、青柠和冰摇 10 秒，滤进装满冰的高球杯，最后补雪碧。雪碧有气，别倒进摇壶。书上用 7.5 oz 柠檬-青柠汽水，这里按本库高球杯缩到 150ml。改编自 Derick Santiago《The Mocktail Club》。' }
-  ,{ name:'百香果菠萝气泡', family:'mocktail', glass:'highball', sub:'Passion Fruit Pineapple · 5 样材料 · 无酒精', items:[['passionfruit',1],['pineapple',90],['lime',15],['syrup',10],['soda',45]],
+  ,{ name:'百香果菠萝气泡', family:'mocktail', glass:'highball', sub:'Passion Fruit Pineapple · 5 样材料 · 无酒精', photo:'assets/cocktails-ai/thumb/passionfruit-pineapple.webp', items:[['passionfruit',1],['pineapple',90],['lime',15],['syrup',10],['soda',45]],
     tip:'书上用 2 个百香果 + 4 oz 菠萝汁 + 青柠 + 香草糖浆，最后加气泡苹果汁。这里用 1 个百香果、普通糖浆和少量苏打水，杯子刚好装下；百香果籽和汁一起倒，香气最猛。改编自 Derick Santiago《The Mocktail Club》。' }
-  ,{ name:'苹果姜汁', family:'mocktail', glass:'highball', sub:'Spiced Apple Ginger · 4 样材料 · 无酒精', items:[['apple_juice',150],['ginger_fresh',3],['lemon',10],['cinnamon_stick',1],['syrup',10]],
+  ,{ name:'苹果姜汁', family:'mocktail', glass:'highball', sub:'Spiced Apple Ginger · 4 样材料 · 无酒精', photo:'assets/cocktails-ai/thumb/apple-ginger.webp', items:[['apple_juice',150],['ginger_fresh',3],['lemon',10],['cinnamon_stick',1],['syrup',10]],
     tip:'书上用苹果酒 + 姜汁浓缩 + 肉桂粉。这里用苹果汁、3 片生姜和一根肉桂棒，超市都能买到；姜片先压两下，肉桂棒当搅拌棒，喝到最后香气最明显。改编自 Derick Santiago《The Mocktail Club》。' }
-  ,{ name:'西柚帕洛玛', family:'mocktail', glass:'highball', sub:'Paloma Sin · 3 样材料 · 无酒精', items:[['grapefruit_soda',140],['lime',15],['soda',35]],
+  ,{ name:'西柚帕洛玛', family:'mocktail', glass:'highball', sub:'Paloma Sin · 3 样材料 · 无酒精', photo:'assets/cocktails-ai/thumb/grapefruit-paloma.webp', items:[['grapefruit_soda',140],['lime',15],['soda',35]],
     tip:'书上是有龙舌兰替代液的 Paloma；这杯把酒精部分拿掉，只留西柚汽水、青柠和苏打，冰满杯就是一杯很干净的午后饮料。改编自 Derick Santiago《The Mocktail Club》。' }
 ];
 
@@ -8212,6 +8223,9 @@ var qrcode = function() {
     var p = PRESETS[i];
     if (!p) return '';
     return '<button type="button" class="preset" data-preset="' + i + '">' +
+      (p.photo ? '<span class="p-photo"><img src="' + esc(p.photo) + '" alt="'
+        + esc(p.name + ' AI 示意图') + '" loading="lazy" decoding="async">'
+        + '<i class="p-ai" title="AI 示意图">AI</i></span>' : '') +
       '<span class="p-name">' + esc(p.name) + '</span>' +
       '<span class="p-sub">' + esc(p.sub) + '</span>' +
       '<span class="p-comp">' + esc(compLine(p)) + '</span>' +

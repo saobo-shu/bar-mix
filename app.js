@@ -1764,6 +1764,9 @@
     var p = PRESETS[i];
     if (!p) return '';
     return '<button type="button" class="preset" data-preset="' + i + '">' +
+      (p.photo ? '<span class="p-photo"><img src="' + esc(p.photo) + '" alt="'
+        + esc(p.name + ' AI 示意图') + '" loading="lazy" decoding="async">'
+        + '<i class="p-ai" title="AI 示意图">AI</i></span>' : '') +
       '<span class="p-name">' + esc(p.name) + '</span>' +
       '<span class="p-sub">' + esc(p.sub) + '</span>' +
       '<span class="p-comp">' + esc(compLine(p)) + '</span>' +

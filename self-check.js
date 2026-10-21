@@ -3471,10 +3471,12 @@ console.log('\n--- 书本无酒精 ---');
   const badItems = [];
   const badFam = [];
   const badVol = [];
+  const badPhoto = [];
   names.forEach(function (n) {
     const p = byName[n];
     if (!p) return;
     p.items.forEach(function (it) { if (!global.__I.some(function (g) { return g.id === it[0]; })) badItems.push(n + ':' + it[0]); });
+    if (!p.photo || !fs.existsSync(path.join(dir, p.photo))) badPhoto.push(n);
     B.state.glass = p.glass; B.state.iceLevel = 'full';
     B.load(p.items);
     const ab = B.analyze();
@@ -3483,12 +3485,13 @@ console.log('\n--- 书本无酒精 ---');
     if (fam !== 'mocktail') badFam.push(n + ':' + fam);
     if (gl && ab.liquid > gl.liquidMax) badVol.push(n + ':' + Math.round(ab.liquid) + '>' + gl.liquidMax);
   });
-  const okData = !missing.length && !badItems.length && !badFam.length && !badVol.length && names.length === 5;
-  console.log('  ' + (okData ? '✅' : '❌') + ' 5 杯都在预设里、材料都有、家族都是无酒精、装得进杯子'
+  const okData = !missing.length && !badItems.length && !badFam.length && !badVol.length && !badPhoto.length && names.length === 5;
+  console.log('  ' + (okData ? '✅' : '❌') + ' 5 杯都在预设里、材料都有、家族都是无酒精、装得进杯子、有图'
     + (missing.length ? '　缺：' + missing.join('、') : '')
     + (badItems.length ? '　坏材料：' + badItems.join('、') : '')
     + (badFam.length ? '　家族：' + badFam.join('、') : '')
-    + (badVol.length ? '　超量：' + badVol.join('、') : ''));
+    + (badVol.length ? '　超量：' + badVol.join('、') : '')
+    + (badPhoto.length ? '　缺图：' + badPhoto.join('、') : ''));
   if (!okData) bad('无酒精', '书本无酒精数据不完整');
 
   B.page.set('menu'); B.menu.setTab('mocktail');
@@ -3499,9 +3502,11 @@ console.log('\n--- 书本无酒精 ---');
   const okUi = tabs.indexOf('无酒精') >= 0
     && names.every(function (n) { return cards.indexOf(n) >= 0; })
     && (cards.match(/data-preset/g) || []).length === 5
+    && cards.indexOf('p-photo') >= 0
+    && cards.indexOf('espresso-tonic.webp') >= 0
     && count.indexOf('The Mocktail Club') >= 0
     && filters === '';
-  console.log('  ' + (okUi ? '✅' : '❌') + ' 「无酒精」标签页能列出 5 杯，筛选条收起');
+  console.log('  ' + (okUi ? '✅' : '❌') + ' 「无酒精」标签页能列出 5 杯，卡片有图，筛选条收起');
   if (!okUi) bad('无酒精', '「无酒精」标签页没画对');
 
   const coffeePreset = global.__PRESETS.findIndex(function (p) { return p.name === '浓缩咖啡汤力'; });

@@ -1,0 +1,72 @@
+[
+  {
+    "zh": "浓缩咖啡汤力",
+    "en": "Espresso & Tonic",
+    "slug": "espresso-tonic",
+    "file": "source/espresso-tonic.png",
+    "glass": "高球杯/柯林杯",
+    "ice": "普通透明方冰（装2/3，非碎冰）",
+    "garnish": "橙皮卷（喷香）",
+    "prompt": "Editorial cocktail photo of Espresso & Tonic, served in a tall straight-sided highball glass filled two-thirds with clear square ice cubes, 45ml chilled espresso floated over 140ml tonic water, deep amber-brown coffee layer with a thin natural crema, gentle bubbles in the tonic, one long orange peel expressed over the top, condensation on the glass. 45-degree top-down view, single drink centered, soft natural side lighting, warm off-white seamless background, clean minimal counter, realistic editorial photography, natural color grading, not oversaturated. No text, no logo, no labels, no brand bottles, no people, no hands, no straw, no coffee beans, no extra garnish, no collage, 1:1 square, 1024x1024.",
+    "reviewed": true,
+    "full": "full/espresso-tonic.webp",
+    "thumb": "thumb/espresso-tonic.webp",
+    "label": "AI 示意图"
+  },
+  {
+    "zh": "蓝莓薄荷沁饮",
+    "en": "Blueberry Mint Refresher",
+    "slug": "blueberry-mint",
+    "file": "source/blueberry-mint.png",
+    "glass": "高球杯/柯林杯",
+    "ice": "普通透明方冰（装2/3，非碎冰）",
+    "garnish": "蓝莓数颗 + 薄荷头",
+    "prompt": "Editorial cocktail photo of Blueberry Mint Refresher, served in a tall highball glass filled two-thirds with clear square ice cubes, deep violet-blue drink made with muddled blueberries, fresh lime juice and soda, garnish is ONLY a few whole blueberries and one fresh mint sprig on top, absolutely no lime garnish anywhere, no citrus wheel or slice on the glass wall, visible tiny blueberry pieces, light carbonation, condensation on the glass. 45-degree top-down view, single drink centered, soft natural side lighting, warm off-white seamless background, clean minimal counter, realistic editorial photography, natural color grading, not oversaturated. No text, no logo, no labels, no brand bottles, no people, no hands, no straw, no lime wheel, no lime slice, no extra fruit, no extra garnish, no collage, 1:1 square, 1024x1024.",
+    "reviewed": true,
+    "full": "full/blueberry-mint.webp",
+    "thumb": "thumb/blueberry-mint.webp",
+    "label": "AI 示意图"
+  },
+  {
+    "zh": "百香果菠萝气泡",
+    "en": "Passion Fruit Pineapple Sparkler",
+    "slug": "passionfruit-pineapple",
+    "file": "source/passionfruit-pineapple.png",
+    "glass": "高球杯/柯林杯",
+    "ice": "普通透明方冰（装2/3，非碎冰）",
+    "garnish": "半颗百香果",
+    "prompt": "Editorial cocktail photo of Passion Fruit Pineapple Sparkler, served in a tall highball glass filled two-thirds with clear square ice cubes, golden-orange drink with visible passion fruit seeds, light carbonation, half a fresh passion fruit floated on top, condensation on the glass. 45-degree top-down view, single drink centered, soft natural side lighting, warm off-white seamless background, clean minimal counter, realistic editorial photography, natural color grading, not oversaturated. No text, no logo, no labels, no brand bottles, no people, no hands, no straw, no mint, no pineapple wedge, no extra garnish, no collage, 1:1 square, 1024x1024.",
+    "reviewed": true,
+    "full": "full/passionfruit-pineapple.webp",
+    "thumb": "thumb/passionfruit-pineapple.webp",
+    "label": "AI 示意图"
+  },
+  {
+    "zh": "苹果姜汁",
+    "en": "Spiced Apple Ginger",
+    "slug": "apple-ginger",
+    "file": "source/apple-ginger.png",
+    "glass": "高球杯/柯林杯",
+    "ice": "普通透明方冰（装2/3，非碎冰）",
+    "garnish": "单根肉桂棒（搅拌用）",
+    "prompt": "Editorial cocktail photo of Spiced Apple Ginger, tall highball glass two-thirds full with clear square ice cubes, clear golden-amber apple drink, a single thin cinnamon stick leaning inside as the only stirrer, clearly just one cinnamon stick, no second stick, a few thin slices of fresh ginger resting near the ice, condensation on the glass. 45-degree top-down view, single drink centered, soft natural side lighting, warm off-white seamless background, clean minimal counter, realistic editorial photography, natural color grading, not oversaturated. No text, no logo, no labels, no brand bottles, no people, no hands, no straw, no apple fan, exactly one cinnamon stick only, no extra garnish, no collage, 1:1 square, 1024x1024.",
+    "reviewed": true,
+    "full": "full/apple-ginger.webp",
+    "thumb": "thumb/apple-ginger.webp",
+    "label": "AI 示意图"
+  },
+  {
+    "zh": "西柚帕洛玛",
+    "en": "Grapefruit Paloma",
+    "slug": "grapefruit-paloma",
+    "file": "source/grapefruit-paloma.png",
+    "glass": "高球杯/柯林杯",
+    "ice": "普通透明方冰（装2/3，非碎冰）",
+    "garnish": "薄青柠片（杯口）",
+    "prompt": "Editorial cocktail photo of Grapefruit Paloma Sin, served in a tall highball glass filled two-thirds with clear square ice cubes, pale pink grapefruit drink with fine bubbles, one thin lime wheel on the rim, condensation on the glass. 45-degree top-down view, single drink centered, soft natural side lighting, warm off-white seamless background, clean minimal counter, realistic editorial photography, natural color grading, not oversaturated. No text, no logo, no labels, no brand bottles, no people, no hands, no straw, no salt rim, no grapefruit slice, no extra garnish, no collage, 1:1 square, 1024x1024.",
+    "reviewed": true,
+    "full": "full/grapefruit-paloma.webp",
+    "thumb": "thumb/grapefruit-paloma.webp",
+    "label": "AI 示意图"
+  }
+]
