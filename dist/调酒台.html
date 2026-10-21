@@ -1106,7 +1106,7 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
   <nav class="sidenav" id="sidenav" aria-label="页面导航">
       <button type="button" class="navitem is-big on" data-page="bar"><b>调酒台</b><i>配比 · 风味 · 评分</i></button>
       <button type="button" class="navitem" data-page="tonight"><b>今晚喝什么</b><i>挑一个心情，来三杯</i></button>
-      <button type="button" class="navitem" data-page="menu"><b>酒单</b><i>191 款经典</i></button>
+      <button type="button" class="navitem" data-page="menu"><b>酒单</b><i>191 经典 · 5 无酒精</i></button>
 
       <!-- 侧栏里的当前杯子：宽屏时下面不再是一整块空白 -->
       <div class="sidecup" id="sideCup">
@@ -1339,11 +1339,11 @@ footer { text-align: center; font-size: 11.5px; color: var(--muted); padding: 6p
 
   </section><!-- /page-bar -->
 
-  <!-- 酒单：191 款经典，可以筛、可以搜、点开看材料和来历 -->
+  <!-- 酒单：191 款经典 + 5 款无酒精，可以筛、可以搜、点开看材料和来历 -->
   <section class="page" id="page-menu">
     <section class="panel">
       <div class="panel-head">
-        <h2>酒单 · 191 款经典</h2>
+        <h2>酒单 · 191 款经典 + 5 款无酒精</h2>
         <span class="hint">配方来自调酒师 <b>BoyanSHI</b> 的配方本（以好喝为准，和 IBA 官方规格不同）　·　点一杯看材料、做法和来历　·　可按技法筛：没有摇壶就选「不用摇壶」</span>
       </div>
       <div class="havebar">
@@ -2268,6 +2268,9 @@ var INGREDIENTS = [
   { id:'green_grape', cat:'garnish', name:'青提（5 颗）', unit:'颗', mlu:0, def:5, step:1, abv:0, src:'rt',
     f:{sugar:3,acid:1,bitter:0,booze:0,fruit:6,spice:0,fizz:0,body:1},
     note:'恩佐尼里要捣碎的绿葡萄。买一小串，用不完当水果吃；捣轻一点，葡萄皮会发苦。' },
+  { id:'blueberry', cat:'fresh', name:'蓝莓（一把）', unit:'g', mlu:0, def:40, step:5, abv:0, src:'rt',
+    f:{sugar:6,acid:2,bitter:0,booze:0,fruit:8,spice:0,fizz:0,body:1},
+    note:'冷冻蓝莓也可以，先解冻；和薄荷一起轻压，别把籽压碎，会发苦。' },
 
     /* 冰不再是材料：它由你选的杯子决定——
        冰杯 / 高球杯 / 古典杯 / 飓风杯自带冰，马天尼杯和一口杯没有。
@@ -2380,6 +2383,18 @@ var PRESETS = [
   ,{ name:'椰林飘香', family:'highball', glass:'hurricane', sub:'Piña Colada · 顺便看看它为什么容易失败', items:[['rum',45],['pineapple',90],['coconut_milk',30],['lime',20]],
     why:'本库没有椰子和菠萝糖浆；多出来的甜用菠萝汁补（90ml），所以比参考本稠一点。',
     tip:'青柠不能省：朗姆 + 菠萝 + 椰浆之外，就靠它把甜压住，少了它是一杯甜果昔。这一杯我特意放进来当反面教材：菠萝汁里的菠萝蛋白酶会把椰浆的乳化结构拆开，倒下去那一刻就可能起絮分层，和 pH 无关。想稳定出品，用罐装/超高温灭菌的菠萝汁，或者把鲜菠萝汁煮开一分钟灭酶再放凉。' }
+  /* 下面 5 杯来自 Derick Santiago《The Mocktail Club》，
+     只收材料少、国内超市/网购能买到的；比例按本库杯子容量略有缩放。 */
+  ,{ name:'浓缩咖啡汤力', family:'mocktail', glass:'highball', sub:'Espresso & Tonic · 3 样材料 · 无酒精', items:[['cold_brew',45],['tonic',140],['orange_peel',1]],
+    tip:'书上用 2 oz 冰镇浓缩咖啡 + 6 oz 汤力水。这里用冷萃咖啡代替浓缩，苦味更柔、便利店更容易买到；有浓缩咖啡就换成 45ml 放凉。先倒咖啡，再沿杯壁倒汤力水，最后挤橙皮油。改编自 Derick Santiago《The Mocktail Club》。' }
+  ,{ name:'蓝莓薄荷沁饮', family:'mocktail', glass:'highball', sub:'Blueberry Mint Refresher · 5 样材料 · 无酒精', items:[['blueberry',40],['syrup',20],['lime',15],['mint',6],['sprite',150]],
+    tip:'蓝莓和薄荷先轻压，加糖浆、青柠和冰摇 10 秒，滤进装满冰的高球杯，最后补雪碧。雪碧有气，别倒进摇壶。书上用 7.5 oz 柠檬-青柠汽水，这里按本库高球杯缩到 150ml。改编自 Derick Santiago《The Mocktail Club》。' }
+  ,{ name:'百香果菠萝气泡', family:'mocktail', glass:'highball', sub:'Passion Fruit Pineapple · 5 样材料 · 无酒精', items:[['passionfruit',1],['pineapple',90],['lime',15],['syrup',10],['soda',45]],
+    tip:'书上用 2 个百香果 + 4 oz 菠萝汁 + 青柠 + 香草糖浆，最后加气泡苹果汁。这里用 1 个百香果、普通糖浆和少量苏打水，杯子刚好装下；百香果籽和汁一起倒，香气最猛。改编自 Derick Santiago《The Mocktail Club》。' }
+  ,{ name:'苹果姜汁', family:'mocktail', glass:'highball', sub:'Spiced Apple Ginger · 4 样材料 · 无酒精', items:[['apple_juice',150],['ginger_fresh',3],['lemon',10],['cinnamon_stick',1],['syrup',10]],
+    tip:'书上用苹果酒 + 姜汁浓缩 + 肉桂粉。这里用苹果汁、3 片生姜和一根肉桂棒，超市都能买到；姜片先压两下，肉桂棒当搅拌棒，喝到最后香气最明显。改编自 Derick Santiago《The Mocktail Club》。' }
+  ,{ name:'西柚帕洛玛', family:'mocktail', glass:'highball', sub:'Paloma Sin · 3 样材料 · 无酒精', items:[['grapefruit_soda',140],['lime',15],['soda',35]],
+    tip:'书上是有龙舌兰替代液的 Paloma；这杯把酒精部分拿掉，只留西柚汽水、青柠和苏打，冰满杯就是一杯很干净的午后饮料。改编自 Derick Santiago《The Mocktail Club》。' }
 ];
 
 /* =========================================================
@@ -2709,7 +2724,9 @@ var PRESET_METHOD = {
   '花花公子': 'stir', '萨泽拉克': 'stir',
   '锈钉': 'build', '教父': 'build', '黑俄罗斯': 'build',
   '法国情怀': 'build', '薄荷朱丽普': 'build',
-  '热托蒂': 'build', '爱尔兰咖啡': 'build'
+  '热托蒂': 'build', '爱尔兰咖啡': 'build',
+  '浓缩咖啡汤力': 'build', '蓝莓薄荷沁饮': 'shake', '百香果菠萝气泡': 'shake',
+  '苹果姜汁': 'build', '西柚帕洛玛': 'build'
 };
 
 /* =========================================================
@@ -3117,6 +3134,11 @@ var SCORING_SCHEMES = [
    ========================================================= */
 var HOUSE_PRESETS = ['威士忌高球', '维他柠檬茶微醺', '威士忌乌龙', '姜味骡子', '热托蒂',
   '威士忌可乐', '浓缩柠檬高球', '金汤力', '养乐多烧酒', '可尔必思沙瓦', '芒果朗姆'];
+
+/* 书里筛出来的 5 杯无酒精：材料少、国内能买到，单独进「无酒精」栏。
+   完整 75 道里大部分要无酒精烈酒/接骨木花汤力/自制灌木糖浆，先不收。 */
+var MOCKTAIL_PRESETS = ['浓缩咖啡汤力', '蓝莓薄荷沁饮', '百香果菠萝气泡',
+  '苹果姜汁', '西柚帕洛玛'];
 
 var REF_PRESET_MAP = {
   '威士忌酸': '威士忌酸', '古典鸡尾酒': '古典', '盘尼西林': '青霉素', '生锈钉': '锈钉',
@@ -9121,6 +9143,7 @@ var qrcode = function() {
     if (!box) return;
     var tabs = [
       { id: 'classic', name: '经典 191', n: REF_RECIPES.length },
+      { id: 'mocktail', name: '无酒精', n: MOCKTAIL_PRESETS.length },
       { id: 'house', name: '住处特调', n: HOUSE_PRESETS.length },
       { id: 'favs', name: '我的收藏', n: favs.length },
       { id: 'mine', name: '我的特调', n: myRecipes.length }
@@ -9134,8 +9157,8 @@ var qrcode = function() {
   function renderMenuFilters() {
     var box = document.getElementById('menuFilters');
     if (!box) return;
-    /* 住处特调和我的特调不走这套筛选（一个是 11 款小集合，一个是自己的配方） */
-    if (menuTab === 'mine' || menuTab === 'house') { box.innerHTML = ''; return; }
+    /* 住处特调 / 无酒精 / 我的特调不走这套筛选 */
+    if (menuTab === 'mine' || menuTab === 'house' || menuTab === 'mocktail') { box.innerHTML = ''; return; }
     var fams = [
       ['', '全部基酒'], ['gin', '金酒'], ['whisky', '威士忌'], ['rum', '朗姆'],
       ['vodka', '伏特加'], ['tequila', '龙舌兰'], ['brandy', '白兰地']
@@ -9180,8 +9203,8 @@ var qrcode = function() {
   function menuList() {
     var q = menuQuery.trim().toLowerCase();
     var out = [];
-    /* "住处特调"栏用的是预设数据，不走这里 */
-    if (menuTab === 'house') return out;
+    /* "住处特调"和"无酒精"栏用的是预设数据，不走这里 */
+    if (menuTab === 'house' || menuTab === 'mocktail') return out;
     if (menuTab === 'mine') {
       out = myRecipes.map(function (m, i) { return { mine: i, m: m }; });
       if (q) out = out.filter(function (x) { return x.m.name.toLowerCase().indexOf(q) >= 0; });
@@ -9238,14 +9261,16 @@ var qrcode = function() {
         ? (myRecipes.length ? '你保存了 ' + myRecipes.length + ' 杯' : '')
         : '共 ' + list.length + ' 款' + (menuTab === 'favs' ? '（收藏）' : '');
     }
-    /* 住处特调：只有我们这儿有的 11 款（便利店路线为主），用预设卡片的样子画 */
-    if (menuTab === 'house') {
+    /* 住处特调 / 无酒精：用预设卡片的样式画。无酒精只放书里筛出来的 5 杯。 */
+    var nameList = menuTab === 'house' ? HOUSE_PRESETS
+      : (menuTab === 'mocktail' ? MOCKTAIL_PRESETS : null);
+    if (nameList) {
       var q2 = menuQuery.trim().toLowerCase();
       var hits = [];
-      HOUSE_PRESETS.forEach(function (name) {
+      nameList.forEach(function (name) {
         var i = presetIndexByName(name);
         if (i < 0) return;
-        /* 住处特调这一栏也一样：别名一起搜（青霉素 ↔ 盘尼西林 这种） */
+        /* 这两栏也一样：别名一起搜（青霉素 ↔ 盘尼西林 这种） */
         if (q2 && (name + ' ' + aliasText(name) + ' ' + compLine(PRESETS[i])).toLowerCase().indexOf(q2) < 0) return;
         hits.push(i);
       });
@@ -9253,7 +9278,9 @@ var qrcode = function() {
       box.innerHTML = hits.length
         ? hits.map(presetCardHtml).join('')
         : '<p class="hint">没找到。换个词试试。</p>';
-      if (cnt) cnt.textContent = '共 ' + hits.length + ' 款　这些是便利店/住处能做的；经典 191 款在「经典」那一栏';
+      if (cnt) cnt.textContent = menuTab === 'mocktail'
+        ? '共 ' + hits.length + ' 款　改编自《The Mocktail Club》，材料在超市/网购能买到'
+        : '共 ' + hits.length + ' 款　这些是便利店/住处能做的；经典 191 款在「经典」那一栏';
       if (more) more.hidden = true;
       return;
     }
@@ -10405,7 +10432,7 @@ var qrcode = function() {
   var PAGE_SUB = {
     tonight: '挑一个心情，来三杯',
     bar: '挑材料 → 实时风味图 → 评分与调整建议',
-    menu: '191 款经典 · 我的收藏 · 我的特调',
+    menu: '191 款经典 · 5 款无酒精 · 我的收藏 · 我的特调',
     tips: '没冰箱也能调：保存、替换、避坑'
   };
   function currentPage() {

@@ -63,6 +63,7 @@ const src = fs.readFileSync(path.join(dir, 'data.js'), 'utf8') + '\n' +
             + ' global.__IBA = IBA_RECIPES;'
             + ' global.__PHOTOS = COCKTAIL_PHOTOS;'
             + ' global.__OPT = OPTIONAL_ING; global.__HOUSE = HOUSE_PRESETS;'
+            + ' global.__MOCK = MOCKTAIL_PRESETS;'
             + ' global.__MAP = REF_PRESET_MAP; global.__SWAP = SWAP_NOTE;'
             + ' global.__ORIGIN = ORIGIN; global.__PICKLINE = PICK_LINE;';
 eval(src);
@@ -3458,6 +3459,60 @@ console.log('\n--- IBA 官方规格（第三个版本）---');
       || !SWALLOW.test('Honey syrup 2-3 quarter size sliced fresh ginger')) {
     bad('IBA 解析', '吞行检测规则自己失效了——那两条老 bug 都没认出来');
   }
+})();
+
+/* ---- 书里筛出来的无酒精 ---- */
+console.log('\n--- 书本无酒精 ---');
+(function () {
+  const names = global.__MOCK;
+  const byName = {};
+  global.__PRESETS.forEach(function (p) { byName[p.name] = p; });
+  const missing = names.filter(function (n) { return !byName[n]; });
+  const badItems = [];
+  const badFam = [];
+  const badVol = [];
+  names.forEach(function (n) {
+    const p = byName[n];
+    if (!p) return;
+    p.items.forEach(function (it) { if (!global.__I.some(function (g) { return g.id === it[0]; })) badItems.push(n + ':' + it[0]); });
+    B.state.glass = p.glass; B.state.iceLevel = 'full';
+    B.load(p.items);
+    const ab = B.analyze();
+    const fam = B.familyOf(ab).id;
+    const gl = global.__G.find(function (g) { return g.id === p.glass; });
+    if (fam !== 'mocktail') badFam.push(n + ':' + fam);
+    if (gl && ab.liquid > gl.liquidMax) badVol.push(n + ':' + Math.round(ab.liquid) + '>' + gl.liquidMax);
+  });
+  const okData = !missing.length && !badItems.length && !badFam.length && !badVol.length && names.length === 5;
+  console.log('  ' + (okData ? '✅' : '❌') + ' 5 杯都在预设里、材料都有、家族都是无酒精、装得进杯子'
+    + (missing.length ? '　缺：' + missing.join('、') : '')
+    + (badItems.length ? '　坏材料：' + badItems.join('、') : '')
+    + (badFam.length ? '　家族：' + badFam.join('、') : '')
+    + (badVol.length ? '　超量：' + badVol.join('、') : ''));
+  if (!okData) bad('无酒精', '书本无酒精数据不完整');
+
+  B.page.set('menu'); B.menu.setTab('mocktail');
+  const tabs = els.menuTabs.innerHTML || '';
+  const cards = els.menuList.innerHTML || '';
+  const count = els.menuCount.textContent || '';
+  const filters = els.menuFilters.innerHTML || '';
+  const okUi = tabs.indexOf('无酒精') >= 0
+    && names.every(function (n) { return cards.indexOf(n) >= 0; })
+    && (cards.match(/data-preset/g) || []).length === 5
+    && count.indexOf('The Mocktail Club') >= 0
+    && filters === '';
+  console.log('  ' + (okUi ? '✅' : '❌') + ' 「无酒精」标签页能列出 5 杯，筛选条收起');
+  if (!okUi) bad('无酒精', '「无酒精」标签页没画对');
+
+  const coffeePreset = global.__PRESETS.findIndex(function (p) { return p.name === '浓缩咖啡汤力'; });
+  fire({ preset: String(coffeePreset) });
+  const okLoad = coffeePreset >= 0
+    && B.state.cup.get('cold_brew') === 45
+    && B.state.cup.get('tonic') === 140
+    && B.state.recipeName === '浓缩咖啡汤力';
+  console.log('  ' + (okLoad ? '✅' : '❌') + ' 点无酒精卡片能装进杯子（冷萃 45 / 汤力 140）');
+  if (!okLoad) bad('无酒精', '点无酒精卡片没有正确装杯');
+  B.menu.setTab('classic'); B.load([]); B.page.set('bar');
 })();
 
 /* ---- 酒单 AI 示意图 ---- */

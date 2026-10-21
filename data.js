@@ -665,6 +665,9 @@ var INGREDIENTS = [
   { id:'green_grape', cat:'garnish', name:'青提（5 颗）', unit:'颗', mlu:0, def:5, step:1, abv:0, src:'rt',
     f:{sugar:3,acid:1,bitter:0,booze:0,fruit:6,spice:0,fizz:0,body:1},
     note:'恩佐尼里要捣碎的绿葡萄。买一小串，用不完当水果吃；捣轻一点，葡萄皮会发苦。' },
+  { id:'blueberry', cat:'fresh', name:'蓝莓（一把）', unit:'g', mlu:0, def:40, step:5, abv:0, src:'rt',
+    f:{sugar:6,acid:2,bitter:0,booze:0,fruit:8,spice:0,fizz:0,body:1},
+    note:'冷冻蓝莓也可以，先解冻；和薄荷一起轻压，别把籽压碎，会发苦。' },
 
     /* 冰不再是材料：它由你选的杯子决定——
        冰杯 / 高球杯 / 古典杯 / 飓风杯自带冰，马天尼杯和一口杯没有。
@@ -777,6 +780,18 @@ var PRESETS = [
   ,{ name:'椰林飘香', family:'highball', glass:'hurricane', sub:'Piña Colada · 顺便看看它为什么容易失败', items:[['rum',45],['pineapple',90],['coconut_milk',30],['lime',20]],
     why:'本库没有椰子和菠萝糖浆；多出来的甜用菠萝汁补（90ml），所以比参考本稠一点。',
     tip:'青柠不能省：朗姆 + 菠萝 + 椰浆之外，就靠它把甜压住，少了它是一杯甜果昔。这一杯我特意放进来当反面教材：菠萝汁里的菠萝蛋白酶会把椰浆的乳化结构拆开，倒下去那一刻就可能起絮分层，和 pH 无关。想稳定出品，用罐装/超高温灭菌的菠萝汁，或者把鲜菠萝汁煮开一分钟灭酶再放凉。' }
+  /* 下面 5 杯来自 Derick Santiago《The Mocktail Club》，
+     只收材料少、国内超市/网购能买到的；比例按本库杯子容量略有缩放。 */
+  ,{ name:'浓缩咖啡汤力', family:'mocktail', glass:'highball', sub:'Espresso & Tonic · 3 样材料 · 无酒精', items:[['cold_brew',45],['tonic',140],['orange_peel',1]],
+    tip:'书上用 2 oz 冰镇浓缩咖啡 + 6 oz 汤力水。这里用冷萃咖啡代替浓缩，苦味更柔、便利店更容易买到；有浓缩咖啡就换成 45ml 放凉。先倒咖啡，再沿杯壁倒汤力水，最后挤橙皮油。改编自 Derick Santiago《The Mocktail Club》。' }
+  ,{ name:'蓝莓薄荷沁饮', family:'mocktail', glass:'highball', sub:'Blueberry Mint Refresher · 5 样材料 · 无酒精', items:[['blueberry',40],['syrup',20],['lime',15],['mint',6],['sprite',150]],
+    tip:'蓝莓和薄荷先轻压，加糖浆、青柠和冰摇 10 秒，滤进装满冰的高球杯，最后补雪碧。雪碧有气，别倒进摇壶。书上用 7.5 oz 柠檬-青柠汽水，这里按本库高球杯缩到 150ml。改编自 Derick Santiago《The Mocktail Club》。' }
+  ,{ name:'百香果菠萝气泡', family:'mocktail', glass:'highball', sub:'Passion Fruit Pineapple · 5 样材料 · 无酒精', items:[['passionfruit',1],['pineapple',90],['lime',15],['syrup',10],['soda',45]],
+    tip:'书上用 2 个百香果 + 4 oz 菠萝汁 + 青柠 + 香草糖浆，最后加气泡苹果汁。这里用 1 个百香果、普通糖浆和少量苏打水，杯子刚好装下；百香果籽和汁一起倒，香气最猛。改编自 Derick Santiago《The Mocktail Club》。' }
+  ,{ name:'苹果姜汁', family:'mocktail', glass:'highball', sub:'Spiced Apple Ginger · 4 样材料 · 无酒精', items:[['apple_juice',150],['ginger_fresh',3],['lemon',10],['cinnamon_stick',1],['syrup',10]],
+    tip:'书上用苹果酒 + 姜汁浓缩 + 肉桂粉。这里用苹果汁、3 片生姜和一根肉桂棒，超市都能买到；姜片先压两下，肉桂棒当搅拌棒，喝到最后香气最明显。改编自 Derick Santiago《The Mocktail Club》。' }
+  ,{ name:'西柚帕洛玛', family:'mocktail', glass:'highball', sub:'Paloma Sin · 3 样材料 · 无酒精', items:[['grapefruit_soda',140],['lime',15],['soda',35]],
+    tip:'书上是有龙舌兰替代液的 Paloma；这杯把酒精部分拿掉，只留西柚汽水、青柠和苏打，冰满杯就是一杯很干净的午后饮料。改编自 Derick Santiago《The Mocktail Club》。' }
 ];
 
 /* =========================================================
@@ -1106,7 +1121,9 @@ var PRESET_METHOD = {
   '花花公子': 'stir', '萨泽拉克': 'stir',
   '锈钉': 'build', '教父': 'build', '黑俄罗斯': 'build',
   '法国情怀': 'build', '薄荷朱丽普': 'build',
-  '热托蒂': 'build', '爱尔兰咖啡': 'build'
+  '热托蒂': 'build', '爱尔兰咖啡': 'build',
+  '浓缩咖啡汤力': 'build', '蓝莓薄荷沁饮': 'shake', '百香果菠萝气泡': 'shake',
+  '苹果姜汁': 'build', '西柚帕洛玛': 'build'
 };
 
 /* =========================================================
@@ -1514,6 +1531,11 @@ var SCORING_SCHEMES = [
    ========================================================= */
 var HOUSE_PRESETS = ['威士忌高球', '维他柠檬茶微醺', '威士忌乌龙', '姜味骡子', '热托蒂',
   '威士忌可乐', '浓缩柠檬高球', '金汤力', '养乐多烧酒', '可尔必思沙瓦', '芒果朗姆'];
+
+/* 书里筛出来的 5 杯无酒精：材料少、国内能买到，单独进「无酒精」栏。
+   完整 75 道里大部分要无酒精烈酒/接骨木花汤力/自制灌木糖浆，先不收。 */
+var MOCKTAIL_PRESETS = ['浓缩咖啡汤力', '蓝莓薄荷沁饮', '百香果菠萝气泡',
+  '苹果姜汁', '西柚帕洛玛'];
 
 var REF_PRESET_MAP = {
   '威士忌酸': '威士忌酸', '古典鸡尾酒': '古典', '盘尼西林': '青霉素', '生锈钉': '锈钉',

@@ -2695,6 +2695,7 @@
     if (!box) return;
     var tabs = [
       { id: 'classic', name: '经典 191', n: REF_RECIPES.length },
+      { id: 'mocktail', name: '无酒精', n: MOCKTAIL_PRESETS.length },
       { id: 'house', name: '住处特调', n: HOUSE_PRESETS.length },
       { id: 'favs', name: '我的收藏', n: favs.length },
       { id: 'mine', name: '我的特调', n: myRecipes.length }
@@ -2708,8 +2709,8 @@
   function renderMenuFilters() {
     var box = document.getElementById('menuFilters');
     if (!box) return;
-    /* 住处特调和我的特调不走这套筛选（一个是 11 款小集合，一个是自己的配方） */
-    if (menuTab === 'mine' || menuTab === 'house') { box.innerHTML = ''; return; }
+    /* 住处特调 / 无酒精 / 我的特调不走这套筛选 */
+    if (menuTab === 'mine' || menuTab === 'house' || menuTab === 'mocktail') { box.innerHTML = ''; return; }
     var fams = [
       ['', '全部基酒'], ['gin', '金酒'], ['whisky', '威士忌'], ['rum', '朗姆'],
       ['vodka', '伏特加'], ['tequila', '龙舌兰'], ['brandy', '白兰地']
@@ -2754,8 +2755,8 @@
   function menuList() {
     var q = menuQuery.trim().toLowerCase();
     var out = [];
-    /* "住处特调"栏用的是预设数据，不走这里 */
-    if (menuTab === 'house') return out;
+    /* "住处特调"和"无酒精"栏用的是预设数据，不走这里 */
+    if (menuTab === 'house' || menuTab === 'mocktail') return out;
     if (menuTab === 'mine') {
       out = myRecipes.map(function (m, i) { return { mine: i, m: m }; });
       if (q) out = out.filter(function (x) { return x.m.name.toLowerCase().indexOf(q) >= 0; });
@@ -2812,14 +2813,16 @@
         ? (myRecipes.length ? '你保存了 ' + myRecipes.length + ' 杯' : '')
         : '共 ' + list.length + ' 款' + (menuTab === 'favs' ? '（收藏）' : '');
     }
-    /* 住处特调：只有我们这儿有的 11 款（便利店路线为主），用预设卡片的样子画 */
-    if (menuTab === 'house') {
+    /* 住处特调 / 无酒精：用预设卡片的样式画。无酒精只放书里筛出来的 5 杯。 */
+    var nameList = menuTab === 'house' ? HOUSE_PRESETS
+      : (menuTab === 'mocktail' ? MOCKTAIL_PRESETS : null);
+    if (nameList) {
       var q2 = menuQuery.trim().toLowerCase();
       var hits = [];
-      HOUSE_PRESETS.forEach(function (name) {
+      nameList.forEach(function (name) {
         var i = presetIndexByName(name);
         if (i < 0) return;
-        /* 住处特调这一栏也一样：别名一起搜（青霉素 ↔ 盘尼西林 这种） */
+        /* 这两栏也一样：别名一起搜（青霉素 ↔ 盘尼西林 这种） */
         if (q2 && (name + ' ' + aliasText(name) + ' ' + compLine(PRESETS[i])).toLowerCase().indexOf(q2) < 0) return;
         hits.push(i);
       });
@@ -2827,7 +2830,9 @@
       box.innerHTML = hits.length
         ? hits.map(presetCardHtml).join('')
         : '<p class="hint">没找到。换个词试试。</p>';
-      if (cnt) cnt.textContent = '共 ' + hits.length + ' 款　这些是便利店/住处能做的；经典 191 款在「经典」那一栏';
+      if (cnt) cnt.textContent = menuTab === 'mocktail'
+        ? '共 ' + hits.length + ' 款　改编自《The Mocktail Club》，材料在超市/网购能买到'
+        : '共 ' + hits.length + ' 款　这些是便利店/住处能做的；经典 191 款在「经典」那一栏';
       if (more) more.hidden = true;
       return;
     }
@@ -3979,7 +3984,7 @@
   var PAGE_SUB = {
     tonight: '挑一个心情，来三杯',
     bar: '挑材料 → 实时风味图 → 评分与调整建议',
-    menu: '191 款经典 · 我的收藏 · 我的特调',
+    menu: '191 款经典 · 5 款无酒精 · 我的收藏 · 我的特调',
     tips: '没冰箱也能调：保存、替换、避坑'
   };
   function currentPage() {

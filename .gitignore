@@ -14,3 +14,6 @@ desktop.ini
 
 # 1024 原始 AI 图只留本地母版，不进仓库；只提交 800/400 WebP
 assets/cocktails-ai/source/
+
+# 用户放进来参考的书（版权文件，不入库）
+(书-中文)*.pdf
