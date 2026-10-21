@@ -45,7 +45,7 @@ node tools/build.js
 
 - 自检最后一行：`✅ 全部检查通过`
 - 审计：`跑了 3240 种组合（45 配方 × 8 杯型 × 3 冰量 × 3 口味）`、`共 0 个问题`
-- 构建：生成 `dist/index.html` 和 `dist/调酒台.html`，约 666KB
+- 构建：生成 `dist/index.html` 和 `dist/调酒台.html`，约 667KB
 
 ---
 

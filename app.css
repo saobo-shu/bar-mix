@@ -112,13 +112,24 @@ button { font: inherit; color: inherit; cursor: pointer; }
   border-bottom: 1px solid var(--line);
 }
 .brand { display: flex; align-items: center; gap: 9px; min-width: 0; flex: 1; }
+.brand > div { min-width: 0; flex: 1; }
 .brand .dot {
   width: 11px; height: 11px; border-radius: 50%; flex: none;
   background: var(--amber);
   box-shadow: 0 0 0 4px rgba(224, 163, 92, .16);
 }
-.brand h1 { font-size: 16px; margin: 0; font-weight: 600; letter-spacing: .02em; }
+.brand h1 { font-size: 16px; margin: 0; font-weight: 600; letter-spacing: .02em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .brand p { margin: 0; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 520px) {
+  /* 窄屏顶栏只留品牌名，副标题让位给分数/主题按钮 */
+  .brand p { display: none; }
+}
+@media (max-width: 420px) {
+  /* 更窄时先收起纯装饰的小柱状图，别和分数挤标题 */
+  .mini { display: none; }
+  .chipScore .num { font-size: 20px; }
+}
 
 .scorechip { display: flex; align-items: center; gap: 9px; flex: none; }
 .mini { display: flex; align-items: flex-end; gap: 2px; height: 26px; }
