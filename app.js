@@ -1482,9 +1482,7 @@
     var empty = state.cup.size === 0;
     var band = bandOf(total);
 
-    /* 顶部小条 */
-    document.getElementById('scoreNum').textContent = empty ? '--' : Math.round(total);
-    document.getElementById('scoreLbl').textContent = empty ? '等待加料' : band[1];
+    /* 顶部小条：纯饮和单料不显示分数，避免右上角偷偷跳出一个假分数 */
     var mini = document.getElementById('miniBars');
     mini.innerHTML = v.map(function (x, i) {
       return '<i style="height:' + (12 + x * 88).toFixed(0) + '%" title="' + DIMS[i].name + '"></i>';
@@ -1504,6 +1502,10 @@
        把麦卡伦 12 年判得比占边白标低。 */
     var neat = !empty && a.neatPour;
     var single = !empty && a.singleSoft;
+    document.getElementById('scoreNum').textContent =
+      empty ? '--' : (neat ? '--' : (single ? '—' : Math.round(total)));
+    document.getElementById('scoreLbl').textContent =
+      empty ? '等待加料' : (neat ? '纯饮 · 不评分' : (single ? '只是材料' : band[1]));
     document.getElementById('bigScore').textContent =
       empty ? '--' : (neat ? '纯饮' : (single ? '—' : Math.round(total)));
     document.getElementById('scoreUnit').textContent =

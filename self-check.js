@@ -977,6 +977,20 @@ console.log('\n--- 三种模式 ---');
   const fm2 = B.familyOf(B.analyze()).id;
   console.log('  ' + (fm2 === 'mocktail' ? '✅' : '❌') + ' 处女酸酒（青柠+糖+苏打）也是 Mocktail，不是菲士');
   if (fm2 !== 'mocktail') bad('模式', '无酒精酸酒被分到 ' + fm2);
+
+  /* 右上角小条：纯饮/单料不能偷偷显示分数 */
+  B.state.glass = 'shot'; B.state.iceLevel = 'none';
+  B.load([['macallan', 45]]);
+  const topNeat = els.scoreNum.textContent === '--'
+    && (els.scoreLbl.textContent || '').indexOf('不评分') >= 0;
+  B.state.glass = 'highball'; B.state.iceLevel = 'full';
+  B.load([['coke', 45]]);
+  const topSingle = els.scoreNum.textContent === '—'
+    && (els.scoreLbl.textContent || '').indexOf('只是材料') >= 0;
+  console.log('  ' + (topNeat && topSingle ? '✅' : '❌')
+    + ' 纯饮/单料时右上角也不显示分数（' + els.scoreNum.textContent + ' / ' + els.scoreLbl.textContent + '）');
+  if (!(topNeat && topSingle)) bad('模式', '右上角分数没关掉：neat='
+    + els.scoreNum.textContent + '/' + els.scoreLbl.textContent);
   B.load([]);
 })();
 
